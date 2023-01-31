@@ -42,11 +42,7 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task'],
                     label: "Actualizar",
                     functionName: "actualizarPantalla"
                 });
-                form.addButton({
-                    id: "refresh",
-                    label: "Actualizar 2",
-                    
-                });
+                
 
                 /**
                  * *Debe llenarse con las subsidiarias
