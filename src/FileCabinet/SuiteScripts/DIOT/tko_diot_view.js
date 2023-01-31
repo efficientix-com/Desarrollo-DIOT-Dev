@@ -2,12 +2,12 @@
  * @NApiVersion 2.1
  * @NScriptType Suitelet
  */
-define(['N/log', 'N/ui/serverWidget', 'N/search'],
+define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task'],
     /**
  * @param{log} log
  * @param{serverWidget} serverWidget
  */
-    (log, serverWidget, search) => {
+    (log, serverWidget, search, task) => {
         /**
          * Defines the Suitelet script trigger point.
          * @param {Object} scriptContext
@@ -175,6 +175,33 @@ define(['N/log', 'N/ui/serverWidget', 'N/search'],
                 log.error({ title: 'Error on searchAccountingPeriod', details: error })
             }
             return periods
+        }
+
+        function generaDIOT() {
+            var objTransacciones = {
+                "custscript_tko_diot_subsidiary": '',
+                "custscript_tko_diot_periodo": '',
+            }
+            for (var i = 1; i <= 10; i++) {
+                var scriptdeploy_id = 'customdeploy_tko_diot_generate_' + i;
+                log.debug('scriptdeploy_id', scriptdeploy_id);
+
+                var mrTask = task.create({ taskType: task.TaskType.MAP_REDUCE });
+                mrTask.scriptId = 'customscript_tko_generate_diot_mr';
+                mrTask.deploymentId = scriptdeploy_id;
+                mrTask.params = objTransacciones;
+
+                try {
+                    var mrTaskId = mrTask.submit();
+                    log.debug("scriptTaskId tarea ejecutada", mrTaskId);
+                    log.audit("Tarea ejecutada", mrTaskId);
+                    break;
+                }
+                catch (e) {
+                    log.debug({ title: "error", details: e });
+                    log.error("summarize", "Aún esta corriendo el deployment: " + scriptdeploy_id);
+                }
+            }
         }
 
         return { onRequest }
