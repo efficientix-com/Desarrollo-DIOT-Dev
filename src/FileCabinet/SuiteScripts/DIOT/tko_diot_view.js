@@ -47,7 +47,7 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task'],
                     label: "Actualizar",
                     functionName: "actualizarPantalla"
                 });
-                
+
                 /**
                  * *Debe llenarse con las subsidiarias
                  */
@@ -82,6 +82,26 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task'],
                         text: periods[period].name
                     })
                 }
+
+                /**
+                 * Campo a llenar con el tipo de operación
+                 */
+                var operacionesList = form.addField({
+                    id: 'custpage_operaciones',
+                    type: serverWidget.FieldType.SELECT,
+                    label: "Tipo de Operación"
+                });
+
+                var operaciones = searchOperationTypes();
+                for (let operacion = 0; operacion < operaciones.length; operacion++) {
+                    operacionesList.addSelectOption({
+                        value: operaciones[operacion].id,
+                        text: operaciones[operacion].name
+                    })
+                }
+
+                /* operacionesList.addSelectOption({ value: '3', text: 'Prestación de Servicios' });
+                operacionesList.addSelectOption({ value: '6', text: 'Arrendamiento de Inmuebles' }); */
 
                 /**
                  * !Aqui se realizaran las actualizaciones de los stages del MR
@@ -180,6 +200,38 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task'],
                 log.error({ title: 'Error on searchAccountingPeriod', details: error })
             }
             return periods
+        }
+
+        function searchOperationTypes() {
+            try {
+                var operaciones = []
+                var tipoOp = search.create({
+                    type: 'customrecord_tko_tipo_operacion',
+                    filters: 
+                    [
+                        ["isinactive", "is", "F"]
+                    ],
+                    columns:
+                    [
+                        "internalid", "name"
+                    ]
+                });
+                var searchResultCount = tipoOp.runPaged().count;
+                log.debug("operationTypesSearchObj result count", searchResultCount);
+                tipoOp.run().each(function (result) {
+                    var id = result.getValue({ name: 'internalid' });
+                    var name = result.getValue({ name: 'name' });
+
+                    operaciones.push({
+                        id: id,
+                        name: name
+                    })
+                    return true;
+                });
+            } catch (error) {
+                log.error({ title: 'Error on searchOperationTypes', details: error })
+            }
+            return operaciones;
         }
 
         function generaDIOT() {
