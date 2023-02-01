@@ -24,9 +24,14 @@ function() {
         location.reload()
     }
 
+    function generarReporte(){
+        
+    }
+
     return {
         pageInit: pageInit,
-        actualizarPantalla:actualizarPantalla
+        actualizarPantalla:actualizarPantalla,
+        generarReporte:generarReporte
     };
 
 });

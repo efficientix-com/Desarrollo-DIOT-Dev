@@ -37,13 +37,17 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task'],
                 /**
                  * *Creacion de los campos para los filtro de la DIOT
                  */
+
+                form.addSubmitButton({
+                    label: 'Generar'
+                });
+
                 form.addButton({
                     id: "refresh",
                     label: "Actualizar",
                     functionName: "actualizarPantalla"
                 });
                 
-
                 /**
                  * *Debe llenarse con las subsidiarias
                  */
