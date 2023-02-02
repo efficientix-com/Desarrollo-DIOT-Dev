@@ -2,12 +2,12 @@
  * @NApiVersion 2.1
  * @NScriptType Suitelet
  */
-define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task'],
+define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
     /**
  * @param{log} log
  * @param{serverWidget} serverWidget
  */
-    (log, serverWidget, search, task) => {
+    (log, serverWidget, search, task, runtime) => {
         /**
          * Defines the Suitelet script trigger point.
          * @param {Object} scriptContext
@@ -100,8 +100,38 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task'],
                     })
                 }
 
-                /* operacionesList.addSelectOption({ value: '3', text: 'Prestación de Servicios' });
-                operacionesList.addSelectOption({ value: '6', text: 'Arrendamiento de Inmuebles' }); */
+                /**
+                 * Obtener el tipo de tercero y RFC
+                 */
+
+                /* var userVendor = runtime.getCurrentUser().id;
+                log.debug({ title: 'proveedor', details: userVendor}); */
+
+                var userVendor = 2370;
+
+                var proveedor = search.lookupFields({
+                    type: search.Type.VENDOR,
+                    id: userVendor,
+                    columns: ['custentity_tko_diot_prov_type', 'custentity_mx_rfc']
+                })
+
+                log.debug({ title: 'tercero', details: proveedor.custentity_tko_diot_prov_type});
+                log.debug({ title: 'rfc', details: proveedor.custentity_mx_rfc});
+
+                /**
+                 * Campo de RFC
+                 */
+                var campoRfc = form.addField({
+                    id: 'custpage_rfc',
+                    type: serverWidget.FieldType.TEXT,
+                    label: 'RFC'
+                });
+
+                if (proveedor.custentity_tko_diot_prov_type[0].value == 1) {
+                    campoRfc.isMandatory = true;
+                } else if (proveedor.custentity_tko_diot_prov_type[0].value == 3) {
+                    campoRfc.isDisabled = true;
+                }
 
                 /**
                  * !Aqui se realizaran las actualizaciones de los stages del MR
@@ -115,7 +145,7 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task'],
                 var archivo = sublist.addField({
                     id: 'txt',
                     label: 'Archivo TXT',
-                    type: serverWidget.FieldType.RICHTEXT,
+                    type: serverWidget.FieldType.TEXT,  //se cambio RICHTEXT por TEXT 
                 });
 
             } catch (UIError) {
