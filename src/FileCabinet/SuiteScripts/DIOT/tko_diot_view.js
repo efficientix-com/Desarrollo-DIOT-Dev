@@ -39,7 +39,8 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                  */
 
                 form.addSubmitButton({
-                    label: 'Generar'
+                    label: 'Generar',
+                    functionName: 'generarReporte'
                 });
 
                 form.addButton({
@@ -112,11 +113,12 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                 var proveedor = search.lookupFields({
                     type: search.Type.VENDOR,
                     id: userVendor,
-                    columns: ['custentity_tko_diot_prov_type', 'custentity_mx_rfc']
+                    columns: ['custentity_tko_diot_prov_type', 'custentity_mx_rfc', 'vatregnumber']
                 })
 
                 log.debug({ title: 'tercero', details: proveedor.custentity_tko_diot_prov_type});
                 log.debug({ title: 'rfc', details: proveedor.custentity_mx_rfc});
+                log.debug({ title: 'rfc legacy', details: proveedor.vatregnumber});
 
                 /**
                  * Campo de RFC
@@ -127,10 +129,50 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                     label: 'RFC'
                 });
 
-                if (proveedor.custentity_tko_diot_prov_type[0].value == 1) {
+                /**
+                * Campo de nombre del extranjero
+                */
+                var nombreExtranjero = form.addField({
+                    id: 'custpage_nombre_extranjero',
+                    type: serverWidget.FieldType.TEXT,
+                    label: 'Nombre del extranjero'
+                });
+                nombreExtranjero.updateDisplayType({ displayType: serverWidget.FieldDisplayType.HIDDEN });
+
+                /**
+                 * Campo de país de residencia
+                 */
+                var paisResidencia = form.addField({
+                    id: 'custpage_pais_residencia',
+                    type: serverWidget.FieldType.SELECT,
+                    label: 'País de Residencia'
+                });
+                paisResidencia.updateDisplayType({ displayType: serverWidget.FieldDisplayType.HIDDEN });
+
+                if (proveedor.custentity_tko_diot_prov_type[0].value == 1) { // nacionales
                     campoRfc.isMandatory = true;
-                } else if (proveedor.custentity_tko_diot_prov_type[0].value == 3) {
-                    campoRfc.isDisabled = true;
+                    campoRfc.maxLength = 13;
+                } else if (proveedor.custentity_tko_diot_prov_type[0].value == 2) { // extranjeros
+                    campoRfc.isMandatory = false;
+                    campoRfc.defaultValue = proveedor.custentity_mx_rfc;
+
+                    nombreExtranjero.updateDisplayType({ displayType: serverWidget.FieldDisplayType.NORMAL });
+                    nombreExtranjero.defaultValue = '';
+                    nombreExtranjero.isMandatory = false;
+
+                    log.debug({ title: 'tipoDato', details: typeof nombreExtranjero });
+                    log.debug({ title: 'longitudObjeto', details: Object.keys(nombreExtranjero).length });
+                    log.debug({ title: 'objeto', details: JSON.stringify(nombreExtranjero) });
+
+                    if (Object.keys(nombreExtranjero).length !== 0){
+                        paisResidencia.updateDisplayType({ displayType: serverWidget.FieldDisplayType.NORMAL });
+                        paisResidencia.isMandatory = true;
+                    }
+                } else if (proveedor.custentity_tko_diot_prov_type[0].value == 3) { // globales
+                    campoRfc.updateDisplayType({ displayType: serverWidget.FieldDisplayType.DISABLED });
+                    campoRfc.defaultValue = '';
+                } else {
+                    
                 }
 
                 /**
