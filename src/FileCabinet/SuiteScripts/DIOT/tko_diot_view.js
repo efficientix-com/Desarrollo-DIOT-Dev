@@ -101,6 +101,12 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                     })
                 }
 
+                var facturas = searchVendorBill();
+                //log.debug({ title: 'facturas', details: facturas });
+
+                var date = obtenerFecha();
+                log.debug({ title: 'fecha', details: date });
+
                 /**
                  * Obtener el tipo de tercero y RFC
                  */
@@ -157,7 +163,7 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                     campoRfc.defaultValue = proveedor.custentity_mx_rfc;
 
                     nombreExtranjero.updateDisplayType({ displayType: serverWidget.FieldDisplayType.NORMAL });
-                    nombreExtranjero.defaultValue = '';
+                    //nombreExtranjero.defaultValue = '';
                     nombreExtranjero.isMandatory = false;
 
                     log.debug({ title: 'tipoDato', details: typeof nombreExtranjero });
@@ -165,7 +171,7 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                     log.debug({ title: 'objeto', details: JSON.stringify(nombreExtranjero) });
 
                     if (Object.keys(nombreExtranjero).length !== 0){
-                        paisResidencia.updateDisplayType({ displayType: serverWidget.FieldDisplayType.NORMAL });
+                        //paisResidencia.updateDisplayType({ displayType: serverWidget.FieldDisplayType.NORMAL });
                         paisResidencia.isMandatory = true;
                     }
                 } else if (proveedor.custentity_tko_diot_prov_type[0].value == 3) { // globales
@@ -194,6 +200,20 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                 log.error({ title: 'Error en createUI', details: UIError })
             }
             return form;
+        }
+
+        /**
+         * Funcion para obtener la fecha con el formato correcto
+         */
+        function obtenerFecha() {
+            var fecha = new Date();
+            var day = fecha.getDate();
+            var month = fecha.getMonth() + 1;
+            var year = fecha.getFullYear();
+
+            var date = day + '/' + month + '/' + year;
+
+            return date;
         }
 
         function searchSubsidiaries() {
@@ -274,6 +294,9 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
             return periods
         }
 
+        /**
+         * Funcion para obtener el tipo de operaciones
+         */
         function searchOperationTypes() {
             try {
                 var operaciones = []
@@ -305,6 +328,93 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
             }
             return operaciones;
         }
+
+        /**
+         * Funcion para obtener todas las facturas del proveedor
+         */
+        function searchVendorBill(){
+            try {
+                var facturas = []
+                var facturaSearch = search.create({
+                    type: "vendorbill",
+                    filters:
+                    [
+                       ["type","anyof","VendBill"], 
+                       "AND", 
+                       ["voided","is","F"], 
+                       "AND", 
+                       ["mainline","is","T"]
+                    ],
+                    columns:
+                    [
+                        "internalid",
+                        search.createColumn({
+                            name: "ordertype",
+                            sort: search.Sort.ASC
+                        }),
+                       "trandate",
+                       "taxperiod",
+                       "type",
+                       "tranid",
+                       "entity",
+                       "account",
+                       "memo",
+                       "amount"
+                    ]
+                });
+                var searchResultCount = facturaSearch.runPaged().count;
+                log.debug("vendorbillSearchObj result count",searchResultCount);
+                facturaSearch.run().each(function(result){
+                    // .run().each has a limit of 4,000 results
+                    var id = result.getValue({ name: 'internalid' });
+                    var orderType = result.getValue({ name: 'ordertype' });
+                    var tranDate = result.getValue({ name: 'trandate' });
+                    var taxPeriod = result.getValue({ name: 'taxperiod' });
+                    var type = result.getValue({ name: 'type' });
+                    var tranId = result.getValue({ name: 'tranid' });
+                    var entity = result.getValue({ name: 'entity' });
+                    var account = result.getValue({ name: 'account' });
+                    var memo = result.getValue({ name: 'memo' });
+                    var amount = result.getValue({ name: 'amount' });
+
+                    facturas.push({
+                        id: id,
+                        orderType, orderType,
+                        tranDate: tranDate,
+                        taxPeriod: taxPeriod,
+                        type: type,
+                        tranId: tranId,
+                        entity: entity,
+                        account: account,
+                        memo: memo,
+                        amount: amount
+                    })
+                    return true;
+                });
+            } catch (error) {
+                log.error({ title: 'Error on searchVendorInvoices', details: error })
+            }
+            return facturas;
+        }
+
+        /**
+         * Funcion para obtener los informe de gastos
+         */
+/*         function searchExpenseReport(){
+            try{
+                var informes = []
+                var informesGastos = search.create({
+                    type: '',
+                    filters: 
+                    [
+                        []
+                    ]
+                });
+            } catch (error) {
+                log.error({ title: 'Error on searchExpenseReport', details: error })
+            }
+            return informes;
+        } */
 
         function generaDIOT() {
             var objTransacciones = {
