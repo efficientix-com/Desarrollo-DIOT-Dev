@@ -101,20 +101,20 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                     })
                 }
 
+                /**
+                 * Se obtienen las transacciones que incurren en la generacion de impuestos
+                 */
                 var facturas = searchVendorBill();
-                //log.debug({ title: 'facturas', details: facturas });
+                var informes = searchExpenseReports();
+                var polizas = searchDailyPolicy();
+
 
                 var date = obtenerFecha();
-                log.debug({ title: 'fecha', details: date });
 
                 /**
                  * Obtener el tipo de tercero y RFC
                  */
-
-                /* var userVendor = runtime.getCurrentUser().id;
-                log.debug({ title: 'proveedor', details: userVendor}); */
-
-                var userVendor = 2370;
+                var userVendor = facturas[0].entity;
 
                 var proveedor = search.lookupFields({
                     type: search.Type.VENDOR,
@@ -155,30 +155,35 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                 });
                 paisResidencia.updateDisplayType({ displayType: serverWidget.FieldDisplayType.HIDDEN });
 
-                if (proveedor.custentity_tko_diot_prov_type[0].value == 1) { // nacionales
-                    campoRfc.isMandatory = true;
-                    campoRfc.maxLength = 13;
-                } else if (proveedor.custentity_tko_diot_prov_type[0].value == 2) { // extranjeros
-                    campoRfc.isMandatory = false;
-                    campoRfc.defaultValue = proveedor.custentity_mx_rfc;
+                // Verifica que tenga un tipo de tercero
+                if (Object.entries(proveedor.custentity_tko_diot_prov_type).length !== 0) {
 
-                    nombreExtranjero.updateDisplayType({ displayType: serverWidget.FieldDisplayType.NORMAL });
-                    //nombreExtranjero.defaultValue = '';
-                    nombreExtranjero.isMandatory = false;
+                    //proveedores nacionales
+                    if (proveedor.custentity_tko_diot_prov_type[0].value == 1) {
+                        campoRfc.isMandatory = true;
+                        campoRfc.maxLength = 13;
 
-                    log.debug({ title: 'tipoDato', details: typeof nombreExtranjero });
-                    log.debug({ title: 'longitudObjeto', details: Object.keys(nombreExtranjero).length });
-                    log.debug({ title: 'objeto', details: JSON.stringify(nombreExtranjero) });
+                    //proveedores extranjeros
+                    } else if (proveedor.custentity_tko_diot_prov_type[0].value == 2) {
+                        campoRfc.isMandatory = false;
+                        campoRfc.defaultValue = proveedor.custentity_mx_rfc;
+                        nombreExtranjero.updateDisplayType({ displayType: serverWidget.FieldDisplayType.NORMAL });
+                        nombreExtranjero.defaultValue = '';
+                        nombreExtranjero.isMandatory = false;
+                        if (Object.keys(nombreExtranjero).length !== 0){
+                            //paisResidencia.updateDisplayType({ displayType: serverWidget.FieldDisplayType.NORMAL });
+                            paisResidencia.isMandatory = true;
+                        }
 
-                    if (Object.keys(nombreExtranjero).length !== 0){
-                        //paisResidencia.updateDisplayType({ displayType: serverWidget.FieldDisplayType.NORMAL });
-                        paisResidencia.isMandatory = true;
+                    //proveedores globales
+                    } else if (proveedor.custentity_tko_diot_prov_type[0].value == 3) {
+                        campoRfc.updateDisplayType({ displayType: serverWidget.FieldDisplayType.DISABLED });
+                        campoRfc.defaultValue = '';
+                    } else {
+                        
                     }
-                } else if (proveedor.custentity_tko_diot_prov_type[0].value == 3) { // globales
-                    campoRfc.updateDisplayType({ displayType: serverWidget.FieldDisplayType.DISABLED });
-                    campoRfc.defaultValue = '';
                 } else {
-                    
+
                 }
 
                 /**
@@ -330,9 +335,9 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
         }
 
         /**
-         * Funcion para obtener todas las facturas del proveedor
+         * Funcion para obtener todas las facturas pagadas de proveedores
          */
-        function searchVendorBill(){
+        function searchVendorBill() {
             try {
                 var facturas = []
                 var facturaSearch = search.create({
@@ -343,7 +348,9 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                        "AND", 
                        ["voided","is","F"], 
                        "AND", 
-                       ["mainline","is","T"]
+                       ["mainline","is","T"],
+                       "AND",
+                       ["status","anyof","VendBill:B"]
                     ],
                     columns:
                     [
@@ -353,6 +360,7 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                             sort: search.Sort.ASC
                         }),
                        "trandate",
+                       "postingperiod",
                        "taxperiod",
                        "type",
                        "tranid",
@@ -363,12 +371,12 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                     ]
                 });
                 var searchResultCount = facturaSearch.runPaged().count;
-                log.debug("vendorbillSearchObj result count",searchResultCount);
+                log.debug("vendorBillSearchObj result count",searchResultCount);
                 facturaSearch.run().each(function(result){
                     // .run().each has a limit of 4,000 results
                     var id = result.getValue({ name: 'internalid' });
-                    var orderType = result.getValue({ name: 'ordertype' });
                     var tranDate = result.getValue({ name: 'trandate' });
+                    var postingPeriod = result.getValue({ name: 'postingperiod' });
                     var taxPeriod = result.getValue({ name: 'taxperiod' });
                     var type = result.getValue({ name: 'type' });
                     var tranId = result.getValue({ name: 'tranid' });
@@ -379,8 +387,8 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
 
                     facturas.push({
                         id: id,
-                        orderType, orderType,
                         tranDate: tranDate,
+                        postingPeriod: postingPeriod,
                         taxPeriod: taxPeriod,
                         type: type,
                         tranId: tranId,
@@ -398,23 +406,132 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
         }
 
         /**
-         * Funcion para obtener los informe de gastos
+         * Funcion para obtener los informes de gastos pagados
          */
-/*         function searchExpenseReport(){
+        function searchExpenseReports() {
             try{
                 var informes = []
-                var informesGastos = search.create({
-                    type: '',
-                    filters: 
+                var informesSearch = search.create({
+                    type: "expensereport",
+                    filters:
                     [
-                        []
+                       ["type","anyof","ExpRept"], 
+                       "AND", 
+                       ["voided","is","F"], 
+                       "AND", 
+                       ["mainline","is","T"], 
+                       "AND", 
+                       ["status","anyof","ExpRept:I"]
+                    ],
+                    columns:
+                    [
+                        "internalid",
+                        search.createColumn({
+                            name: "ordertype",
+                            sort: search.Sort.ASC
+                        }),
+                        "trandate",
+                        "postingperiod",
+                        "taxperiod",
+                        "type",
+                        "tranid",
+                        "entity",
+                        "account",
+                        "memo",
+                        "amount"
                     ]
-                });
+                 });
+                 var searchResultCount = informesSearch.runPaged().count;
+                 log.debug("expenseReportSearchObj result count",searchResultCount);
+                 informesSearch.run().each(function(result){
+                    // .run().each has a limit of 4,000 results
+                    var id = result.getValue({ name: 'internalid' });
+                    var tranDate = result.getValue({ name: 'trandate' });
+                    var postingPeriod = result.getValue({ name: 'postingperiod' });
+                    var taxPeriod = result.getValue({ name: 'taxperiod' });
+                    var type = result.getValue({ name: 'type' });
+                    var tranId = result.getValue({ name: 'tranid' });
+                    var entity = result.getValue({ name: 'entity' });
+                    var account = result.getValue({ name: 'account' });
+                    var memo = result.getValue({ name: 'memo' });
+                    var amount = result.getValue({ name: 'amount' });
+
+                    informes.push({
+                        id: id,
+                        tranDate: tranDate,
+                        postingPeriod: postingPeriod,
+                        taxPeriod: taxPeriod,
+                        type: type,
+                        tranId: tranId,
+                        entity, entity,
+                        account: account,
+                        memo: memo,
+                        amount: amount
+                    })
+                    return true;
+                 });                 
             } catch (error) {
-                log.error({ title: 'Error on searchExpenseReport', details: error })
+                log.error({ title: 'Error on searchExpenseReports', details: error })
             }
             return informes;
-        } */
+        }
+
+        /**
+         * Funcion para obtener las polizas de diario
+         */
+        function searchDailyPolicy() {
+            try {
+                var polizas = []
+                var polizasSearch = search.create({
+                    type: "journalentry",
+                    filters:
+                    [
+                       ["type","anyof","Journal"], 
+                       "AND", 
+                       ["voided","is","F"], 
+                       "AND", 
+                       ["mainline","is","T"], 
+                       "AND", 
+                       ["status","anyof","Journal:B"]
+                    ],
+                    columns:
+                    [
+                        "internalId",
+                        "trandate",
+                        "postingperiod",
+                        "tranid",
+                        "entity",
+                        "account",
+                        "amount"
+                    ]
+                 });
+                 var searchResultCount = polizasSearch.runPaged().count;
+                 log.debug("dailyPolicySearchObj result count",searchResultCount);
+                 polizasSearch.run().each(function(result){
+                    var id = result.getValue({ name: 'internalid' });
+                    var trandDate = result.getValue({ name: 'trandate' });
+                    var postingPeriod = result.getValue({ name: 'postingperiod' });
+                    var tranId = result.getValue({ name: 'tranid' });
+                    var entity = result.getValue({ name: 'entity' });
+                    var account = result.getValue({ name: 'account' });
+                    var amount = result.getValue({ name: 'amount' });
+
+                    polizas.push({
+                        id:id,
+                        tranDate: trandDate,
+                        postingPeriod: postingPeriod,
+                        tranId: tranId,
+                        entity: entity,
+                        account: account,
+                        amount: amount
+                    })
+                    return true;
+                 });
+            } catch (error) {
+                log.error({ title: 'Error on searchDailyPolicy', details: error });
+            }
+            return polizas;
+        }
 
         function generaDIOT() {
             var objTransacciones = {
