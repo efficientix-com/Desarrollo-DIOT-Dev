@@ -108,23 +108,27 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                 var informes = searchExpenseReports();
                 var polizas = searchDailyPolicy();
 
+                //Agrupar impuestos por proveedor
+                if (Object.entries(facturas).length !== 0){
+                    var proveedores = buscarFacturas(facturas);
+                    /* if(Object.entries(informes).length !== 0)
+                        buscarInformesFaltantes(proveedores, informes);
+                    buscarPolizasFaltantes(proveedores); */
+                } else if (Object.entries(informes).length !== 0) {
 
-                var date = obtenerFecha();
+                } else if (Object.entries(polizas).length !== 0) {
+
+                } else {
+                    alert("No tiene transacciones pagadas durante este mes");
+                }
 
                 /**
                  * Obtener el tipo de tercero y RFC
                  */
-                var userVendor = facturas[0].entity;
 
-                var proveedor = search.lookupFields({
-                    type: search.Type.VENDOR,
-                    id: userVendor,
-                    columns: ['custentity_tko_diot_prov_type', 'custentity_mx_rfc', 'vatregnumber']
-                })
-
-                log.debug({ title: 'tercero', details: proveedor.custentity_tko_diot_prov_type});
+                /* log.debug({ title: 'tercero', details: proveedor.custentity_tko_diot_prov_type});
                 log.debug({ title: 'rfc', details: proveedor.custentity_mx_rfc});
-                log.debug({ title: 'rfc legacy', details: proveedor.vatregnumber});
+                log.debug({ title: 'rfc legacy', details: proveedor.vatregnumber}); */
 
                 /**
                  * Campo de RFC
@@ -155,7 +159,7 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                 });
                 paisResidencia.updateDisplayType({ displayType: serverWidget.FieldDisplayType.HIDDEN });
 
-                // Verifica que tenga un tipo de tercero
+                /* // Verifica que tenga un tipo de tercero
                 if (Object.entries(proveedor.custentity_tko_diot_prov_type).length !== 0) {
 
                     //proveedores nacionales
@@ -185,7 +189,7 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                 } else {
 
                 }
-
+ */
                 /**
                  * !Aqui se realizaran las actualizaciones de los stages del MR
                  */
@@ -208,17 +212,91 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
         }
 
         /**
-         * Funcion para obtener la fecha con el formato correcto
+         * Funcion para buscar facturas de un proveedor
          */
-        function obtenerFecha() {
-            var fecha = new Date();
-            var day = fecha.getDate();
-            var month = fecha.getMonth() + 1;
-            var year = fecha.getFullYear();
+        function buscarFacturas(facturas, informes, polizas) {
+            var proveedores = []
+            for (let factura = 0; factura < facturas.length; factura++) {
+                var userVendor = facturas[factura].entity;
+                var proveedor = search.lookupFields({
+                    type: search.Type.VENDOR,
+                    id: userVendor,
+                    columns: ['custentity_tko_diot_prov_type', 'custentity_mx_rfc', 'vatregnumber']
+                })
+                // busca informes y polizas de ese proveedor
+                var informesProv = buscarInformes(userVendor, informes);
+                if (Object.entries(informesProv).length !== 0) {
+                    //se escribe en el txt
+                }
+                var polizasProv = buscarPolizas(userVendor, polizas);
+                if(Object.entries(polizasProv).length !== 0) {
+                    //se escribe en el txt
+                }
+                proveedores.push({
+                    userVendor: userVendor
+                })
+            }
+            return proveedores;
+        }
 
-            var date = day + '/' + month + '/' + year;
+        /**
+         * Funcion para buscar informes de gastos
+         */
+        function buscarInformes(proveedor, informes) {
+            var informeProv = []
+            for (let informe = 0; informe < informes.length; informe++) {
+                if (informes[informe].entity === proveedor) {
+                    informeProv.push({
+                        informes: informes[informe]
+                    })
+                }
+            }
+            return informeProv;
+        }
 
-            return date;
+        function buscarInformesFaltantes(proveedores, informes) {
+            var informesFaltantes = []
+            for (let informe = 0; informe < informes.length; informe++) {
+                for (let i = 0; i < proveedores.length; i++) {
+                    if (informes[informe].entity !== proveedores[i]) {
+                        var polizasProv = buscarPolizas(proveedores[i], polizas);
+                        informesFaltantes.push({ 
+                            informes: informes[informe],
+                            polizas: polizasProv
+                        })
+                    }
+                }
+            }
+            return informesFaltantes;
+        }
+
+        /**
+         * Funcion para buscar polizas de un proveedor
+         */
+        function buscarPolizas(proveedor, polizas) {
+            var polizaProv = []
+            for (let poliza = 0; poliza < polizas.length; poliza++) {
+                if (polizas[poliza].entity === proveedor) {
+                    polizaProv.push({
+                        polizas: polizas[poliza]
+                    })
+                }
+            }
+            return polizaProv;
+        }
+
+        function buscarPolizasFaltantes(proveedores, polizas) {
+            var polizasFaltantes = []
+            for (let poliza = 0; poliza < polizas.length; poliza++) {
+                for (let i = 0; i < proveedores.length; i++) {
+                    if (polizas[poliza].entity !== proveedores[i]) {
+                        polizasFaltantes.push({ 
+                            polizas: polizas[poliza]
+                        })
+                    }
+                }
+            }
+            return polizasFaltantes;
         }
 
         function searchSubsidiaries() {
@@ -350,7 +428,9 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                        "AND", 
                        ["mainline","is","T"],
                        "AND",
-                       ["status","anyof","VendBill:B"]
+                       ["status","anyof","VendBill:B"],
+                       "AND", 
+                       ["trandate","within","lastmonth"]
                     ],
                     columns:
                     [
@@ -361,7 +441,6 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                         }),
                        "trandate",
                        "postingperiod",
-                       "taxperiod",
                        "type",
                        "tranid",
                        "entity",
@@ -377,7 +456,6 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                     var id = result.getValue({ name: 'internalid' });
                     var tranDate = result.getValue({ name: 'trandate' });
                     var postingPeriod = result.getValue({ name: 'postingperiod' });
-                    var taxPeriod = result.getValue({ name: 'taxperiod' });
                     var type = result.getValue({ name: 'type' });
                     var tranId = result.getValue({ name: 'tranid' });
                     var entity = result.getValue({ name: 'entity' });
@@ -389,7 +467,6 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                         id: id,
                         tranDate: tranDate,
                         postingPeriod: postingPeriod,
-                        taxPeriod: taxPeriod,
                         type: type,
                         tranId: tranId,
                         entity: entity,
@@ -421,7 +498,9 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                        "AND", 
                        ["mainline","is","T"], 
                        "AND", 
-                       ["status","anyof","ExpRept:I"]
+                       ["status","anyof","ExpRept:I"],
+                       "AND", 
+                       ["trandate","within","lastmonth"]
                     ],
                     columns:
                     [
@@ -432,12 +511,10 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                         }),
                         "trandate",
                         "postingperiod",
-                        "taxperiod",
                         "type",
                         "tranid",
                         "entity",
                         "account",
-                        "memo",
                         "amount"
                     ]
                  });
@@ -448,24 +525,20 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                     var id = result.getValue({ name: 'internalid' });
                     var tranDate = result.getValue({ name: 'trandate' });
                     var postingPeriod = result.getValue({ name: 'postingperiod' });
-                    var taxPeriod = result.getValue({ name: 'taxperiod' });
                     var type = result.getValue({ name: 'type' });
                     var tranId = result.getValue({ name: 'tranid' });
                     var entity = result.getValue({ name: 'entity' });
                     var account = result.getValue({ name: 'account' });
-                    var memo = result.getValue({ name: 'memo' });
                     var amount = result.getValue({ name: 'amount' });
 
                     informes.push({
                         id: id,
                         tranDate: tranDate,
                         postingPeriod: postingPeriod,
-                        taxPeriod: taxPeriod,
                         type: type,
                         tranId: tranId,
                         entity, entity,
                         account: account,
-                        memo: memo,
                         amount: amount
                     })
                     return true;
@@ -492,16 +565,26 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                        "AND", 
                        ["mainline","is","T"], 
                        "AND", 
-                       ["status","anyof","Journal:B"]
+                       ["status","anyof","Journal:B"],
+                       "AND", 
+                       ["account","anyof","186"], 
+                       "AND", 
+                       ["trandate","within","lastmonth"]
                     ],
                     columns:
                     [
                         "internalId",
+                        search.createColumn({
+                            name: "ordertype",
+                            sort: search.Sort.ASC
+                        }),
                         "trandate",
                         "postingperiod",
+                        "type",
                         "tranid",
                         "entity",
                         "account",
+                        "memo",
                         "amount"
                     ]
                  });
@@ -511,18 +594,22 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                     var id = result.getValue({ name: 'internalid' });
                     var trandDate = result.getValue({ name: 'trandate' });
                     var postingPeriod = result.getValue({ name: 'postingperiod' });
+                    var type = result.getValue({ name: 'type' });
                     var tranId = result.getValue({ name: 'tranid' });
                     var entity = result.getValue({ name: 'entity' });
                     var account = result.getValue({ name: 'account' });
+                    var memo = result.getValue({ name: 'memo' });
                     var amount = result.getValue({ name: 'amount' });
 
                     polizas.push({
                         id:id,
                         tranDate: trandDate,
                         postingPeriod: postingPeriod,
+                        type: type,
                         tranId: tranId,
                         entity: entity,
                         account: account,
+                        memo: memo,
                         amount: amount
                     })
                     return true;
