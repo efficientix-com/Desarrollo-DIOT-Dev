@@ -108,6 +108,9 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                 var informes = searchExpenseReports();
                 var polizas = searchDailyPolicy();
 
+                var prov = buscaProveedores(facturas, informes, polizas);
+                log.debug({ title: 'Objeto Prov', details: prov });
+
                 //Agrupar impuestos por proveedor
                 if (Object.entries(facturas).length !== 0){
                     var proveedores = buscarFacturas(facturas);
@@ -209,6 +212,50 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                 log.error({ title: 'Error en createUI', details: UIError })
             }
             return form;
+        }
+
+        /**
+         * Funcion para buscar los proveedores de cada una de las transacciones
+         * @param {*} facturas Facturas encontradas del mes pasado
+         * @param {*} informes Informes encontrados del mes pasado
+         * @param {*} polizas  Polizas encontradas del mes pasado
+         * @returns Objeto con los proveedores de cada tipo de transacción
+         */
+        function buscaProveedores(facturas, informes, polizas) {
+            var proveedoresFact = []
+            var proveedoresInfo = []
+            var proveedoresPoli = []
+            if (Object.entries(facturas).length !== 0) {
+                for (let factura = 0; factura < facturas.length; factura++) {
+                    var userVendor = facturas[factura].entity;
+                    proveedoresFact.push({
+                        userVendor: userVendor
+                    })
+                }
+            } else if (Object.entries(informes).length !== 0) {
+                for (let informe = 0; informe < informes.length; informe++) {
+                    var userVendor = informes[informe].entity;
+                    proveedoresInfo.push({
+                        userVendor: userVendor
+                    })
+                }
+            } else if (Object.entries(polizas).length !== 0) {
+                for (let poliza = 0; poliza < polizas.length; poliza++) {
+                    var userVendor = polizas[poliza].entity;
+                    proveedoresPoli.push({
+                        userVendor: userVendor
+                    })
+                }
+            } else {
+                log.debug({ title: 'Proveedores', details: 'No se tienen transacciones del mes pasado' });
+            }
+            var proveedores = []
+            proveedores.push({
+                proveedoresFact: proveedoresFact,
+                proveedoresInfo: proveedoresInfo,
+                proveedoresPoli: proveedoresPoli
+            })
+            return proveedores;
         }
 
         /**
