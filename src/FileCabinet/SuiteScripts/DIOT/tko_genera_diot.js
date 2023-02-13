@@ -2,9 +2,9 @@
  * @NApiVersion 2.1
  * @NScriptType MapReduceScript
  */
-define(['N/runtime'],
+define(['N/runtime', 'N/search'],
 
-    (runtime) => {
+    (runtime, search) => {
         /**
          * Defines the function that is executed at the beginning of the map/reduce process and generates the input data.
          * @param {Object} inputContext
@@ -19,6 +19,179 @@ define(['N/runtime'],
          */
 
         const getInputData = (inputContext) => {
+            try{
+                /* BG Facturas */
+                var facturas = []
+                var facturaSearch = search.create({
+                    type: "vendorbill",
+                    filters:
+                    [
+                       ["type","anyof","VendBill"], 
+                       "AND", 
+                       ["voided","is","F"], 
+                       "AND", 
+                       ["mainline","is","T"],
+                       "AND",
+                       ["status","anyof","VendBill:B"],
+                       "AND", 
+                       ["trandate","within","lastmonth"],
+                       "AND", 
+                       ["vendor.custentity_tko_diot_prov_type","anyof","1","2","3"]
+                    ],
+                    columns:
+                    [
+                       "internalid",
+                       "trandate",
+                       "postingperiod",
+                       "type",
+                       "tranid",
+                       "entity",
+                       "account",
+                       "memo",
+                       "amount",
+                       search.createColumn({
+                        name: "custentity_tko_diot_prov_type",
+                        join: "vendor"
+                       })
+
+                        /* 
+                            tipooperacion,
+                        */
+                    ]
+                });
+                // var searchResultCount = facturaSearch.runPaged().count;
+                // log.debug("vendorBillSearchObj result count",searchResultCount);
+                facturaSearch.run().each(function(result){
+
+                    /* 
+                        var type_tercero = result.getValue({name: vendor.custentity_tko_diot_prov_type});
+                        var op_type = result.getValue({name: tipooperacion});
+                        var proveedor = result.getValue({name: entity});
+                    */
+
+                    facturas.push({
+                        id: result.getValue({ name: 'internalid' }),
+                        tranId: result.getValue({ name: 'tranid' }),
+                        tranDate: result.getValue({ name: 'trandate' }),
+                        postingPeriod: result.getValue({ name: 'postingperiod' }),
+                        type: result.getValue({ name: 'type' }),
+                        entity: result.getValue({ name: 'entity' }),
+                        account: result.getValue({ name: 'account' }),
+                        memo: result.getValue({ name: 'memo' }),
+                        amount: result.getValue({ name: 'amount' }),
+                        tipoTercero: result.getValue({ name: 'vendor.custentity_tko_diot_prov_type' })
+                    });
+                });
+
+                /* BG Informes */
+                var informes = []
+                var informesSearch = search.create({
+                    type: "expensereport",
+                    filters:
+                    [
+                       ["type","anyof","ExpRept"], 
+                       "AND", 
+                       ["voided","is","F"], 
+                       "AND", 
+                       ["mainline","is","T"], 
+                       "AND", 
+                       ["status","anyof","ExpRept:I"],
+                       "AND", 
+                       ["trandate","within","lastmonth"]
+                    ],
+                    columns:
+                    [
+                        "internalid",
+                        "trandate",
+                        "postingperiod",
+                        "type",
+                        "tranid",
+                        "entity",
+                        "account",
+                        "amount"
+                        /* 
+                            custcol_tko_diot_prov_type
+                        */
+                    ]
+                });
+                informesSearch.run().each(function(result){
+                    informes.push({
+                        id: result.getValue({ name: 'internalid' }),
+                        tranDate: result.getValue({ name: 'trandate' }),
+                        postingPeriod: result.getValue({ name: 'postingperiod' }),
+                        type: result.getValue({ name: 'type' }),
+                        tranId: result.getValue({ name: 'tranid' }),
+                        entity: result.getValue({ name: 'entity' }),
+                        account: result.getValue({ name: 'account' }),
+                        amount: result.getValue({ name: 'amount' })
+                    })
+                }); 
+
+                /* BG Polizas */
+                var polizas = []
+                var polizasSearch = search.create({
+                    type: "journalentry",
+                    filters:
+                    [
+                       ["type","anyof","Journal"], 
+                       "AND", 
+                       ["voided","is","F"], 
+                       "AND", 
+                       ["mainline","is","T"], 
+                       "AND", 
+                       ["status","anyof","Journal:B"],
+                       "AND", 
+                       ["account","anyof","186"], 
+                       "AND", 
+                       ["trandate","within","lastmonth"]
+                    ],
+                    columns:
+                    [
+                        "internalId",
+                        search.createColumn({
+                            name: "ordertype",
+                            sort: search.Sort.ASC
+                        }),
+                        "trandate",
+                        "postingperiod",
+                        "type",
+                        "tranid",
+                        "entity",
+                        "account",
+                        "memo",
+                        "amount"
+                    ]
+                });
+                polizasSearch.run().each(function(result){
+                    polizas.push({
+                        id: result.getValue({ name: 'internalid' }),
+                        tranDate: result.getValue({ name: 'trandate' }),
+                        postingPeriod: result.getValue({ name: 'postingperiod' }),
+                        type: result.getValue({ name: 'type' }),
+                        tranId: result.getValue({ name: 'tranid' }),
+                        entity: result.getValue({ name: 'entity' }),
+                        account: result.getValue({ name: 'account' }),
+                        memo: result.getValue({ name: 'memo' }),
+                        amount: result.getValue({ name: 'amount' })
+                    })
+                });
+                
+                /* Guardar busquedas en un arreglo de objetos */
+                var datos_transacciones = []
+
+                if (facturas && informes && polizas) {
+                    datos_transacciones.push({
+                        facturas_obj: facturas,
+                        informes_obj: informes,
+                        polizas_obj: polizas
+                    });
+                }
+
+                return datos_transacciones;
+
+            } catch (error) {
+                log.error({ title: 'Error en la busqueda de transacciones', details: error })
+            }
 
         }
 
@@ -40,6 +213,7 @@ define(['N/runtime'],
          */
 
         const map = (mapContext) => {
+
 
         }
 
@@ -85,6 +259,7 @@ define(['N/runtime'],
         const summarize = (summaryContext) => {
 
         }
+
 
         return {getInputData, map, reduce, summarize}
 
