@@ -52,11 +52,8 @@ define(['N/runtime', 'N/search'],
                        search.createColumn({
                         name: "custentity_tko_diot_prov_type",
                         join: "vendor"
-                       })
-
-                        /* 
-                            tipooperacion,
-                        */
+                       }),
+                       "custbody_mx_operation_type"
                     ]
                 });
                 // var searchResultCount = facturaSearch.runPaged().count;
@@ -79,7 +76,8 @@ define(['N/runtime', 'N/search'],
                         account: result.getValue({ name: 'account' }),
                         memo: result.getValue({ name: 'memo' }),
                         amount: result.getValue({ name: 'amount' }),
-                        tipoTercero: result.getValue({ name: 'vendor.custentity_tko_diot_prov_type' })
+                        tipoTercero: result.getValue({ name: 'vendor.custentity_tko_diot_prov_type' }),
+                        tipoOperacion: result.getValue({ name: 'custbody_mx_operation_type'})
                     });
                 });
 
@@ -114,7 +112,8 @@ define(['N/runtime', 'N/search'],
                         search.createColumn({
                             name: "custentity_tko_diot_prov_type",
                             join: "vendorLine"
-                        })
+                        }),
+                        "custbody_mx_operation_type"
                         /* 
                             custcol_tko_diot_prov_type
                         */
@@ -131,7 +130,8 @@ define(['N/runtime', 'N/search'],
                         account: result.getValue({ name: 'account' }),
                         amount: result.getValue({ name: 'amount' }),
                         proveedor: result.getValue({ name: 'vendorLine' }),
-                        tipoTercero: result.getValue({ name: 'vendorLine.custentity_tko_diot_prov_type' })
+                        tipoTercero: result.getValue({ name: 'vendorLine.custentity_tko_diot_prov_type' }),
+                        tipoOperacion: result.getValue({ name: 'custbody_mx_operation_type' })
                     })
                 }); 
 
