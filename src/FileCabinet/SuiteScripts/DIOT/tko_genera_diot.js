@@ -75,7 +75,7 @@ define(['N/runtime', 'N/search'],
                         tranDate: result.getValue({ name: 'trandate' }),
                         postingPeriod: result.getValue({ name: 'postingperiod' }),
                         type: result.getValue({ name: 'type' }),
-                        entity: result.getValue({ name: 'entity' }),
+                        proveedor: result.getValue({ name: 'entity' }),
                         account: result.getValue({ name: 'account' }),
                         memo: result.getValue({ name: 'memo' }),
                         amount: result.getValue({ name: 'amount' }),
@@ -97,7 +97,9 @@ define(['N/runtime', 'N/search'],
                        "AND", 
                        ["status","anyof","ExpRept:I"],
                        "AND", 
-                       ["trandate","within","lastmonth"]
+                       ["trandate","within","lastmonth"], 
+                       "AND", 
+                       ["vendorline.custentity_tko_diot_prov_type","anyof","1","2","3"]
                     ],
                     columns:
                     [
@@ -108,7 +110,11 @@ define(['N/runtime', 'N/search'],
                         "tranid",
                         "entity",
                         "account",
-                        "amount"
+                        "amount",
+                        search.createColumn({
+                            name: "custentity_tko_diot_prov_type",
+                            join: "vendorLine"
+                        })
                         /* 
                             custcol_tko_diot_prov_type
                         */
@@ -123,7 +129,9 @@ define(['N/runtime', 'N/search'],
                         tranId: result.getValue({ name: 'tranid' }),
                         entity: result.getValue({ name: 'entity' }),
                         account: result.getValue({ name: 'account' }),
-                        amount: result.getValue({ name: 'amount' })
+                        amount: result.getValue({ name: 'amount' }),
+                        proveedor: result.getValue({ name: 'vendorLine' }),
+                        tipoTercero: result.getValue({ name: 'vendorLine.custentity_tko_diot_prov_type' })
                     })
                 }); 
 
@@ -143,15 +151,13 @@ define(['N/runtime', 'N/search'],
                        "AND", 
                        ["account","anyof","186"], 
                        "AND", 
-                       ["trandate","within","lastmonth"]
+                       ["trandate","within","lastmonth"], 
+                       "AND", 
+                       ["vendorline.custentity_tko_diot_prov_type","anyof","1","2","3"]
                     ],
                     columns:
                     [
                         "internalId",
-                        search.createColumn({
-                            name: "ordertype",
-                            sort: search.Sort.ASC
-                        }),
                         "trandate",
                         "postingperiod",
                         "type",
@@ -159,7 +165,11 @@ define(['N/runtime', 'N/search'],
                         "entity",
                         "account",
                         "memo",
-                        "amount"
+                        "amount",
+                        search.createColumn({
+                            name: "custentity_tko_diot_prov_type",
+                            join: "vendorLine"
+                        })
                     ]
                 });
                 polizasSearch.run().each(function(result){
@@ -172,7 +182,9 @@ define(['N/runtime', 'N/search'],
                         entity: result.getValue({ name: 'entity' }),
                         account: result.getValue({ name: 'account' }),
                         memo: result.getValue({ name: 'memo' }),
-                        amount: result.getValue({ name: 'amount' })
+                        amount: result.getValue({ name: 'amount' }),
+                        proveedor: result.getValue({ name: 'vendorLine' }),
+                        tipoTercero: result.getValue({ name: 'vendorLine.custentity_tko_diot_prov_type' })
                     })
                 });
                 
