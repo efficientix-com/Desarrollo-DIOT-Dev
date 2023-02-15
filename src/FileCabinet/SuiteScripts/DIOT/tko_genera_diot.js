@@ -36,7 +36,9 @@ define(['N/runtime', 'N/search'],
                        "AND", 
                        ["trandate","within","lastmonth"],
                        "AND", 
-                       ["vendor.custentity_tko_diot_prov_type","anyof","1","2","3"]
+                       ["vendor.custentity_tko_diot_prov_type","anyof","1","2","3"], 
+                       "AND", 
+                       ["custbody_tko_tipo_operacion","anyof","1","2","3"]
                     ],
                     columns:
                     [
@@ -53,18 +55,15 @@ define(['N/runtime', 'N/search'],
                         name: "custentity_tko_diot_prov_type",
                         join: "vendor"
                        }),
-                       "custbody_mx_operation_type"
+                       "custbody_tko_tipo_operacion"
                     ]
                 });
                 // var searchResultCount = facturaSearch.runPaged().count;
                 // log.debug("vendorBillSearchObj result count",searchResultCount);
                 facturaSearch.run().each(function(result){
 
-                    /* 
-                        var type_tercero = result.getValue({name: vendor.custentity_tko_diot_prov_type});
-                        var op_type = result.getValue({name: tipooperacion});
-                        var proveedor = result.getValue({name: entity});
-                    */
+                    var proveedor = result.getValue({ name: 'entity' });
+                    var tipoTercero = result.getValue({ name: 'vendor.custentity_tko_diot_prov_type' });
 
                     facturas.push({
                         id: result.getValue({ name: 'internalid' }),
@@ -72,13 +71,42 @@ define(['N/runtime', 'N/search'],
                         tranDate: result.getValue({ name: 'trandate' }),
                         postingPeriod: result.getValue({ name: 'postingperiod' }),
                         type: result.getValue({ name: 'type' }),
-                        proveedor: result.getValue({ name: 'entity' }),
+                        proveedor: proveedor,
                         account: result.getValue({ name: 'account' }),
                         memo: result.getValue({ name: 'memo' }),
                         amount: result.getValue({ name: 'amount' }),
-                        tipoTercero: result.getValue({ name: 'vendor.custentity_tko_diot_prov_type' }),
-                        tipoOperacion: result.getValue({ name: 'custbody_mx_operation_type'})
+                        tipoTercero: tipoTercero,
+                        tipoOperacion: result.getValue({ name: 'custbody_tko_tipo_operacion'})
                     });
+
+                    var rfc = search.lookupFields({
+                        type: search.Type.VENDOR,
+                        id: proveedor,
+                        columns: ['custentity_mx_rfc']
+                    });
+
+                    if (tipoTercero == 1) { //4 - proveedor nacional
+                        if(rfc){
+                            //el valor se escribe en el txt
+                        }else{
+                            rfc = 'EKU9003173C9'
+                        }
+                    }else if (tipoTercero == 2) { //5 - proveedor extranjero
+                        var datos_prov = search.lookupFields({
+                            type: search.Type.VENDOR,
+                            id: proveedor,
+                            columns: ['taxidnum', 'custentity_tko_nombre_extranjero']
+                        });
+                        var taxId = datos_prov.taxidnum;
+                        var nombreExtranjero = datos_prov.custentity_tko_nombre_extranjero;
+                        if(rfc){
+                            //el valor se escribe en el txt
+                        }else{
+                            rfc = '' //dejar vacio
+                        }
+                    }else if (tipoTercero == 3) { //15 -proveedor global
+                        rfc = '' //dejar vacio
+                    }
                 });
 
                 /* BG Informes */
@@ -97,7 +125,9 @@ define(['N/runtime', 'N/search'],
                        "AND", 
                        ["trandate","within","lastmonth"], 
                        "AND", 
-                       ["vendorline.custentity_tko_diot_prov_type","anyof","1","2","3"]
+                       ["vendorline.custentity_tko_diot_prov_type","anyof","1","2","3"], 
+                       "AND", 
+                       ["custbody_tko_tipo_operacion","anyof","1","2","3"]
                     ],
                     columns:
                     [
@@ -113,10 +143,7 @@ define(['N/runtime', 'N/search'],
                             name: "custentity_tko_diot_prov_type",
                             join: "vendorLine"
                         }),
-                        "custbody_mx_operation_type"
-                        /* 
-                            custcol_tko_diot_prov_type
-                        */
+                        "custbody_tko_tipo_operacion"
                     ]
                 });
                 informesSearch.run().each(function(result){
@@ -131,7 +158,7 @@ define(['N/runtime', 'N/search'],
                         amount: result.getValue({ name: 'amount' }),
                         proveedor: result.getValue({ name: 'vendorLine' }),
                         tipoTercero: result.getValue({ name: 'vendorLine.custentity_tko_diot_prov_type' }),
-                        tipoOperacion: result.getValue({ name: 'custbody_mx_operation_type' })
+                        tipoOperacion: result.getValue({ name: 'custbody_tko_tipo_operacion' })
                     })
                 }); 
 
@@ -153,7 +180,9 @@ define(['N/runtime', 'N/search'],
                        "AND", 
                        ["trandate","within","lastmonth"], 
                        "AND", 
-                       ["vendorline.custentity_tko_diot_prov_type","anyof","1","2","3"]
+                       ["vendorline.custentity_tko_diot_prov_type","anyof","1","2","3"], 
+                       "AND", 
+                       ["custbody_tko_tipo_operacion","anyof","1","2","3"]
                     ],
                     columns:
                     [
@@ -169,7 +198,8 @@ define(['N/runtime', 'N/search'],
                         search.createColumn({
                             name: "custentity_tko_diot_prov_type",
                             join: "vendorLine"
-                        })
+                        }),
+                        "custbody_tko_tipo_operacion"
                     ]
                 });
                 polizasSearch.run().each(function(result){
@@ -184,7 +214,8 @@ define(['N/runtime', 'N/search'],
                         memo: result.getValue({ name: 'memo' }),
                         amount: result.getValue({ name: 'amount' }),
                         proveedor: result.getValue({ name: 'vendorLine' }),
-                        tipoTercero: result.getValue({ name: 'vendorLine.custentity_tko_diot_prov_type' })
+                        tipoTercero: result.getValue({ name: 'vendorLine.custentity_tko_diot_prov_type' }),
+                        tipoOperacion: result.getValue({ name: 'custbody_tko_tipo_operacion' })
                     })
                 });
                 
