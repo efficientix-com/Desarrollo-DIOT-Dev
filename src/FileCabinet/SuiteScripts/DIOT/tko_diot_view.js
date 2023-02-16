@@ -59,7 +59,7 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                 });
 
                 var subsis = searchSubsidiaries();
-                for (let sub = 0; sub < subsis.length; sub++) {
+                for (var sub = 0; sub < subsis.length; sub++) {
 
                     subsidiaryList.addSelectOption({
                         value: subsis[sub].id,

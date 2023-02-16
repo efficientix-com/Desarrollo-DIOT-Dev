@@ -79,13 +79,18 @@ define(['N/runtime', 'N/search'],
                         tipoOperacion: result.getValue({ name: 'custbody_tko_tipo_operacion'})
                     });
 
-                    var rfc = search.lookupFields({
-                        type: search.Type.VENDOR,
-                        id: proveedor,
-                        columns: ['custentity_mx_rfc']
-                    });
-
+                    
                     if (tipoTercero == 1) { //4 - proveedor nacional
+                        var rfc = search.lookupFields({
+                            type: search.Type.VENDOR,
+                            id: proveedor,
+                            columns: ['custentity_mx_rfc']
+                        });
+                        
+                        if (rfc.custentity_mx_rfc.text == "") {
+                            rfc = 'EKU9003173C9'
+                        }
+
                         if(rfc){
                             //el valor se escribe en el txt
                         }else{
@@ -95,10 +100,14 @@ define(['N/runtime', 'N/search'],
                         var datos_prov = search.lookupFields({
                             type: search.Type.VENDOR,
                             id: proveedor,
-                            columns: ['taxidnum', 'custentity_tko_nombre_extranjero']
+                            columns: ['taxidnum', 'custentity_tko_nombre_extranjero', 'custentity_tko_pais_residencia']
                         });
                         var taxId = datos_prov.taxidnum;
                         var nombreExtranjero = datos_prov.custentity_tko_nombre_extranjero;
+                        var paisResidencia = datos_prov.custentity_tko_pais_residencia;
+                        if(nombreExtranjero.text != ""){
+                            //obligatorio pais de residencia y nacionalidad
+                        }
                         if(rfc){
                             //el valor se escribe en el txt
                         }else{
@@ -257,7 +266,8 @@ define(['N/runtime', 'N/search'],
 
         const map = (mapContext) => {
 
-
+            var results = JSON.parse(mapContext.value);
+            
         }
 
         /**

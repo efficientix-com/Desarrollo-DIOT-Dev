@@ -24,7 +24,7 @@ function() {
         location.reload()
     }
 
-    function generarReporte(){
+    function generarReporte(scriptContext){
         
     }
 
