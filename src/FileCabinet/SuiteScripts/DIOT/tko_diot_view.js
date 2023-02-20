@@ -248,11 +248,11 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                 "custscript_tko_diot_periodo": '',
             }
             for (var i = 1; i <= 10; i++) {
-                var scriptdeploy_id = 'customdeploy_tko_diot_generate_' + i;
+                var scriptdeploy_id = 'customdeploy_tko_genera_diot' + i;
                 log.debug('scriptdeploy_id', scriptdeploy_id);
 
                 var mrTask = task.create({ taskType: task.TaskType.MAP_REDUCE });
-                mrTask.scriptId = 'customscript_tko_generate_diot_mr';
+                mrTask.scriptId = 'customscript_tko_genera_diot';
                 mrTask.deploymentId = scriptdeploy_id;
                 mrTask.params = objTransacciones;
 
