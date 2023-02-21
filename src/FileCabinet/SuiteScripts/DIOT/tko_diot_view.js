@@ -16,18 +16,23 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
          * @since 2015.2
          */
         const onRequest = (scriptContext) => {
-            var request = scriptContext.request, params = request.params, response = scriptContext.response
+            var request = scriptContext.request, response = scriptContext.response;
+            var parameters = scriptContext.request.parameters;
             try {
-                let form = createUI(params);
+                let form = createUI(parameters);
                 response.writePage({
                     pageObject: form
                 });
+                switch(parameters.action){
+                    case 'ejecuta':
+                        log.audit({ title: 'prueba', details: "Hola mundo" });
+                }
             } catch (onRequestError) {
                 log.error({ title: 'Error en onRequest', details: onRequestError })
             }
         }
 
-        function createUI(params) {
+        function createUI(parameters) {
             let form = serverWidget.createForm({
                 title: 'Reporte DIOT'
             });
@@ -35,13 +40,13 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
 
             try {
                 /**
-                 * *Creacion de los campos para los filtro de la DIOT
+                 * Creacion de los campos para los filtros de la DIOT
                  */
 
-                form.addSubmitButton({
+                /* form.addSubmitButton({
                     label: 'Generar',
-                    functionName: 'generarReporte'
-                });
+                    functionName: 'generaDIOT'
+                }); */
 
                 form.addButton({
                     id: "refresh",
@@ -49,8 +54,15 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                     functionName: "actualizarPantalla"
                 });
 
+                form.addButton({
+                    id: "genera",
+                    label: "Generar",
+                    functionName: "generaDIOT"
+                });
+                log.debug( "parameters", parameters );
+
                 /**
-                 * *Debe llenarse con las subsidiarias
+                 * Lista de subsidiarias
                  */
                 var subsidiaryList = form.addField({
                     id: "custpage_subsi",
@@ -68,45 +80,22 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                 }
 
                 /**
-                 * *Debe llenarse con loa periodos contables
+                 * Lista de periodos
                  */
-/*                 var accPeriod = form.addField({
-                    id: "custpage_periodo",
+                var periodList = form.addField({
+                    id: "custpage_period",
                     type: serverWidget.FieldType.SELECT,
-                    label: 'Periodo'
+                    label: "Periodo Contable"
                 });
 
                 var periods = searchAccountingPeriod();
-                for (let period = 0; period < periods.length; period++) {
-                    accPeriod.addSelectOption({
-                        value: periods[period].id,
-                        text: periods[period].name
-                    })
-                } */
+                for (var per = 0; per < periods.length; per++) {
 
-                /**
-                 * Campo a llenar con el tipo de operación
-                 */
-                /* var operacionesList = form.addField({
-                    id: 'custpage_operaciones',
-                    type: serverWidget.FieldType.SELECT,
-                    label: "Tipo de Operación"
-                });
-
-                var operaciones = searchOperationTypes();
-                for (let operacion = 0; operacion < operaciones.length; operacion++) {
-                    operacionesList.addSelectOption({
-                        value: operaciones[operacion].id,
-                        text: operaciones[operacion].name
-                    })
-                } */
-
-                /**
-                 * Se obtienen las transacciones que incurren en la generacion de impuestos
-                 */
-/*                 var facturas = searchVendorBill();
-                var informes = searchExpenseReports();
-                var polizas = searchDailyPolicy(); */
+                    periodList.addSelectOption({
+                        value: periods[per].id,
+                        text: periods[per].name
+                    });
+                }
 
                 /**
                  * !Aqui se realizaran las actualizaciones de los stages del MR
@@ -181,12 +170,12 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                         ],
                     columns:
                         [
+                            "internalid",
                             "periodname",
                             search.createColumn({
                                 name: "internalid",
                                 sort: search.Sort.ASC
                             })
-                            // "internalid"
                         ]
                 });
                 var searchResultCount = aPeriod.runPaged().count;
@@ -198,74 +187,29 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                     periods.push({
                         id: id,
                         name: name
-                    })
+                    });
+
                     return true;
                 });
             } catch (error) {
                 log.error({ title: 'Error on searchAccountingPeriod', details: error })
             }
-            return periods
-        }
-
-        /**
-         * Funcion para obtener el tipo de operaciones
-         */
-        function searchOperationTypes() {
-            try {
-                var operaciones = []
-                var tipoOp = search.create({
-                    type: 'customrecord_tko_tipo_operacion',
-                    filters: 
-                    [
-                        ["isinactive", "is", "F"]
-                    ],
-                    columns:
-                    [
-                        "internalid", "name"
-                    ]
-                });
-                var searchResultCount = tipoOp.runPaged().count;
-                log.debug("operationTypesSearchObj result count", searchResultCount);
-                tipoOp.run().each(function (result) {
-                    var id = result.getValue({ name: 'internalid' });
-                    var name = result.getValue({ name: 'name' });
-
-                    operaciones.push({
-                        id: id,
-                        name: name
-                    })
-                    return true;
-                });
-            } catch (error) {
-                log.error({ title: 'Error on searchOperationTypes', details: error })
-            }
-            return operaciones;
+            return periods;
         }
 
         function generaDIOT() {
-            var objTransacciones = {
-                "custscript_tko_diot_subsidiary": '',
-                "custscript_tko_diot_periodo": '',
+            try {
+                var mrTask = task.create({
+                    taskType: task.TaskType.MAP_REDUCE,
+                    scriptId: 'customscript_tko_generate_diot_mr',
+                    deploymentId: 'customdeploy_tko_diot_generate_1'
+                });
+                var idTask = mrTask.submit();
+                log.audit({ title: 'idTask', details: idTask });
             }
-            for (var i = 1; i <= 10; i++) {
-                var scriptdeploy_id = 'customdeploy_tko_genera_diot' + i;
-                log.debug('scriptdeploy_id', scriptdeploy_id);
-
-                var mrTask = task.create({ taskType: task.TaskType.MAP_REDUCE });
-                mrTask.scriptId = 'customscript_tko_genera_diot';
-                mrTask.deploymentId = scriptdeploy_id;
-                mrTask.params = objTransacciones;
-
-                try {
-                    var mrTaskId = mrTask.submit();
-                    log.debug("scriptTaskId tarea ejecutada", mrTaskId);
-                    log.audit("Tarea ejecutada", mrTaskId);
-                    break;
-                }
-                catch (e) {
-                    log.debug({ title: "error", details: e });
-                    log.error("summarize", "Aún esta corriendo el deployment: " + scriptdeploy_id);
-                }
+            catch (e) {
+                log.debug({ title: "error", details: e });
+                log.error("summarize", "Aún esta corriendo el deployment: " + scriptdeploy_id);
             }
         }
 

@@ -3,9 +3,9 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define([],
+define(['N/url'],
 
-function() {
+function(url) {
 
     /**
      * Function to be executed after page is initialized.
@@ -24,14 +24,23 @@ function() {
         location.reload()
     }
 
-    function generarReporte(scriptContext){
-        
+    function generaDIOT(){
+        console.log(true);
+        var output = url.resolveScript({
+            scriptId: 'customscript_tko_diot_view_sl',
+            deploymentId: 'customdeploy_tko_diot_view_sl',
+            params: {
+                'action': 'ejecuta',
+            },
+            returnExternalUrl: false,
+        });
+        window.open(output, '_self');
     }
 
     return {
         pageInit: pageInit,
         actualizarPantalla:actualizarPantalla,
-        generarReporte:generarReporte
+        generaDIOT:generaDIOT
     };
 
 });
