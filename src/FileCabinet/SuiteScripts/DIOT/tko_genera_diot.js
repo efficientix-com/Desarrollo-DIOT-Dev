@@ -20,6 +20,14 @@ define(['N/runtime', 'N/search', 'N/url'],
 
         const getInputData = (inputContext) => {
             try{
+
+                var objScript = runtime.getCurrentScript();
+                var subsidiaria = objScript.getParameter({ name: "custscript_tko_diot_subsidiary" });
+                var periodo = objScript.getParameter({ name: "custscript_tko_diot_periodo" });
+                
+                log.audit({title: 'MR', details: "Se esta ejecutando el MR: getInputData"});
+                log.audit({title: 'Datos', details: [subsidiaria, periodo]});
+
                 /* BG Facturas */
                 var facturas = []
                 var facturaSearch = search.create({
@@ -38,7 +46,11 @@ define(['N/runtime', 'N/search', 'N/url'],
                        "AND", 
                        ["vendor.custentity_tko_diot_prov_type","anyof","1","2","3"], 
                        "AND", 
-                       ["custbody_tko_tipo_operacion","anyof","1","2","3"]
+                       ["custbody_tko_tipo_operacion","anyof","1","2","3"], 
+                       "AND", 
+                       ["subsidiary","anyof",subsidiaria], 
+                       "AND", 
+                       ["postingperiod","abs",periodo], 
                     ],
                     columns:
                     [
@@ -346,7 +358,6 @@ define(['N/runtime', 'N/search', 'N/url'],
                     "custbody_tko_tipo_operacion"
                 ]
             });
-            log.debug("vendorBillSearchObj result count",searchResultCount);
             facturaSearch.run().each(function(result){
 
                 var proveedor = result.getValue({ name: 'entity' });

@@ -25,7 +25,12 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                 });
                 switch(parameters.action){
                     case 'ejecuta':
-                        log.audit({ title: 'prueba', details: "Hola mundo" });
+                        log.debug("prueba", "Click en botón generar");
+                        generaDIOT(parameters.subsidiaria, parameters.periodo);
+                        break;
+                    case 'actualiza':
+                        log.debug("prueba", "Click en botón actualiza");
+                        break;
                 }
             } catch (onRequestError) {
                 log.error({ title: 'Error en onRequest', details: onRequestError })
@@ -57,7 +62,7 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                 form.addButton({
                     id: "genera",
                     label: "Generar",
-                    functionName: "generaDIOT"
+                    functionName: "generarReporte"
                 });
                 log.debug( "parameters", parameters );
 
@@ -71,6 +76,7 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                 });
 
                 var subsis = searchSubsidiaries();
+                subsidiaryList.addSelectOption({ value: '', text: '' });
                 for (var sub = 0; sub < subsis.length; sub++) {
 
                     subsidiaryList.addSelectOption({
@@ -89,6 +95,7 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                 });
 
                 var periods = searchAccountingPeriod();
+                periodList.addSelectOption({ value: '', text: '' });
                 for (var per = 0; per < periods.length; per++) {
 
                     periodList.addSelectOption({
@@ -139,8 +146,8 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                             "custrecord_company_brn"
                         ]
                 });
-                var searchResultCount = subsiSearch.runPaged().count;
-                log.debug("subsidiarySearchObj result count", searchResultCount);
+                // var searchResultCount = subsiSearch.runPaged().count;
+                // log.debug("subsidiarySearchObj result count", searchResultCount);
                 subsiSearch.run().each(function (result) {
                     var id = result.getValue({ name: 'internalid' });
                     var name = result.getValue({ name: 'name' });
@@ -178,8 +185,8 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                             })
                         ]
                 });
-                var searchResultCount = aPeriod.runPaged().count;
-                log.debug("accountingperiodSearchObj result count", searchResultCount);
+                // var searchResultCount = aPeriod.runPaged().count;
+                // log.debug("accountingperiodSearchObj result count", searchResultCount);
                 aPeriod.run().each(function (result) {
                     var id = result.getValue({ name: 'internalid' });
                     var name = result.getValue({ name: 'periodname' });
@@ -197,12 +204,17 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
             return periods;
         }
 
-        function generaDIOT() {
+        function generaDIOT(subsidiaria, periodo) {
             try {
+
                 var mrTask = task.create({
                     taskType: task.TaskType.MAP_REDUCE,
                     scriptId: 'customscript_tko_generate_diot_mr',
-                    deploymentId: 'customdeploy_tko_diot_generate_1'
+                    deploymentId: 'customdeploy_tko_diot_generate_1',
+                    params: {
+                        'custscript_tko_diot_subsidiary': subsidiaria,
+                        'custscript_tko_diot_periodo': periodo
+                    }
                 });
                 var idTask = mrTask.submit();
                 log.audit({ title: 'idTask', details: idTask });
