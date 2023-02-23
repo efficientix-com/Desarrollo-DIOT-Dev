@@ -30,7 +30,7 @@ function(url, currentRecord, message) {
             if ((scriptContext.fieldId == 'custpage_subsi') || (scriptContext.fieldId == 'custpage_period')) {
                 subsidiaria = currentForm.getValue({ fieldId: "custpage_subsi" });
                 periodo = currentForm.getValue({ fieldId: "custpage_period" });
-                // let info = infoSystem(scriptContext,)
+                
                 console.log("Periodo", periodo);
                 console.log("Subsidiaria", subsidiaria);
 

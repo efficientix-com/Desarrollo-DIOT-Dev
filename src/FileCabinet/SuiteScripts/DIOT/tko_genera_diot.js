@@ -26,295 +26,22 @@ define(['N/runtime', 'N/search', 'N/url'],
                 var periodo = objScript.getParameter({ name: "custscript_tko_diot_periodo" });
                 
                 log.audit({title: 'MR', details: "Se esta ejecutando el MR: getInputData"});
-                log.audit({title: 'Datos', details: [subsidiaria, periodo]});
+                var datos = [];
+                datos.push({
+                    'Subsidiaria': subsidiaria,
+                    'Periodo': periodo
+                })
+                log.debug('Datos', datos);
 
-                /* BG Facturas */
-                var facturas = []
-                var facturaSearch = search.create({
-                    type: "vendorbill",
-                    filters:
-                    [
-                       ["type","anyof","VendBill"], 
-                       "AND", 
-                       ["voided","is","F"], 
-                       "AND", 
-                       ["mainline","is","T"],
-                       "AND",
-                       ["status","anyof","VendBill:B"],
-                       "AND", 
-                       ["trandate","within","lastmonth"],
-                       "AND", 
-                       ["vendor.custentity_tko_diot_prov_type","anyof","1","2","3"], 
-                       "AND", 
-                       ["custbody_tko_tipo_operacion","anyof","1","2","3"], 
-                       "AND", 
-                       ["subsidiary","anyof",subsidiaria], 
-                       "AND", 
-                       ["postingperiod","abs",periodo], 
-                    ],
-                    columns:
-                    [
-                        "internalid",
-                        "type",
-                        "tranid",
-                        "entity",
-                        search.createColumn({
-                            name: "custentity_tko_diot_prov_type",
-                            join: "vendor"
-                        }),
-                        "custbody_tko_tipo_operacion"
-                        /* search.createColumn({
-                            name: "custentity_mx_rfc",
-                            join: "vendor"
-                        }),
-                        search.createColumn({
-                           name: "taxidnum",
-                           join: "vendor"
-                        }),
-                        search.createColumn({
-                           name: "custentity_tko_nombre_extranjero",
-                           join: "vendor"
-                        }),
-                        search.createColumn({
-                           name: "custentity_tko_pais_residencia",
-                           join: "vendor"
-                        }) */
-                    ]
-                });
-                // var searchResultCount = facturaSearch.runPaged().count;
-                // log.debug("vendorBillSearchObj result count",searchResultCount);
-                facturaSearch.run().each(function(result){
+                var facturasProv = searchVendorBill(subsidiaria, periodo);
+                var informesGastos = searchExpenseReports(subsidiaria, periodo);
+                var polizasDiario = searchDailyPolicy(subsidiaria, periodo);
 
-                    var proveedor = result.getValue({ name: 'entity' });
-                    var tipoTercero = result.getValue({ name: 'vendor.custentity_tko_diot_prov_type' });
-                    var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-                    /* var rfc = result.getValue({ name: 'vendor.custentity_mx_rfc' });
-                    var taxID = result.getValue({ name: 'vendor.taxidnum' });
-                    var nombreExtranjero = result.getValue({ name: 'vendor.custentity_tko_nombre_extranjero' });
-                    var paisResidencia = result.getValue({ name: 'vendor.custentity_tko_pais_residencia' }); */
+                log.debug("Facturas", facturasProv);
+                log.debug("Informes", informesGastos);
+                log.debug("Polizas", polizasDiario);
 
-                    facturas.push({
-                        id: result.getValue({ name: 'internalid' }),
-                        tranId: result.getValue({ name: 'tranid' }),
-                        type: result.getValue({ name: 'type' }),
-                        proveedor: proveedor,
-                        tipoTercero: tipoTercero,
-                        tipoOperacion: tipoOperacion
-                        /* rfc: rfc,
-                        taxID: taxID,
-                        nombreExtranjero: nombreExtranjero,
-                        paisResidencia: paisResidencia */
-                    });
-
-                    var rfc, taxID, nombreExtranjero, paisResidencia;
-
-                    if (tipoTercero == 1) { //4 - proveedor nacional
-                        var rfc_prov = search.lookupFields({
-                            type: search.Type.VENDOR,
-                            id: proveedor,
-                            columns: ['custentity_mx_rfc']
-                        })
-                        rfc = (rfc_prov.custentity_mx_rfc.text != "") ? rfc_prov.custentity_mx_rfc.text : 'EKU9003173C9';
-                        /* if (rfc.custentity_mx_rfc.text == "") {
-                            rfc = 'EKU9003173C9'
-                        } */
-                    }else if (tipoTercero == 2) { //5 - proveedor extranjero
-                        var datos_prov = search.lookupFields({
-                            type: search.Type.VENDOR,
-                            id: proveedor,
-                            columns: ['custentity_mx_rfc', 'taxidnum', 'custentity_tko_nombre_extranjero', 'custentity_tko_pais_residencia']
-                        });
-                        rfc = (datos_prov.custentity_mx_rfc.text != '') ? datos_prov.custentity_mx_rfc.text : '';
-                        taxID = (datos_prov.taxidnum.text != '') ? datos_prov.taxidnum.text : '';
-                        nombreExtranjero = (datos_prov.custentity_tko_nombre_extranjero.text != '') ? datos_prov.custentity_tko_nombre_extranjero.text : '';
-                        paisResidencia = (datos_prov.custentity_tko_pais_residencia.text != '') ? datos_prov.custentity_tko_pais_residencia.text : '';
-        
-                        if(nombreExtranjero.text != ""){
-                            //obligatorio pais de residencia y nacionalidad
-                        }
-                    }else if (tipoTercero == 3) { //15 -proveedor global
-                        rfc = '' //dejar vacio
-                    }
-                });
-
-                /* BG Informes */
-                var informes = []
-                var informesSearch = search.create({
-                    type: "expensereport",
-                    filters:
-                    [
-                       ["type","anyof","ExpRept"], 
-                       "AND", 
-                       ["voided","is","F"], 
-                       "AND", 
-                       ["mainline","is","T"], 
-                       "AND", 
-                       ["status","anyof","ExpRept:I"],
-                       "AND", 
-                       ["trandate","within","lastmonth"], 
-                       "AND", 
-                       ["vendorline.custentity_tko_diot_prov_type","anyof","1","2","3"], 
-                       "AND", 
-                       ["custbody_tko_tipo_operacion","anyof","1","2","3"]
-                    ],
-                    columns:
-                    [
-                        "internalid",
-                        "type",
-                        "tranid",
-                        "entity",
-                        search.createColumn({
-                           name: "companyname",
-                           join: "vendorLine"
-                        }),
-                        search.createColumn({
-                            name: "custentity_tko_diot_prov_type",
-                            join: "vendorLine"
-                        }),
-                        "custbody_tko_tipo_operacion"
-                    ]
-                });
-                informesSearch.run().each(function(result){
-
-                    var proveedor = result.getValue({ name: 'vendorLine.companyname' });
-                    var tipoTercero = result.getValue({ name: 'vendorLine.custentity_tko_diot_prov_type' });
-                    var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-
-                    informes.push({
-                        id: result.getValue({ name: 'internalid' }),
-                        type: result.getValue({ name: 'type' }),
-                        tranId: result.getValue({ name: 'tranid' }),
-                        entity: result.getValue({ name: 'entity' }),
-                        proveedor: proveedor,
-                        tipoTercero: tipoTercero,
-                        tipoOperacion: tipoOperacion
-                    })
-
-                    var rfc, taxID, nombreExtranjero, paisResidencia;
-
-                    if (tipoTercero == 1) { 
-                        //rfc obligatorio
-                        var rfc_prov = search.lookupFields({
-                            type: search.Type.VENDOR,
-                            id: proveedor,
-                            columns: ['custentity_mx_rfc']
-                        })
-                        rfc = (rfc_prov.custentity_mx_rfc.text != "") ? rfc_prov.custentity_mx_rfc.text : 'EKU9003173C9';
-                    } else if (tipoTercero == 2) {
-                        //rfc opcional
-                        var datos_prov = search.lookupFields({
-                            type: search.Type.VENDOR,
-                            id: proveedor,
-                            columns: ['custentity_mx_rfc', 'taxidnum', 'custentity_tko_nombre_extranjero', 'custentity_tko_pais_residencia']
-                        });
-
-                        rfc = (datos_prov.custentity_mx_rfc.text != '') ? datos_prov.custentity_mx_rfc.text : '';
-                        taxID = (datos_prov.taxidnum.text != '') ? datos_prov.taxidnum.text : '';
-                        nombreExtranjero = (datos_prov.custentity_tko_nombre_extranjero.text != '') ? datos_prov.custentity_tko_nombre_extranjero.text : '';
-                        paisResidencia = (datos_prov.custentity_tko_pais_residencia.text != '') ? datos_prov.custentity_tko_pais_residencia.text : '';
-                    } else if (tipoTercero == 3) {
-                        rfc = ''
-                    }
-                }); 
-
-                /* BG Polizas */
-                var polizas = []
-                var polizasSearch = search.create({
-                    type: "journalentry",
-                    filters:
-                    [
-                       ["type","anyof","Journal"], 
-                       "AND", 
-                       ["voided","is","F"], 
-                       "AND", 
-                       ["mainline","is","T"], 
-                       "AND", 
-                       ["status","anyof","Journal:B"],
-                       "AND", 
-                       ["account","anyof","186"], 
-                       "AND", 
-                       ["trandate","within","lastmonth"], 
-                       "AND", 
-                       ["vendorline.custentity_tko_diot_prov_type","anyof","1","2","3"], 
-                       "AND", 
-                       ["custbody_tko_tipo_operacion","anyof","1","2","3"]
-                    ],
-                    columns:
-                    [
-                        "internalId",
-                        "type",
-                        "tranid",
-                        "entity",
-                        search.createColumn({
-                           name: "companyname",
-                           join: "vendorLine"
-                        }),
-                        search.createColumn({
-                            name: "custentity_tko_diot_prov_type",
-                            join: "vendorLine"
-                        }),
-                        "custbody_tko_tipo_operacion",
-                        search.createColumn({
-                           name: "custentity_mx_rfc",
-                           join: "vendorLine"
-                        }),
-                        search.createColumn({
-                           name: "taxidnum",
-                           join: "vendorLine"
-                        }),
-                        search.createColumn({
-                           name: "custentity_tko_nombre_extranjero",
-                           join: "vendorLine"
-                        }),
-                        search.createColumn({
-                           name: "custentity_tko_pais_residencia",
-                           join: "vendorLine"
-                        })
-                    ]
-                });
-                polizasSearch.run().each(function(result){
-
-                    var proveedor = result.getValue({ name: 'vendorLine.companyname' });
-                    var tipoTercero = result.getValue({ name: 'vendorLine.custentity_tko_diot_prov_type' });
-                    var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-                    var rfc = result.getValue({ name: 'vendorLine.custentity_mx_rfc' });
-                    var taxID = result.getValue({ name: 'vendorLine.taxidnum' });
-                    var nombreExtranjero = result.getValue({ name: 'vendorLine.custentity_tko_nombre_extranjero' });
-                    var paisResidencia = result.getValue({ name: 'vendorLine.custentity_tko_pais_residencia' });
-
-                    polizas.push({
-                        id: result.getValue({ name: 'internalid' }),
-                        type: result.getValue({ name: 'type' }),
-                        tranId: result.getValue({ name: 'tranid' }),
-                        entity: result.getValue({ name: 'entity' }),
-                        proveedor: proveedor,
-                        tipoTercero: tipoTercero,
-                        tipoOperacion: tipoOperacion,
-                        rfc: rfc,
-                        taxID: taxID,
-                        nombreExtranjero: nombreExtranjero,
-                        paisResidencia:paisResidencia
-                    })
-                });
-                
-                /* Guardar busquedas en un arreglo de objetos */
-                var datos_transacciones = []
-
-                if (facturas && informes && polizas) {
-                    datos_transacciones.push({
-                        facturas_obj: facturas,
-                        informes_obj: informes,
-                        polizas_obj: polizas
-                    });
-                }
-                
-                //return datos_transacciones;
-
-                var facturasProv = searchVendorBill();
-                var informesGastos = searchExpenseReports();
-                var polizasDiario = searchDailyPolicy();
-
-                return [facturasProv, informesGastos, polizasDiario];
+                //return [facturasProv, informesGastos, polizasDiario];
 
             } catch (error) {
                 log.error({ title: 'Error en la busqueda de transacciones', details: error })
@@ -325,7 +52,7 @@ define(['N/runtime', 'N/search', 'N/url'],
         /**
          * Funcion para buscar las facturas de proveedores
          */
-        function searchVendorBill(){
+        function searchVendorBill(subsidiaria, periodo){
             var facturas = []
             var facturaSearch = search.create({
                 type: "vendorbill",
@@ -335,49 +62,48 @@ define(['N/runtime', 'N/search', 'N/url'],
                     "AND", 
                     ["voided","is","F"], 
                     "AND", 
-                    ["mainline","is","T"],
-                    "AND",
-                    ["status","anyof","VendBill:B"],
+                    ["mainline","is","T"], 
                     "AND", 
-                    ["trandate","within","lastmonth"],
+                    ["status","anyof","VendBill:B"], 
                     "AND", 
                     ["vendor.custentity_tko_diot_prov_type","anyof","1","2","3"], 
                     "AND", 
-                    ["custbody_tko_tipo_operacion","anyof","1","2","3"]
+                    ["custbody_tko_tipo_operacion","anyof","1","2","3"], 
+                    "AND", 
+                    ["postingperiod","abs",periodo], 
+                    "AND", 
+                    ["subsidiary","anyof",subsidiaria]
                 ],
                 columns:
                 [
-                    "internalid",
-                    "type",
-                    "tranid",
-                    "entity",
-                    search.createColumn({
-                        name: "custentity_tko_diot_prov_type",
-                        join: "vendor"
-                    }),
-                    "custbody_tko_tipo_operacion"
+                   "internalid",
+                   "type",
+                   "entity",
+                   search.createColumn({
+                      name: "custentity_tko_diot_prov_type",
+                      join: "vendor"
+                   }),
+                   "custbody_tko_tipo_operacion"
                 ]
             });
+
             facturaSearch.run().each(function(result){
-
+                var id = result.getValue({ name: 'internalid' });
                 var proveedor = result.getValue({ name: 'entity' });
-                var tipoTercero = result.getValue({ name: 'vendor.custentity_tko_diot_prov_type' });
+                var tipoTercero = result.getValue({ name: 'custentity_tko_diot_prov_type', join: "vendor" });
                 var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-
                 facturas.push({
-                    id: result.getValue({ name: 'internalid' }),
-                    tranId: result.getValue({ name: 'tranid' }),
-                    type: result.getValue({ name: 'type' }),
+                    id: id,
                     proveedor: proveedor,
                     tipoTercero: tipoTercero,
                     tipoOperacion: tipoOperacion
-                });
+                })
+                return true;
             });
-
             return facturas;
         }
 
-        function searchExpenseReports(){
+        function searchExpenseReports(subsidiaria, periodo){
             var informes = []
             var informesSearch = search.create({
                 type: "expensereport",
@@ -389,52 +115,57 @@ define(['N/runtime', 'N/search', 'N/url'],
                     "AND", 
                     ["mainline","is","T"], 
                     "AND", 
-                    ["status","anyof","ExpRept:I"],
+                    ["status","anyof","ExpRept:I","ExpRept:F"], 
                     "AND", 
-                    ["trandate","within","lastmonth"], 
+                    ["custcol_tko_diot_prov_type","anyof","1","2","3"], 
+                    "AND",
+                    ["custbody_tko_tipo_operacion","anyof","1","2","3"], 
                     "AND", 
-                    ["vendorline.custentity_tko_diot_prov_type","anyof","1","2","3"], 
+                    ["postingperiod","abs",periodo], 
                     "AND", 
-                    ["custbody_tko_tipo_operacion","anyof","1","2","3"]
+                    ["subsidiary","anyof",subsidiaria]
                 ],
                 columns:
                 [
                     "internalid",
                     "type",
-                    "tranid",
                     "entity",
+                    "custbody_tko_tipo_operacion",
+                    "custcol_tko_diot_prov_type",
+                    "custcol_tkio_proveedor",
                     search.createColumn({
-                        name: "companyname",
-                        join: "vendorLine"
+                       name: "custentity_tko_diot_prov_type",
+                       join: "vendorLine"
                     }),
                     search.createColumn({
-                        name: "custentity_tko_diot_prov_type",
-                        join: "vendorLine"
-                    }),
-                    "custbody_tko_tipo_operacion"
+                       name: "companyname",
+                       join: "vendorLine"
+                    })
                 ]
             });
             informesSearch.run().each(function(result){
-
-                var proveedor = result.getValue({ name: 'vendorLine.companyname' });
-                var tipoTercero = result.getValue({ name: 'vendorLine.custentity_tko_diot_prov_type' });
+                var id = result.getValue({ name: 'internalid' });
+                var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
+                var proveedorJoin = result.getValue({ name: 'companyname', join: 'vendorLine' });
+                var tipoTercero = result.getValue({ name: 'custcol_tko_diot_prov_type' });
+                var tipoTerceroJoin = result.getValue({ name: 'custentity_tko_diot_prov_type', join: 'vendorLine' });
                 var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
 
                 informes.push({
-                    id: result.getValue({ name: 'internalid' }),
-                    type: result.getValue({ name: 'type' }),
-                    tranId: result.getValue({ name: 'tranid' }),
-                    entity: result.getValue({ name: 'entity' }),
+                    id: id,
                     proveedor: proveedor,
+                    proveedorJoin: proveedorJoin,
                     tipoTercero: tipoTercero,
+                    tipoTerceroJoin: tipoTerceroJoin,
                     tipoOperacion: tipoOperacion
                 })
+                return true;
             });
 
             return informes;
         }
 
-        function searchDailyPolicy(){
+        function searchDailyPolicy(subsidiaria, periodo){
             var polizas = []
             var polizasSearch = search.create({
                 type: "journalentry",
@@ -446,48 +177,63 @@ define(['N/runtime', 'N/search', 'N/url'],
                     "AND", 
                     ["mainline","is","T"], 
                     "AND", 
-                    ["status","anyof","Journal:B"],
+                    ["status","anyof","Journal:B"], 
                     "AND", 
                     ["account","anyof","186"], 
                     "AND", 
-                    ["trandate","within","lastmonth"], 
+                    ["custcol_tko_diot_prov_type","anyof","1","2","3"], 
                     "AND", 
-                    ["vendorline.custentity_tko_diot_prov_type","anyof","1","2","3"], 
+                    ["custbody_tko_tipo_operacion","anyof","1","2","3"], 
                     "AND", 
-                    ["custbody_tko_tipo_operacion","anyof","1","2","3"]
+                    ["postingperiod","abs",periodo], 
+                    "AND", 
+                    ["subsidiary","anyof",subsidiaria]
                 ],
                 columns:
                 [
-                    "internalId",
-                    "type",
-                    "tranid",
-                    "entity",
                     search.createColumn({
-                        name: "companyname",
-                        join: "vendorLine"
-                    }),
-                    search.createColumn({
-                        name: "custentity_tko_diot_prov_type",
-                        join: "vendorLine"
-                    }),
-                    "custbody_tko_tipo_operacion"
+                        name: "internalid",
+                        summary: "GROUP"
+                     }),
+                     search.createColumn({
+                        name: "type",
+                        summary: "GROUP"
+                     }),
+                     search.createColumn({
+                        name: "tranid",
+                        summary: "GROUP"
+                     }),
+                     search.createColumn({
+                        name: "account",
+                        summary: "GROUP"
+                     }),
+                     search.createColumn({
+                        name: "custcol_tko_diot_prov_type",
+                        summary: "GROUP"
+                     }),
+                     search.createColumn({
+                        name: "custbody_tko_tipo_operacion",
+                        summary: "GROUP"
+                     }),
+                     search.createColumn({
+                        name: "custcol_tkio_proveedor",
+                        summary: "GROUP"
+                     })
                 ]
             });
             polizasSearch.run().each(function(result){
-
-                var proveedor = result.getValue({ name: 'vendorLine.companyname' });
-                var tipoTercero = result.getValue({ name: 'vendorLine.custentity_tko_diot_prov_type' });
-                var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                var id = result.getValue({ name: 'internalid', summary: 'GROUP' });
+                var proveedor = result.getValue({ name: 'custcol_tkio_proveedor', summary: 'GROUP' });
+                var tipoTercero = result.getValue({ name: 'custcol_tko_diot_prov_type', summary: 'GROUP' });
+                var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion', summary: 'GROUP' });
 
                 polizas.push({
-                    id: result.getValue({ name: 'internalid' }),
-                    type: result.getValue({ name: 'type' }),
-                    tranId: result.getValue({ name: 'tranid' }),
-                    entity: result.getValue({ name: 'entity' }),
+                    id: id,
                     proveedor: proveedor,
                     tipoTercero: tipoTercero,
                     tipoOperacion: tipoOperacion
                 })
+                return true;
             });
 
             return polizas;
