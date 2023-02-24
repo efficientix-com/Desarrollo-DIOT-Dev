@@ -37,9 +37,13 @@ define(['N/runtime', 'N/search', 'N/url'],
                 var informesGastos = searchExpenseReports(subsidiaria, periodo);
                 var polizasDiario = searchDailyPolicy(subsidiaria, periodo);
 
-                log.debug("Facturas", facturasProv);
-                log.debug("Informes", informesGastos);
-                log.debug("Polizas", polizasDiario);
+                if(facturasProv.length == 0 && informesGastos.length == 0 && polizasDiario.length == 0) {
+                    log.debug('Busquedas', 'No se encontaron transacciones en ese periodo');
+                } else {
+                    log.debug("Facturas", facturasProv);
+                    log.debug("Informes", informesGastos);
+                    log.debug("Polizas", polizasDiario);
+                }
 
                 //return [facturasProv, informesGastos, polizasDiario];
 
@@ -111,13 +115,9 @@ define(['N/runtime', 'N/search', 'N/url'],
                 [
                     ["type","anyof","ExpRept"], 
                     "AND", 
-                    ["voided","is","F"], 
+                    ["voided","is","F"],
                     "AND", 
-                    ["mainline","is","T"], 
-                    "AND", 
-                    ["status","anyof","ExpRept:I","ExpRept:F"], 
-                    "AND", 
-                    ["custcol_tko_diot_prov_type","anyof","1","2","3"], 
+                    ["status","anyof","ExpRept:I","ExpRept:F"],
                     "AND",
                     ["custbody_tko_tipo_operacion","anyof","1","2","3"], 
                     "AND", 
@@ -129,36 +129,26 @@ define(['N/runtime', 'N/search', 'N/url'],
                 [
                     "internalid",
                     "type",
-                    "entity",
+                    "tranid",
                     "custbody_tko_tipo_operacion",
                     "custcol_tko_diot_prov_type",
-                    "custcol_tkio_proveedor",
-                    search.createColumn({
-                       name: "custentity_tko_diot_prov_type",
-                       join: "vendorLine"
-                    }),
-                    search.createColumn({
-                       name: "companyname",
-                       join: "vendorLine"
-                    })
+                    "custcol_tkio_proveedor"
                 ]
             });
             informesSearch.run().each(function(result){
                 var id = result.getValue({ name: 'internalid' });
                 var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
-                var proveedorJoin = result.getValue({ name: 'companyname', join: 'vendorLine' });
                 var tipoTercero = result.getValue({ name: 'custcol_tko_diot_prov_type' });
-                var tipoTerceroJoin = result.getValue({ name: 'custentity_tko_diot_prov_type', join: 'vendorLine' });
                 var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-
-                informes.push({
-                    id: id,
-                    proveedor: proveedor,
-                    proveedorJoin: proveedorJoin,
-                    tipoTercero: tipoTercero,
-                    tipoTerceroJoin: tipoTerceroJoin,
-                    tipoOperacion: tipoOperacion
-                })
+            
+                if(proveedor != "" && tipoTercero != "") {
+                    informes.push({
+                        id: id,
+                        proveedor: proveedor,
+                        tipoTercero: tipoTercero,
+                        tipoOperacion: tipoOperacion
+                    });
+                }
                 return true;
             });
 
