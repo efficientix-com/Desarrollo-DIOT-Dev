@@ -87,7 +87,8 @@ define(['N/runtime', 'N/search', 'N/url'],
                       name: "custentity_tko_diot_prov_type",
                       join: "vendor"
                    }),
-                   "custbody_tko_tipo_operacion"
+                   "custbody_tko_tipo_operacion",
+                   "rate"
                 ]
             });
 
@@ -96,11 +97,69 @@ define(['N/runtime', 'N/search', 'N/url'],
                 var proveedor = result.getValue({ name: 'entity' });
                 var tipoTercero = result.getValue({ name: 'custentity_tko_diot_prov_type', join: "vendor" });
                 var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                var rate = result.getValue({ name: 'rate' });
+
+                // var rfc = search.lookupFields({
+                //     type: search.Type.VENDOR,
+                //     id: proveedor,
+                //     columns: ['custentity_mx_rfc']
+                // });
+                // var nombreExtranjero, pais, nacionalidad;
+
+                // if(tipoTercero == 1){ //proveedor nacional
+                //     /**
+                //      * Obligatorio RFC
+                //      */
+                //     log.debug('RFC', rfc);                    
+                // } else if (tipoTercero == 2){ //proveedor extranjero
+                //     /**
+                //      * Opcional RFC
+                //      * Tax ID
+                //      * Nombre del extranjero
+                //      * Pais de residencia (aplica si nombre de extranjero tiene un valor)
+                //      * Nacionalidad (aplica si nombre de extranjero tiene un valor)
+                //      */
+                //     if(rfc != '') {
+                //         log.debug('RFC', rfc); 
+                //     }
+                //     var taxID = search.lookupFields({
+                //         type: search.Type.VENDOR,
+                //         id: proveedor,
+                //         columns: ['taxidnum']
+                //     });
+                //     nombreExtranjero = search.lookupFields({
+                //         type: search.Type.VENDOR,
+                //         id: proveedor,
+                //         columns: ['custentity_tko_nombre_extranjero']
+                //     });
+                //     log.debug('Tax ID', taxID);
+                //     log.debug('Nombre del extranjero', nombreExtranjero);
+                //     if(nombreExtranjero != ''){
+                //         pais = search.lookupFields({
+                //             type: search.Type.VENDOR,
+                //             id: proveedor,
+                //             columns: ['custentity_tko_pais_residencia']
+                //         });
+                //         nacionalidad = search.lookupFields({
+                //             type: search.Type.VENDOR,
+                //             id: proveedor,
+                //             columns: ['custentity_tko_nacionalidad']
+                //         });
+                //         log.debug('Pais de Residencia', pais);
+                //         log.debug('Nacionalidad', nacionalidad);
+                //     }
+                // } else { //proveedor global
+                //     /**
+                //      * NO Obligatorio RFC
+                //      */
+                // }
+
                 facturas.push({
                     id: id,
                     proveedor: proveedor,
                     tipoTercero: tipoTercero,
-                    tipoOperacion: tipoOperacion
+                    tipoOperacion: tipoOperacion,
+                    rate: rate
                 })
                 return true;
             });
