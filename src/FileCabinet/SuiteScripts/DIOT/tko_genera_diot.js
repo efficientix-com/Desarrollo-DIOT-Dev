@@ -58,6 +58,7 @@ define(['N/runtime', 'N/search', 'N/url'],
          */
         function searchVendorBill(subsidiaria, periodo){
             var facturas = []
+            var amountNotTaxTotal = 0, proveedorF;
             var facturaSearch = search.create({
                 type: "vendorbill",
                 filters:
@@ -88,7 +89,7 @@ define(['N/runtime', 'N/search', 'N/url'],
                       join: "vendor"
                    }),
                    "custbody_tko_tipo_operacion",
-                   "rate"
+                   "amount"
                 ]
             });
 
@@ -97,7 +98,16 @@ define(['N/runtime', 'N/search', 'N/url'],
                 var proveedor = result.getValue({ name: 'entity' });
                 var tipoTercero = result.getValue({ name: 'custentity_tko_diot_prov_type', join: "vendor" });
                 var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-                var rate = result.getValue({ name: 'rate' });
+                var amount = result.getValue({ name: 'amount' });
+
+                facturas.push({
+                    id: id,
+                    proveedor: proveedor,
+                    tipoTercero: tipoTercero,
+                    tipoOperacion: tipoOperacion,
+                    amount: amount
+                })
+                return true;
 
                 // var rfc = search.lookupFields({
                 //     type: search.Type.VENDOR,
@@ -153,15 +163,6 @@ define(['N/runtime', 'N/search', 'N/url'],
                 //      * NO Obligatorio RFC
                 //      */
                 // }
-
-                facturas.push({
-                    id: id,
-                    proveedor: proveedor,
-                    tipoTercero: tipoTercero,
-                    tipoOperacion: tipoOperacion,
-                    rate: rate
-                })
-                return true;
             });
             return facturas;
         }
