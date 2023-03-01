@@ -57,8 +57,7 @@ define(['N/runtime', 'N/search', 'N/url'],
          * Funcion para buscar las facturas de proveedores
          */
         function searchVendorBill(subsidiaria, periodo){
-            var facturas = []
-            var amountNotTaxTotal = 0, proveedorF;
+            var facturas = [], idF = '';
             var facturaSearch = search.create({
                 type: "vendorbill",
                 filters:
@@ -67,29 +66,33 @@ define(['N/runtime', 'N/search', 'N/url'],
                     "AND", 
                     ["voided","is","F"], 
                     "AND", 
-                    ["mainline","is","T"], 
-                    "AND", 
-                    ["status","anyof","VendBill:B"], 
+                    ["mainline","any",""], 
+                    // "AND", 
+                    // ["status","anyof","VendBill:B"], 
                     "AND", 
                     ["vendor.custentity_tko_diot_prov_type","anyof","1","2","3"], 
                     "AND", 
                     ["custbody_tko_tipo_operacion","anyof","1","2","3"], 
                     "AND", 
-                    ["postingperiod","abs",periodo], 
+                    ["postingperiod","abs",periodo],
                     "AND", 
-                    ["subsidiary","anyof",subsidiaria]
+                    ["subsidiary","anyof","5"] //subsidiaria mexico
                 ],
                 columns:
                 [
-                   "internalid",
-                   "type",
-                   "entity",
-                   search.createColumn({
-                      name: "custentity_tko_diot_prov_type",
-                      join: "vendor"
-                   }),
-                   "custbody_tko_tipo_operacion",
-                   "amount"
+                    "internalid",
+                    "type",
+                    "entity",
+                    "amount",
+                    "netamountnotax",
+                    "taxtotal",
+                    "total",
+                    search.createColumn({
+                       name: "custentity_tko_diot_prov_type",
+                       join: "vendor"
+                    }),
+                    "custbody_tko_tipo_operacion",
+                    "taxcode"
                 ]
             });
 
@@ -98,15 +101,34 @@ define(['N/runtime', 'N/search', 'N/url'],
                 var proveedor = result.getValue({ name: 'entity' });
                 var tipoTercero = result.getValue({ name: 'custentity_tko_diot_prov_type', join: "vendor" });
                 var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-                var amount = result.getValue({ name: 'amount' });
+                var importe = result.getValue({ name: 'netamountnotax' });
+                var impuestos = result.getValue({ name: 'taxtotal' });
+                var total = result.getValue({ name: 'total' });
+                var iva = 0;
 
-                facturas.push({
-                    id: id,
-                    proveedor: proveedor,
-                    tipoTercero: tipoTercero,
-                    tipoOperacion: tipoOperacion,
-                    amount: amount
-                })
+                if(idF != id){
+                    if (impuestos != 0 || impuestos != '') {
+                        iva = (impuestos * 100) / importe;
+                    } else {
+                        iva = 0;
+                    }
+                    if(iva < 0){
+                        iva = iva * -1;
+                    }
+                    if (iva == 0){
+                        importe = total;
+                    }
+                    facturas.push({
+                        id: id,
+                        proveedor: proveedor,
+                        tipoTercero: tipoTercero,
+                        tipoOperacion: tipoOperacion,
+                        iva: iva,
+                        importe: importe
+                    });
+                    idF = id;
+                }
+
                 return true;
 
                 // var rfc = search.lookupFields({
