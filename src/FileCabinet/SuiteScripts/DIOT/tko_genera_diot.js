@@ -68,7 +68,7 @@ define(['N/runtime', 'N/search', 'N/url'],
                     "AND", 
                     ["mainline","any",""], 
                     // "AND", 
-                    // ["status","anyof","VendBill:B"], 
+                    // ["status","anyof","VendBill:B"], (para pruebas, estado = pagado por completo)
                     "AND", 
                     ["vendor.custentity_tko_diot_prov_type","anyof","1","2","3"], 
                     "AND", 
@@ -76,7 +76,7 @@ define(['N/runtime', 'N/search', 'N/url'],
                     "AND", 
                     ["postingperiod","abs",periodo],
                     "AND", 
-                    ["subsidiary","anyof","5"] //subsidiaria mexico
+                    ["subsidiary","anyof",subsidiaria] //subsidiaria mexico = 5 (para pruebas)
                 ],
                 columns:
                 [
@@ -190,16 +190,20 @@ define(['N/runtime', 'N/search', 'N/url'],
         }
 
         function searchExpenseReports(subsidiaria, periodo){
-            var informes = []
+            var informes = [], idI = '', codeIva = '', proveedorI = '';
             var informesSearch = search.create({
                 type: "expensereport",
                 filters:
                 [
                     ["type","anyof","ExpRept"], 
                     "AND", 
-                    ["voided","is","F"],
+                    ["voided","is","F"], 
                     "AND", 
-                    ["status","anyof","ExpRept:I","ExpRept:F"],
+                    ["mainline","any",""], 
+                    // "AND", 
+                    // ["status","anyof","ExpRept:F"],  (para prueba, estado = pagado por completo)
+                    "AND", 
+                    ["custcol_tko_diot_prov_type","anyof","2","1","3"],
                     "AND",
                     ["custbody_tko_tipo_operacion","anyof","1","2","3"], 
                     "AND", 
@@ -211,10 +215,15 @@ define(['N/runtime', 'N/search', 'N/url'],
                 [
                     "internalid",
                     "type",
-                    "tranid",
                     "custbody_tko_tipo_operacion",
                     "custcol_tko_diot_prov_type",
-                    "custcol_tkio_proveedor"
+                    "custcol_tkio_proveedor",
+                    "amount",
+                    "netamountnotax",
+                    "taxamount",
+                    "taxtotal",
+                    "total",
+                    "taxcode"
                 ]
             });
             informesSearch.run().each(function(result){
@@ -222,19 +231,41 @@ define(['N/runtime', 'N/search', 'N/url'],
                 var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
                 var tipoTercero = result.getValue({ name: 'custcol_tko_diot_prov_type' });
                 var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-            
-                if(proveedor != "" && tipoTercero != "") {
-                    informes.push({
-                        id: id,
-                        proveedor: proveedor,
-                        tipoTercero: tipoTercero,
-                        tipoOperacion: tipoOperacion
-                    });
-                }
+                var importe = result.getValue({ name: 'netamountnotax' });
+                var impuestos = result.getValue({ name: 'taxamount' });
+                var totalImpuestos = result.getValue({ name: 'taxtotal' });
+                var total = result.getValue({ name: 'total' });
+                var codeImpuesto = result.getValue({ name: 'taxcode' });
+                var iva = 0;
+
+                iva = calculaIVA(impuestos, importe, iva);
+
+                informes.push({
+                    id: id,
+                    proveedor: proveedor,
+                    tipoTercero: tipoTercero,
+                    tipoOperacion: tipoOperacion,
+                    iva: iva,
+                    importe: importe
+                });
+
                 return true;
             });
 
             return informes;
+        }
+
+        function calculaIVA(impuestos, importe, iva){
+            if (impuestos != 0 || impuestos != '') {
+                iva = (impuestos * 100) / importe;
+            } else {
+                iva = 0;
+            }
+            if(iva < 0){
+                iva = iva * -1;
+            }
+
+            return iva;
         }
 
         function searchDailyPolicy(subsidiaria, periodo){
