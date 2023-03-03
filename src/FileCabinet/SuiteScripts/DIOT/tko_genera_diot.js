@@ -57,7 +57,7 @@ define(['N/runtime', 'N/search', 'N/url'],
          * Funcion para buscar las facturas de proveedores
          */
         function searchVendorBill(subsidiaria, periodo){
-            var facturas = [], idF = '';
+            var facturas = [];
             var facturaSearch = search.create({
                 type: "vendorbill",
                 filters:
@@ -66,7 +66,7 @@ define(['N/runtime', 'N/search', 'N/url'],
                     "AND", 
                     ["voided","is","F"], 
                     "AND", 
-                    ["mainline","any",""], 
+                    ["mainline","is","F"],
                     // "AND", 
                     // ["status","anyof","VendBill:B"], (para pruebas, estado = pagado por completo)
                     "AND", 
@@ -76,58 +76,48 @@ define(['N/runtime', 'N/search', 'N/url'],
                     "AND", 
                     ["postingperiod","abs",periodo],
                     "AND", 
-                    ["subsidiary","anyof",subsidiaria] //subsidiaria mexico = 5 (para pruebas)
+                    ["subsidiary","anyof",subsidiaria],
+                    "AND", 
+                    ["taxline","is","F"]
                 ],
                 columns:
                 [
                     "internalid",
                     "type",
-                    "entity",
-                    "amount",
-                    "netamountnotax",
-                    "taxtotal",
-                    "total",
+                    search.createColumn({
+                       name: "internalid",
+                       join: "vendor",
+                    }),
                     search.createColumn({
                        name: "custentity_tko_diot_prov_type",
                        join: "vendor"
                     }),
                     "custbody_tko_tipo_operacion",
-                    "taxcode"
+                    "amount",
+                    "netamountnotax",
+                    "taxamount"
                 ]
             });
 
             facturaSearch.run().each(function(result){
                 var id = result.getValue({ name: 'internalid' });
-                var proveedor = result.getValue({ name: 'entity' });
+                var proveedor = result.getValue({ name: 'internalid', join: "vendor" });
                 var tipoTercero = result.getValue({ name: 'custentity_tko_diot_prov_type', join: "vendor" });
                 var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
                 var importe = result.getValue({ name: 'netamountnotax' });
-                var impuestos = result.getValue({ name: 'taxtotal' });
-                var total = result.getValue({ name: 'total' });
+                var impuestos = result.getValue({ name: 'taxamount' });
                 var iva = 0;
 
-                if(idF != id){
-                    if (impuestos != 0 || impuestos != '') {
-                        iva = (impuestos * 100) / importe;
-                    } else {
-                        iva = 0;
-                    }
-                    if(iva < 0){
-                        iva = iva * -1;
-                    }
-                    if (iva == 0){
-                        importe = total;
-                    }
-                    facturas.push({
-                        id: id,
-                        proveedor: proveedor,
-                        tipoTercero: tipoTercero,
-                        tipoOperacion: tipoOperacion,
-                        iva: iva,
-                        importe: importe
-                    });
-                    idF = id;
-                }
+                iva = calculaIVA(impuestos,importe,iva);
+
+                facturas.push({
+                    id: id,
+                    proveedor: proveedor,
+                    tipoTercero: tipoTercero,
+                    tipoOperacion: tipoOperacion,
+                    iva: iva,
+                    importe: importe
+                });
 
                 return true;
 
@@ -190,7 +180,7 @@ define(['N/runtime', 'N/search', 'N/url'],
         }
 
         function searchExpenseReports(subsidiaria, periodo){
-            var informes = [], idI = '', codeIva = '', proveedorI = '';
+            var informes = [];
             var informesSearch = search.create({
                 type: "expensereport",
                 filters:
@@ -201,7 +191,7 @@ define(['N/runtime', 'N/search', 'N/url'],
                     "AND", 
                     ["mainline","any",""], 
                     // "AND", 
-                    // ["status","anyof","ExpRept:F"],  (para prueba, estado = pagado por completo)
+                    // ["status","anyof","ExpRept:I"],  (para prueba, estado = pagado por completo)
                     "AND", 
                     ["custcol_tko_diot_prov_type","anyof","2","1","3"],
                     "AND",
@@ -209,7 +199,9 @@ define(['N/runtime', 'N/search', 'N/url'],
                     "AND", 
                     ["postingperiod","abs",periodo], 
                     "AND", 
-                    ["subsidiary","anyof",subsidiaria]
+                    ["subsidiary","anyof",subsidiaria], 
+                    "AND", 
+                    ["taxline","is","F"]
                 ],
                 columns:
                 [
@@ -220,10 +212,7 @@ define(['N/runtime', 'N/search', 'N/url'],
                     "custcol_tkio_proveedor",
                     "amount",
                     "netamountnotax",
-                    "taxamount",
-                    "taxtotal",
-                    "total",
-                    "taxcode"
+                    "taxamount"
                 ]
             });
             informesSearch.run().each(function(result){
@@ -233,9 +222,6 @@ define(['N/runtime', 'N/search', 'N/url'],
                 var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
                 var importe = result.getValue({ name: 'netamountnotax' });
                 var impuestos = result.getValue({ name: 'taxamount' });
-                var totalImpuestos = result.getValue({ name: 'taxtotal' });
-                var total = result.getValue({ name: 'total' });
-                var codeImpuesto = result.getValue({ name: 'taxcode' });
                 var iva = 0;
 
                 iva = calculaIVA(impuestos, importe, iva);
