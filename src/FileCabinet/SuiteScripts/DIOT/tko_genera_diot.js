@@ -22,6 +22,7 @@ define(['N/runtime', 'N/search', 'N/url'],
             try{
 
                 var objScript = runtime.getCurrentScript();
+                /** Se obtienen los parametros dados por el usuario */
                 var subsidiaria = objScript.getParameter({ name: "custscript_tko_diot_subsidiary" });
                 var periodo = objScript.getParameter({ name: "custscript_tko_diot_periodo" });
                 
@@ -33,10 +34,20 @@ define(['N/runtime', 'N/search', 'N/url'],
                 })
                 log.debug('Datos', datos);
 
+                /** Se realiza la búsqueda de las distintas transacciones */
                 var facturasProv = searchVendorBill(subsidiaria, periodo);
                 var informesGastos = searchExpenseReports(subsidiaria, periodo);
                 var polizasDiario = searchDailyPolicy(subsidiaria, periodo);
 
+                /** Se ingresan los resultados de cada búsqueda en un arreglo */
+                var resultados = [];
+                resultados.push({
+                    'Facturas': facturasProv,
+                    'Informes': informesGastos,
+                    'Polizas': polizasDiario
+                });
+
+                /** Verifica que las búsquedas no esten vacías */
                 if(facturasProv.length == 0 && informesGastos.length == 0 && polizasDiario.length == 0) {
                     log.debug('Busquedas', 'No se encontaron transacciones en ese periodo');
                 } else {
@@ -45,7 +56,7 @@ define(['N/runtime', 'N/search', 'N/url'],
                     log.debug("Polizas", polizasDiario);
                 }
 
-                //return [facturasProv, informesGastos, polizasDiario];
+                return resultados;
 
             } catch (error) {
                 log.error({ title: 'Error en la busqueda de transacciones', details: error })
@@ -179,6 +190,9 @@ define(['N/runtime', 'N/search', 'N/url'],
             return facturas;
         }
 
+        /**
+         * Funcion para buscar los informes de gastos
+         */
         function searchExpenseReports(subsidiaria, periodo){
             var informes = [];
             var informesSearch = search.create({
@@ -241,6 +255,93 @@ define(['N/runtime', 'N/search', 'N/url'],
             return informes;
         }
 
+        /**
+         * Funcion para buscar las polizas de diario
+         */
+        function searchDailyPolicy(subsidiaria, periodo){
+            var polizas = []
+            var polizasSearch = search.create({
+                type: "journalentry",
+                filters:
+                [
+                    ["type","anyof","Journal"], 
+                    "AND", 
+                    ["voided","is","F"], 
+                    "AND", 
+                    ["mainline","any",""],
+                    "AND", 
+                    ["status","anyof","Journal:B"], 
+                    "AND", 
+                    ["account","anyof","186"], 
+                    "AND", 
+                    ["custcol_tko_diot_prov_type","anyof","1","2","3"], 
+                    "AND", 
+                    ["custbody_tko_tipo_operacion","anyof","1","2","3"], 
+                    "AND", 
+                    ["postingperiod","abs",periodo], 
+                    "AND", 
+                    ["subsidiary","anyof",subsidiaria], 
+                    "AND", 
+                    ["taxline","is","F"]
+                ],
+                columns:
+                [
+                    "internalid",
+                    "type",
+                    "account",
+                    "custcol_tko_diot_prov_type",
+                    "custbody_tko_tipo_operacion",
+                    "custcol_tkio_proveedor",
+                    "amount",
+                    "netamountnotax",
+                    "taxamount"
+                ]
+            });
+            polizasSearch.run().each(function(result){
+                var id = result.getValue({ name: 'internalid' });
+                var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
+                var tipoTercero = result.getValue({ name: 'custcol_tko_diot_prov_type' });
+                var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                var importe = result.getValue({ name: 'netamountnotax' });
+                var impuestos = result.getValue({ name: 'taxamount' });
+                var iva = 0, errores = '';
+
+                iva = calculaIVA(impuestos, importe, iva);
+
+                /** Se busca el RFC, nombreExtranjero, pais y nacionalidad del proveedor de cada operación */
+                var datos = buscaDatos(proveedor, tipoTercero, errores);
+                var rfc = datos[0].rfc;
+                var taxID = datos[0].taxID;
+                var nombreExtranjero = datos[0].nombreExtranjero;
+                var paisResidencia = datos[0].paisResidencia;
+                errores = datos[0].errores;
+
+                polizas.push({
+                    id: id,
+                    proveedor: proveedor,
+                    tipoTercero: tipoTercero,
+                    tipoOperacion: tipoOperacion,
+                    iva: iva,
+                    importe: importe,
+                    rfc: rfc,
+                    taxID: taxID,
+                    nombreExtranjero: nombreExtranjero,
+                    paisResidencia: paisResidencia,
+                    errores: errores
+                })
+                return true;
+            });
+
+            return polizas;
+        }
+
+        /**
+         * Función que calcula el IVA de cada operación realizada en las distintas transacciones
+         * @param {*} impuestos Cantidad o total de impuestos aplicados en dicha operación
+         * @param {*} importe Importe de la operación
+         * @param {*} iva Iva = 0, para hacer el cálculo de manera correcta cada que se invoque la función
+         * @returns {*} El IVA con el cuál fue calculado dicha operación
+         */
         function calculaIVA(impuestos, importe, iva){
             if (impuestos != 0 || impuestos != '') {
                 iva = (impuestos * 100) / importe;
@@ -254,78 +355,53 @@ define(['N/runtime', 'N/search', 'N/url'],
             return iva;
         }
 
-        function searchDailyPolicy(subsidiaria, periodo){
-            var polizas = []
-            var polizasSearch = search.create({
-                type: "journalentry",
-                filters:
-                [
-                    ["type","anyof","Journal"], 
-                    "AND", 
-                    ["voided","is","F"], 
-                    "AND", 
-                    ["mainline","is","T"], 
-                    "AND", 
-                    ["status","anyof","Journal:B"], 
-                    "AND", 
-                    ["account","anyof","186"], 
-                    "AND", 
-                    ["custcol_tko_diot_prov_type","anyof","1","2","3"], 
-                    "AND", 
-                    ["custbody_tko_tipo_operacion","anyof","1","2","3"], 
-                    "AND", 
-                    ["postingperiod","abs",periodo], 
-                    "AND", 
-                    ["subsidiary","anyof",subsidiaria]
-                ],
-                columns:
-                [
-                    search.createColumn({
-                        name: "internalid",
-                        summary: "GROUP"
-                     }),
-                     search.createColumn({
-                        name: "type",
-                        summary: "GROUP"
-                     }),
-                     search.createColumn({
-                        name: "tranid",
-                        summary: "GROUP"
-                     }),
-                     search.createColumn({
-                        name: "account",
-                        summary: "GROUP"
-                     }),
-                     search.createColumn({
-                        name: "custcol_tko_diot_prov_type",
-                        summary: "GROUP"
-                     }),
-                     search.createColumn({
-                        name: "custbody_tko_tipo_operacion",
-                        summary: "GROUP"
-                     }),
-                     search.createColumn({
-                        name: "custcol_tkio_proveedor",
-                        summary: "GROUP"
-                     })
-                ]
-            });
-            polizasSearch.run().each(function(result){
-                var id = result.getValue({ name: 'internalid', summary: 'GROUP' });
-                var proveedor = result.getValue({ name: 'custcol_tkio_proveedor', summary: 'GROUP' });
-                var tipoTercero = result.getValue({ name: 'custcol_tko_diot_prov_type', summary: 'GROUP' });
-                var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion', summary: 'GROUP' });
+        function buscaDatos(proveedor, tipoTercero, errores){
 
-                polizas.push({
-                    id: id,
-                    proveedor: proveedor,
-                    tipoTercero: tipoTercero,
-                    tipoOperacion: tipoOperacion
-                })
-                return true;
+            var error = '', resultados = [];
+            var datos = search.lookupFields({
+                type: search.Type.VENDOR,
+                id: proveedor,
+                columns: ['custentity_mx_rfc', 'taxidnum' , 'custentity_tko_nombre_extranjero', 'custentity_tko_pais_residencia', 'custentity_tko_nacionalidad']
             });
 
-            return polizas;
+            var rfc = datos.custentity_mx_rfc;
+            var taxID = datos.taxidnum;
+            var nombreExtranjero = datos.custentity_tko_nombre_extranjero;
+            var paisResidencia = datos.custentity_tko_pais_residencia;
+            var nacionalidad = datos.custentity_tko_nacionalidad;
+
+            if (tipoTercero == 1){ //si es proveedor nacional -> RFC obligatorio
+                if(rfc == ''){
+                    error = "El proveedor " + proveedor + " no tiene asignado el RFC";
+                    errores = errores + error + ", ";
+                }
+                taxID = "";
+                nombreExtranjero = "";
+                paisResidencia = "";
+            } else if (tipoTercero == 2){ // si es proveedor extranjero -> RFC opcional, TaxID obligatorio, nombreExtranjero opcional
+                if(taxID == ''){
+                    error = "El proveedor " + proveedor + " no tiene asignado el número de ID Fiscal";
+                    errores = errores + error + ", ";
+                }
+                if (nombreExtranjero != "" && paisResidencia == ""){
+                    error = "El proveedor " + proveedor + " no tiene asignado el pais de residencia";
+                    errores = errores + error + ", ";
+                }
+            } else { //si es proveedor global -> RFC NO obligatorio
+                taxID = "";
+                nombreExtranjero = "";
+                paisResidencia = "";
+            }
+
+            resultados. push({
+                rfc: rfc,
+                taxID, taxID,
+                nombreExtranjero: nombreExtranjero,
+                paisResidencia: paisResidencia,
+                errores: errores
+            });
+
+            return resultados;
         }
 
 
@@ -348,13 +424,13 @@ define(['N/runtime', 'N/search', 'N/url'],
 
         const map = (mapContext) => {
 
-            var results = JSON.parse(mapContext.value);
-            
-
             try{
+                var results = mapContext.value;
+                log.debug('Resultados de getInput', results);
+
 
             }catch(error){
-
+                log.error({ title: 'Error en el Map', details: error });
             }
         }
 
