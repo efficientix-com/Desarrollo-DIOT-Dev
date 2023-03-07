@@ -117,9 +117,17 @@ define(['N/runtime', 'N/search', 'N/url'],
                 var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
                 var importe = result.getValue({ name: 'netamountnotax' });
                 var impuestos = result.getValue({ name: 'taxamount' });
-                var iva = 0;
+                var iva = 0, errores = '';
 
                 iva = calculaIVA(impuestos,importe,iva);
+                var datos = buscaDatos(proveedor, tipoTercero, errores);
+
+                var rfc = datos[0].rfc;
+                var taxID = datos[0].taxID;
+                var nombreExtranjero = datos[0].nombreExtranjero;
+                var paisResidencia = datos[0].paisResidencia;
+                var nacionalidad = datos[0].nacionalidad;
+                errores = datos[0].errores;
 
                 facturas.push({
                     id: id,
@@ -127,65 +135,16 @@ define(['N/runtime', 'N/search', 'N/url'],
                     tipoTercero: tipoTercero,
                     tipoOperacion: tipoOperacion,
                     iva: iva,
-                    importe: importe
+                    importe: importe,
+                    rfc: rfc,
+                    taxID: taxID,
+                    nombreExtranjero: nombreExtranjero,
+                    paisResidencia: paisResidencia,
+                    nacionalidad: nacionalidad,
+                    errores: errores
                 });
 
                 return true;
-
-                // var rfc = search.lookupFields({
-                //     type: search.Type.VENDOR,
-                //     id: proveedor,
-                //     columns: ['custentity_mx_rfc']
-                // });
-                // var nombreExtranjero, pais, nacionalidad;
-
-                // if(tipoTercero == 1){ //proveedor nacional
-                //     /**
-                //      * Obligatorio RFC
-                //      */
-                //     log.debug('RFC', rfc);                    
-                // } else if (tipoTercero == 2){ //proveedor extranjero
-                //     /**
-                //      * Opcional RFC
-                //      * Tax ID
-                //      * Nombre del extranjero
-                //      * Pais de residencia (aplica si nombre de extranjero tiene un valor)
-                //      * Nacionalidad (aplica si nombre de extranjero tiene un valor)
-                //      */
-                //     if(rfc != '') {
-                //         log.debug('RFC', rfc); 
-                //     }
-                //     var taxID = search.lookupFields({
-                //         type: search.Type.VENDOR,
-                //         id: proveedor,
-                //         columns: ['taxidnum']
-                //     });
-                //     nombreExtranjero = search.lookupFields({
-                //         type: search.Type.VENDOR,
-                //         id: proveedor,
-                //         columns: ['custentity_tko_nombre_extranjero']
-                //     });
-                //     log.debug('Tax ID', taxID);
-                //     log.debug('Nombre del extranjero', nombreExtranjero);
-                //     if(nombreExtranjero != ''){
-                //         pais = search.lookupFields({
-                //             type: search.Type.VENDOR,
-                //             id: proveedor,
-                //             columns: ['custentity_tko_pais_residencia']
-                //         });
-                //         nacionalidad = search.lookupFields({
-                //             type: search.Type.VENDOR,
-                //             id: proveedor,
-                //             columns: ['custentity_tko_nacionalidad']
-                //         });
-                //         log.debug('Pais de Residencia', pais);
-                //         log.debug('Nacionalidad', nacionalidad);
-                //     }
-                // } else { //proveedor global
-                //     /**
-                //      * NO Obligatorio RFC
-                //      */
-                // }
             });
             return facturas;
         }
@@ -236,9 +195,17 @@ define(['N/runtime', 'N/search', 'N/url'],
                 var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
                 var importe = result.getValue({ name: 'netamountnotax' });
                 var impuestos = result.getValue({ name: 'taxamount' });
-                var iva = 0;
+                var iva = 0, errores = '';
 
                 iva = calculaIVA(impuestos, importe, iva);
+                var datos = buscaDatos(proveedor, tipoTercero, errores);
+
+                var rfc = datos[0].rfc;
+                var taxID = datos[0].taxID;
+                var nombreExtranjero = datos[0].nombreExtranjero;
+                var paisResidencia = datos[0].paisResidencia;
+                var nacionalidad = datos[0].nacionalidad;
+                errores = datos[0].errores;
 
                 informes.push({
                     id: id,
@@ -246,7 +213,13 @@ define(['N/runtime', 'N/search', 'N/url'],
                     tipoTercero: tipoTercero,
                     tipoOperacion: tipoOperacion,
                     iva: iva,
-                    importe: importe
+                    importe: importe,
+                    rfc: rfc,
+                    taxID: taxID,
+                    nombreExtranjero: nombreExtranjero,
+                    paisResidencia: paisResidencia,
+                    nacionalidad: nacionalidad,
+                    errores: errores
                 });
 
                 return true;
@@ -307,13 +280,13 @@ define(['N/runtime', 'N/search', 'N/url'],
                 var iva = 0, errores = '';
 
                 iva = calculaIVA(impuestos, importe, iva);
-
-                /** Se busca el RFC, nombreExtranjero, pais y nacionalidad del proveedor de cada operación */
                 var datos = buscaDatos(proveedor, tipoTercero, errores);
+
                 var rfc = datos[0].rfc;
                 var taxID = datos[0].taxID;
                 var nombreExtranjero = datos[0].nombreExtranjero;
                 var paisResidencia = datos[0].paisResidencia;
+                var nacionalidad = datos[0].nacionalidad;
                 errores = datos[0].errores;
 
                 polizas.push({
@@ -327,6 +300,7 @@ define(['N/runtime', 'N/search', 'N/url'],
                     taxID: taxID,
                     nombreExtranjero: nombreExtranjero,
                     paisResidencia: paisResidencia,
+                    nacionalidad: nacionalidad,
                     errores: errores
                 })
                 return true;
@@ -355,6 +329,13 @@ define(['N/runtime', 'N/search', 'N/url'],
             return iva;
         }
 
+        /**
+         * Función que realiza la búsqueda de distintos campos de acuerdo a cada proveedor
+         * @param {*} proveedor Proveedor obtenido de cada operación
+         * @param {*} tipoTercero Tipo de tercero del proveedor
+         * @param {*} errores Errores que se almacenan de acuerdo a las validaciones
+         * @returns Los valores de los campos obtenidos y los errores encontrados
+         */
         function buscaDatos(proveedor, tipoTercero, errores){
 
             var error = '', resultados = [];
@@ -368,6 +349,12 @@ define(['N/runtime', 'N/search', 'N/url'],
             var taxID = datos.taxidnum;
             var nombreExtranjero = datos.custentity_tko_nombre_extranjero;
             var paisResidencia = datos.custentity_tko_pais_residencia;
+            if(paisResidencia.length != 0){
+                var paisText = paisResidencia[0].text;
+                paisResidencia = paisText;
+            }else {
+                paisResidencia = "";
+            }
             var nacionalidad = datos.custentity_tko_nacionalidad;
 
             if (tipoTercero == 1){ //si es proveedor nacional -> RFC obligatorio
@@ -375,22 +362,37 @@ define(['N/runtime', 'N/search', 'N/url'],
                     error = "El proveedor " + proveedor + " no tiene asignado el RFC";
                     errores = errores + error + ", ";
                 }
+                /** Los siguientes campos son vacíos porque solo aplican para proveedores extranjeros */
                 taxID = "";
                 nombreExtranjero = "";
                 paisResidencia = "";
+                nacionalidad = "";
             } else if (tipoTercero == 2){ // si es proveedor extranjero -> RFC opcional, TaxID obligatorio, nombreExtranjero opcional
                 if(taxID == ''){
                     error = "El proveedor " + proveedor + " no tiene asignado el número de ID Fiscal";
                     errores = errores + error + ", ";
                 }
-                if (nombreExtranjero != "" && paisResidencia == ""){
+                /** Si tiene asignado un valor el campo nombre extranjero, se tiene que tener el pais y la nacionalidad */
+                if (nombreExtranjero != ""  && paisResidencia == ""){
                     error = "El proveedor " + proveedor + " no tiene asignado el pais de residencia";
                     errores = errores + error + ", ";
                 }
+                if(nombreExtranjero != "" && nacionalidad == ""){
+                    error = "El proveedor " + proveedor + " no tiene asignada la nacionalidad";
+                    errores = errores + error + ", ";
+                }
+                /** Si no tiene un valor en nombre extranjero los otros campos no importan */
+                if(nombreExtranjero == ""){ 
+                    paisResidencia = "";
+                    nacionalidad = "";
+                }
             } else { //si es proveedor global -> RFC NO obligatorio
+                /** Los siguientes campos son vacíos porque solo aplican para proveedores extranjeros */
+                rfc = "";
                 taxID = "";
                 nombreExtranjero = "";
                 paisResidencia = "";
+                nacionalidad = "";
             }
 
             resultados. push({
@@ -398,6 +400,7 @@ define(['N/runtime', 'N/search', 'N/url'],
                 taxID, taxID,
                 nombreExtranjero: nombreExtranjero,
                 paisResidencia: paisResidencia,
+                nacionalidad: nacionalidad,
                 errores: errores
             });
 
@@ -426,7 +429,7 @@ define(['N/runtime', 'N/search', 'N/url'],
 
             try{
                 var results = mapContext.value;
-                log.debug('Resultados de getInput', results);
+                //log.debug('Resultados de getInput', results);
 
 
             }catch(error){
@@ -475,9 +478,17 @@ define(['N/runtime', 'N/search', 'N/url'],
          */
         const summarize = (summaryContext) => {
 
+            /* log.debug('Summary Time', summaryContext.seconds);
+            log.debug('Summary Usage', summaryContext.usage);
+            log.debug('Summary Yields', summaryContext.yields);
+
+            log.debug('Input Summary', summaryContext.inputSummary);
+            log.debug('Map Summary', summaryContext.mapSummary);
+            log.debug('Reduce Summary', summaryContext.reduceSummary); */
+
         }
 
 
-        return {getInputData, map, reduce, summarize}
+        return {getInputData, map, reduce, summarize};
 
     });
