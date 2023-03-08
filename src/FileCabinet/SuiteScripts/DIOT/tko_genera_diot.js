@@ -79,7 +79,9 @@ define(['N/runtime', 'N/search', 'N/url'],
                     "AND", 
                     ["mainline","is","F"],
                     // "AND", 
-                    // ["status","anyof","VendBill:B"], (para pruebas, estado = pagado por completo)
+                    // ["status","anyof","VendBill:B"], // (para pruebas, estado = pagado por completo)
+                    "AND", 
+                    ["account","anyof","186"],  
                     "AND", 
                     ["vendor.custentity_tko_diot_prov_type","anyof","1","2","3"], 
                     "AND", 
@@ -106,7 +108,12 @@ define(['N/runtime', 'N/search', 'N/url'],
                     "custbody_tko_tipo_operacion",
                     "amount",
                     "netamountnotax",
-                    "taxamount"
+                    "taxamount",
+                    "taxcode",
+                    search.createColumn({
+                       name: "name",
+                       join: "taxItem"
+                    })
                 ]
             });
 
@@ -117,6 +124,8 @@ define(['N/runtime', 'N/search', 'N/url'],
                 var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
                 var importe = result.getValue({ name: 'netamountnotax' });
                 var impuestos = result.getValue({ name: 'taxamount' });
+                var taxCode = result.getValue({ name: 'taxcode' });
+                var taxCodeName = result.getValue({ name: 'name', join: 'taxItem' });
                 var iva = 0, errores = '';
 
                 iva = calculaIVA(impuestos,importe,iva);
@@ -136,6 +145,9 @@ define(['N/runtime', 'N/search', 'N/url'],
                     tipoOperacion: tipoOperacion,
                     iva: iva,
                     importe: importe,
+                    taxCode: taxCode,
+                    taxCodeName: taxCodeName,
+                    impuestos: impuestos,
                     rfc: rfc,
                     taxID: taxID,
                     nombreExtranjero: nombreExtranjero,
@@ -185,7 +197,12 @@ define(['N/runtime', 'N/search', 'N/url'],
                     "custcol_tkio_proveedor",
                     "amount",
                     "netamountnotax",
-                    "taxamount"
+                    "taxamount",
+                    "taxcode",
+                    search.createColumn({
+                       name: "name",
+                       join: "taxItem"
+                    })
                 ]
             });
             informesSearch.run().each(function(result){
@@ -195,6 +212,8 @@ define(['N/runtime', 'N/search', 'N/url'],
                 var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
                 var importe = result.getValue({ name: 'netamountnotax' });
                 var impuestos = result.getValue({ name: 'taxamount' });
+                var taxCode = result.getValue({ name: 'taxcode' });
+                var taxCodeName = result.getValue({ name: 'name', join: 'taxItem' });
                 var iva = 0, errores = '';
 
                 iva = calculaIVA(impuestos, importe, iva);
@@ -216,6 +235,9 @@ define(['N/runtime', 'N/search', 'N/url'],
                     importe: importe,
                     rfc: rfc,
                     taxID: taxID,
+                    taxCode: taxCode,
+                    taxCodeName: taxCodeName,
+                    impuestos: impuestos,
                     nombreExtranjero: nombreExtranjero,
                     paisResidencia: paisResidencia,
                     nacionalidad: nacionalidad,
@@ -267,7 +289,12 @@ define(['N/runtime', 'N/search', 'N/url'],
                     "custcol_tkio_proveedor",
                     "amount",
                     "netamountnotax",
-                    "taxamount"
+                    "taxamount",
+                    "taxcode",
+                    search.createColumn({
+                       name: "name",
+                       join: "taxItem"
+                    })
                 ]
             });
             polizasSearch.run().each(function(result){
@@ -277,6 +304,8 @@ define(['N/runtime', 'N/search', 'N/url'],
                 var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
                 var importe = result.getValue({ name: 'netamountnotax' });
                 var impuestos = result.getValue({ name: 'taxamount' });
+                var taxCode = result.getValue({ name: 'taxcode' });
+                var taxCodeName = result.getValue({ name: 'name', join: 'taxItem' });
                 var iva = 0, errores = '';
 
                 iva = calculaIVA(impuestos, importe, iva);
@@ -298,6 +327,9 @@ define(['N/runtime', 'N/search', 'N/url'],
                     importe: importe,
                     rfc: rfc,
                     taxID: taxID,
+                    taxCode: taxCode,
+                    taxCodeName: taxCodeName,
+                    impuestos: impuestos,
                     nombreExtranjero: nombreExtranjero,
                     paisResidencia: paisResidencia,
                     nacionalidad: nacionalidad,
@@ -405,6 +437,47 @@ define(['N/runtime', 'N/search', 'N/url'],
             });
 
             return resultados;
+        }
+
+        /**
+         * Funcion que evalúa a que columna pertenece en el txt de acuerdo al código de impuesto
+         * @param {*} taxCode código de impuesto a evaluar
+         * @returns Número de columna al que pertenece
+         */
+        function codigoImpuesto(taxCode) {
+
+            var columna = "";
+
+            switch (taxCode) {
+                case 1017: //IVA 16
+                    columna = 8;
+                    break;
+                case 1026: //R-MX
+                    columna = 13;
+                    break;
+                case 1022: //IS-MX
+                    columna = 16;
+                    break;
+                case 1027: //IR-MX
+                    columna = 18;
+                    break;
+                case 1024: //IE-MX
+                    columna = 20;
+                    break;
+                case 1021: //E-MX
+                    columna = 22;
+                    break;
+                case 1032: //IVA 8
+                    columna = 23;
+                    break;
+                case 1063: //RESICO 1.25
+                    columna = 23;
+                    break;
+                default:
+                    columna = 0;
+            }
+
+            return columna;
         }
 
 

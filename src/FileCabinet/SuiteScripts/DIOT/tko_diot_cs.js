@@ -1,5 +1,5 @@
 /**
- * @NApiVersion 2.x
+ * @NApiVersion 2.1
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
@@ -26,7 +26,7 @@ function(url, currentRecord, message) {
 
     function fieldChanged(scriptContext) {
         try {
-            let currentForm = currentRecord.get();
+            var currentForm = currentRecord.get();
             if ((scriptContext.fieldId == 'custpage_subsi') || (scriptContext.fieldId == 'custpage_period')) {
                 subsidiaria = currentForm.getValue({ fieldId: "custpage_subsi" });
                 periodo = currentForm.getValue({ fieldId: "custpage_period" });
