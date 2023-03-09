@@ -176,7 +176,9 @@ define(['N/runtime', 'N/search', 'N/url'],
                     "AND", 
                     ["mainline","any",""], 
                     // "AND", 
-                    // ["status","anyof","ExpRept:I"],  (para prueba, estado = pagado por completo)
+                    // ["status","anyof","ExpRept:I"], (para prueba, estado = pagado por completo)
+                    "AND", 
+                    ["account","anyof","186"],   
                     "AND", 
                     ["custcol_tko_diot_prov_type","anyof","2","1","3"],
                     "AND",
@@ -448,33 +450,24 @@ define(['N/runtime', 'N/search', 'N/url'],
 
             var columna = "";
 
-            switch (taxCode) {
-                case 1017: //IVA 16
-                    columna = 8;
-                    break;
-                case 1026: //R-MX
-                    columna = 13;
-                    break;
-                case 1022: //IS-MX
-                    columna = 16;
-                    break;
-                case 1027: //IR-MX
-                    columna = 18;
-                    break;
-                case 1024: //IE-MX
-                    columna = 20;
-                    break;
-                case 1021: //E-MX
-                    columna = 22;
-                    break;
-                case 1032: //IVA 8
-                    columna = 23;
-                    break;
-                case 1063: //RESICO 1.25
-                    columna = 23;
-                    break;
-                default:
-                    columna = 0;
+            if(taxCode == 1017){ //IVA 16
+                columna = 8;
+            }else if(taxCode == 1026){ //R-MX
+                columna = 13;
+            } else if(taxCode == 1022){ //IS-MX
+                columna = 16;
+            } else if(taxCode == 1027){ //IR-MX
+                columna = 18;
+            } else if(taxCode == 1024){ //IE-MX
+                columna = 20;
+            } else if(taxCode == 1020){ //Z-MX
+                columna = 21;
+            } else if(taxCode == 1021){ //E-MX
+                columna = 22;
+            } else if(taxCode == 1032 || taxCode == 1063){ //IVA 8 || RESICO 1.25
+                columna = 23;
+            } else {
+                columna = 0;
             }
 
             return columna;
