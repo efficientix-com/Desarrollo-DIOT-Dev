@@ -68,7 +68,7 @@ define(['N/runtime', 'N/search', 'N/url'],
          * Funcion para buscar las facturas de proveedores
          */
         function searchVendorBill(subsidiaria, periodo){
-            var facturas = [];
+            var facturas = [], creditoFacturas = [];
             var facturaSearch = search.create({
                 type: "vendorbill",
                 filters:
@@ -131,6 +131,8 @@ define(['N/runtime', 'N/search', 'N/url'],
                 iva = calculaIVA(impuestos,importe,iva);
                 var datos = buscaDatos(proveedor, tipoTercero, errores);
 
+                var credito = searchVendorCredit(proveedor, id);
+
                 var rfc = datos[0].rfc;
                 var taxID = datos[0].taxID;
                 var nombreExtranjero = datos[0].nombreExtranjero;
@@ -153,7 +155,8 @@ define(['N/runtime', 'N/search', 'N/url'],
                     nombreExtranjero: nombreExtranjero,
                     paisResidencia: paisResidencia,
                     nacionalidad: nacionalidad,
-                    errores: errores
+                    errores: errores,
+                    credito: credito
                 });
 
                 return true;
@@ -471,6 +474,75 @@ define(['N/runtime', 'N/search', 'N/url'],
             }
 
             return columna;
+        }
+
+        /**
+         * Funcion que hace una búsqueda de devoluciones o bonificaciones de algún proveedor
+         */
+        function searchVendorCredit(proveedor, idFactProv){
+            var credito = [];
+            var creditSearch = search.create({
+                type: "vendorcredit",
+                filters:
+                [
+                   ["type","anyof","VendCred"], 
+                   "AND", 
+                   ["voided","is","F"], 
+                   "AND", 
+                   ["mainline","is","F"], 
+                   "AND", 
+                   ["taxline","is","F"], 
+                   "AND", 
+                   ["vendor.internalid","anyof",proveedor], 
+                   "AND", 
+                   ["appliedtotransaction.internalid","anyof",idFactProv]
+                ],
+                columns:
+                [
+                   "internalid",
+                   search.createColumn({
+                      name: "entityid",
+                      join: "vendor"
+                   }),
+                   "custbody_tko_tipo_operacion",
+                   search.createColumn({
+                      name: "custentity_tko_diot_prov_type",
+                      join: "vendor"
+                   }),
+                   search.createColumn({
+                      name: "internalid",
+                      join: "appliedToTransaction"
+                   }),
+                   "account",
+                   "amount",
+                   "netamountnotax",
+                   "taxamount",
+                   "taxcode"
+                ]
+            });
+            creditSearch.run().each(function(result){
+                
+                var id = result.getValue({ name: 'internalid' });
+                var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                var tipoTercero = result.getValue({ name: 'custentity_tko_diot_prov_type', join: 'vendor' });
+                var idFactura = result.getValue({ name: 'internalid', join: 'appliedToTransaction' });
+                var importe = result.getValue({ name: 'netamountnotax' });
+                var impuesto = result.getValue({ name: 'taxamount' });
+
+                credito.push({
+                    id: id,
+                    proveedor: proveedor,
+                    tipoOperacion:tipoOperacion,
+                    tipoTercero: tipoTercero,
+                    idFactura: idFactura,
+                    importe: importe,
+                    impuesto: impuesto
+                });
+
+                return true;
+            });
+
+            return credito;
         }
 
 
