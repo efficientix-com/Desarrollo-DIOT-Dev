@@ -38,6 +38,7 @@ define(['N/runtime', 'N/search', 'N/url'],
                 var facturasProv = searchVendorBill(subsidiaria, periodo);
                 var informesGastos = searchExpenseReports(subsidiaria, periodo);
                 var polizasDiario = searchDailyPolicy(subsidiaria, periodo);
+                //var creditoFacturas = searchAllVendorCredit();
 
                 /** Se ingresan los resultados de cada búsqueda en un arreglo */
                 var resultados = [];
@@ -54,6 +55,7 @@ define(['N/runtime', 'N/search', 'N/url'],
                     log.debug("Facturas", facturasProv);
                     log.debug("Informes", informesGastos);
                     log.debug("Polizas", polizasDiario);
+                    //log.debug('Credito Facturas', creditoFacturas);
                 }
 
                 return resultados;
@@ -126,12 +128,17 @@ define(['N/runtime', 'N/search', 'N/url'],
                 var impuestos = result.getValue({ name: 'taxamount' });
                 var taxCode = result.getValue({ name: 'taxcode' });
                 var taxCodeName = result.getValue({ name: 'name', join: 'taxItem' });
-                var iva = 0, errores = '';
+                var iva = 0, errores = '', columnaDiot = '';
 
                 iva = calculaIVA(impuestos,importe,iva);
                 var datos = buscaDatos(proveedor, tipoTercero, errores);
+                columnaDiot = codigoImpuesto(taxCode);
 
+                //Realizar la búsqueda después de agrupar
                 var credito = searchVendorCredit(proveedor, id);
+                if (credito.length == 0){
+                    credito = "";
+                }
 
                 var rfc = datos[0].rfc;
                 var taxID = datos[0].taxID;
@@ -150,6 +157,7 @@ define(['N/runtime', 'N/search', 'N/url'],
                     taxCode: taxCode,
                     taxCodeName: taxCodeName,
                     impuestos: impuestos,
+                    columnaDiot: columnaDiot,
                     rfc: rfc,
                     taxID: taxID,
                     nombreExtranjero: nombreExtranjero,
@@ -219,10 +227,11 @@ define(['N/runtime', 'N/search', 'N/url'],
                 var impuestos = result.getValue({ name: 'taxamount' });
                 var taxCode = result.getValue({ name: 'taxcode' });
                 var taxCodeName = result.getValue({ name: 'name', join: 'taxItem' });
-                var iva = 0, errores = '';
+                var iva = 0, errores = '', columnaDiot = '';
 
                 iva = calculaIVA(impuestos, importe, iva);
                 var datos = buscaDatos(proveedor, tipoTercero, errores);
+                columnaDiot = codigoImpuesto(taxCode);
 
                 var rfc = datos[0].rfc;
                 var taxID = datos[0].taxID;
@@ -243,6 +252,7 @@ define(['N/runtime', 'N/search', 'N/url'],
                     taxCode: taxCode,
                     taxCodeName: taxCodeName,
                     impuestos: impuestos,
+                    columnaDiot: columnaDiot,
                     nombreExtranjero: nombreExtranjero,
                     paisResidencia: paisResidencia,
                     nacionalidad: nacionalidad,
@@ -311,10 +321,11 @@ define(['N/runtime', 'N/search', 'N/url'],
                 var impuestos = result.getValue({ name: 'taxamount' });
                 var taxCode = result.getValue({ name: 'taxcode' });
                 var taxCodeName = result.getValue({ name: 'name', join: 'taxItem' });
-                var iva = 0, errores = '';
+                var iva = 0, errores = '', columnaDiot = '';
 
                 iva = calculaIVA(impuestos, importe, iva);
                 var datos = buscaDatos(proveedor, tipoTercero, errores);
+                columnaDiot = codigoImpuesto(taxCode);
 
                 var rfc = datos[0].rfc;
                 var taxID = datos[0].taxID;
@@ -335,6 +346,7 @@ define(['N/runtime', 'N/search', 'N/url'],
                     taxCode: taxCode,
                     taxCodeName: taxCodeName,
                     impuestos: impuestos,
+                    columnaDiot: columnaDiot,
                     nombreExtranjero: nombreExtranjero,
                     paisResidencia: paisResidencia,
                     nacionalidad: nacionalidad,
@@ -538,14 +550,77 @@ define(['N/runtime', 'N/search', 'N/url'],
                     importe: importe,
                     impuesto: impuesto
                 });
+                
+                return true;
+            });
+            
+            return credito;
+        }
+        
+        function searchAllVendorCredit(){
+            var creditoFact = [];
+            var creditSearch = search.create({
+                type: "vendorcredit",
+                filters:
+                [
+                   ["type","anyof","VendCred"], 
+                   "AND", 
+                   ["voided","is","F"], 
+                   "AND", 
+                   ["mainline","is","F"], 
+                   "AND", 
+                   ["taxline","is","F"]
+                ],
+                columns:
+                [
+                   "internalid",
+                   search.createColumn({
+                      name: "entityid",
+                      join: "vendor"
+                   }),
+                   "custbody_tko_tipo_operacion",
+                   search.createColumn({
+                      name: "custentity_tko_diot_prov_type",
+                      join: "vendor"
+                   }),
+                   search.createColumn({
+                      name: "internalid",
+                      join: "appliedToTransaction"
+                   }),
+                   "account",
+                   "amount",
+                   "netamountnotax",
+                   "taxamount",
+                   "taxcode"
+                ]
+            });
+            creditSearch.run().each(function(result){
+                
+                var id = result.getValue({ name: 'internalid' });
+                var proveedor = result.getValue({ name: 'entityid', join: 'vendor' });
+                var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                var tipoTercero = result.getValue({ name: 'custentity_tko_diot_prov_type', join: 'vendor' });
+                var idFactura = result.getValue({ name: 'internalid', join: 'appliedToTransaction' });
+                var importe = result.getValue({ name: 'netamountnotax' });
+                var impuesto = result.getValue({ name: 'taxamount' });
+
+                creditoFact.push({
+                    id: id,
+                    proveedor: proveedor,
+                    tipoOperacion: tipoOperacion,
+                    tipoTercero: tipoTercero,
+                    idFactura: idFactura,
+                    importe: importe,
+                    impuesto: impuesto
+                });
 
                 return true;
             });
 
-            return credito;
+            //log.debug('Credito', creditoFact);
+            return creditoFact;
         }
-
-
+        
         /**
          * Defines the function that is executed when the map entry point is triggered. This entry point is triggered automatically
          * when the associated getInputData stage is complete. This function is applied to each key-value pair in the provided
