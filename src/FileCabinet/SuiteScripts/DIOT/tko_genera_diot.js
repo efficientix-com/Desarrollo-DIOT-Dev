@@ -87,14 +87,15 @@ define(['N/runtime', 'N/search', 'N/url'],
                         "AND", 
                         ["status","anyof","VendBill:B"], 
                         "AND", 
-                        ["postingperiod","abs","151"], 
+                        ["postingperiod","abs",periodo], 
                         "AND", 
-                        ["subsidiary","anyof","2"], 
+                        ["subsidiary","anyof",subsidiaria], 
                         "AND", 
                         ["taxline","is","F"]
                     ],
                     columns:
                     [
+                        //falta columna tipo tercero, tipo operacion y codigo de impuesto
                         "internalid",
                         "type",
                         search.createColumn({
@@ -104,7 +105,9 @@ define(['N/runtime', 'N/search', 'N/url'],
                          "amount",
                          "netamount",
                          "taxtotal",
-                         "total"
+                         "total",
+                         "taxcode",
+                         "taxtype"
                     ]
                 });
     
@@ -114,17 +117,21 @@ define(['N/runtime', 'N/search', 'N/url'],
                     var impuestos = result.getValue({ name: 'taxtotal' });
                     var total = result.getValue({ name: 'total' });
                     var importe = total - impuestos;
+                    var taxCode = result.getValue({ name: 'taxcode' });
+                    var taxCodeName = result.getValue({ name: 'name', join: 'taxItem' });
+                    var tipoImpuesto = result.getValue({ name: 'taxtype' });
                     var iva = 0, errores = '', columnaDiot = '';
-    
+
+                    //iva = calculaIVA(impuestos,importe,iva);
                     //var datos = buscaDatos(proveedor, tipoTercero, errores); aun no se tiene el tipo de tercero
     
                     //Realizar la búsqueda después de agrupar
-                    /* var credito = searchVendorCredit(proveedor, id);
+                    var credito = searchVendorCredit(proveedor, id, suitetax);
                     if (credito.length == 0){
                         credito = "";
                     }
     
-                    var rfc = datos[0].rfc;
+                    /* var rfc = datos[0].rfc;
                     var taxID = datos[0].taxID;
                     var nombreExtranjero = datos[0].nombreExtranjero;
                     var paisResidencia = datos[0].paisResidencia;
@@ -136,14 +143,10 @@ define(['N/runtime', 'N/search', 'N/url'],
                         proveedor: proveedor,
                         importe: importe,
                         impuestos: impuestos,
-                        // columnaDiot: columnaDiot,
-                        // rfc: rfc,
-                        // taxID: taxID,
-                        // nombreExtranjero: nombreExtranjero,
-                        // paisResidencia: paisResidencia,
-                        // nacionalidad: nacionalidad,
-                        // errores: errores,
-                        // credito: credito
+                        taxCode: taxCode,
+                        taxCodeName: taxCodeName,
+                        tipoImpuesto: tipoImpuesto,
+                        credito: credito
                     });
     
                     return true;
@@ -217,7 +220,7 @@ define(['N/runtime', 'N/search', 'N/url'],
                     columnaDiot = codigoImpuesto(taxCode);
     
                     //Realizar la búsqueda después de agrupar
-                    var credito = searchVendorCredit(proveedor, id);
+                    var credito = searchVendorCredit(proveedor, id, suitetax);
                     if (credito.length == 0){
                         credito = "";
                     }
@@ -261,7 +264,7 @@ define(['N/runtime', 'N/search', 'N/url'],
          */
         function searchExpenseReports(subsidiaria, periodo, suitetax){
 
-            if(suitetax){
+            if(suitetax){   //no se manejan informes de gastos
                 var informes = [];
                 var informesSearch = search.create({
                     type: "expensereport",
@@ -455,16 +458,10 @@ define(['N/runtime', 'N/search', 'N/url'],
                         "AND", 
                         ["voided","is","F"], 
                         "AND", 
-                        ["mainline","any",""],
+                        ["mainline","is","T"],
                         "AND", 
                         ["status","anyof","Journal:B"], 
-                        "AND", 
-                        ["account","anyof","186"], 
-                        "AND", 
-                        ["custcol_tko_diot_prov_type","anyof","1","2","3"], 
-                        "AND", 
-                        ["custbody_tko_tipo_operacion","anyof","1","2","3"], 
-                        "AND", 
+                        "AND",
                         ["postingperiod","abs",periodo], 
                         "AND", 
                         ["subsidiary","anyof",subsidiaria], 
@@ -475,32 +472,26 @@ define(['N/runtime', 'N/search', 'N/url'],
                     [
                         "internalid",
                         "type",
-                        "account",
-                        "custcol_tko_diot_prov_type",
-                        "custbody_tko_tipo_operacion",
-                        "custcol_tkio_proveedor",
+                        "entity",
                         "amount",
-                        "netamountnotax",
-                        "taxamount",
-                        "taxcode",
-                        search.createColumn({
-                           name: "name",
-                           join: "taxItem"
-                        })
+                        "netamount",
+                        "taxtotal",
+                        "total"
                     ]
                 });
                 polizasSearch.run().each(function(result){
                     var id = result.getValue({ name: 'internalid' });
-                    var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
-                    var tipoTercero = result.getValue({ name: 'custcol_tko_diot_prov_type' });
-                    var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-                    var importe = result.getValue({ name: 'netamountnotax' });
-                    var impuestos = result.getValue({ name: 'taxamount' });
-                    var taxCode = result.getValue({ name: 'taxcode' });
-                    var taxCodeName = result.getValue({ name: 'name', join: 'taxItem' });
+                    var proveedor = result.getValue({ name: 'entity' });
+                    var importe = result.getValue({ name: 'netamount' });
+                    var impuestos = result.getValue({ name: 'taxtotal' });
+                    var total = result.getValue({ name: 'total' });
                     var iva = 0, errores = '', columnaDiot = '';
+
+                    if(impuestos == ''){
+                        impuestos = 0;
+                    }
     
-                    iva = calculaIVA(impuestos, importe, iva);
+                    /* iva = calculaIVA(impuestos, importe, iva);
                     var datos = buscaDatos(proveedor, tipoTercero, errores);
                     columnaDiot = codigoImpuesto(taxCode);
     
@@ -509,25 +500,13 @@ define(['N/runtime', 'N/search', 'N/url'],
                     var nombreExtranjero = datos[0].nombreExtranjero;
                     var paisResidencia = datos[0].paisResidencia;
                     var nacionalidad = datos[0].nacionalidad;
-                    errores = datos[0].errores;
+                    errores = datos[0].errores; */
     
                     polizas.push({
                         id: id,
                         proveedor: proveedor,
-                        tipoTercero: tipoTercero,
-                        tipoOperacion: tipoOperacion,
-                        iva: iva,
                         importe: importe,
-                        rfc: rfc,
-                        taxID: taxID,
-                        taxCode: taxCode,
-                        taxCodeName: taxCodeName,
-                        impuestos: impuestos,
-                        columnaDiot: columnaDiot,
-                        nombreExtranjero: nombreExtranjero,
-                        paisResidencia: paisResidencia,
-                        nacionalidad: nacionalidad,
-                        errores: errores
+                        impuestos: impuestos
                     })
                     return true;
                 });
@@ -757,70 +736,125 @@ define(['N/runtime', 'N/search', 'N/url'],
         /**
          * Funcion que hace una búsqueda de devoluciones o bonificaciones de algún proveedor
          */
-        function searchVendorCredit(proveedor, idFactProv){
-            var credito = [];
-            var creditSearch = search.create({
-                type: "vendorcredit",
-                filters:
-                [
-                   ["type","anyof","VendCred"], 
-                   "AND", 
-                   ["voided","is","F"], 
-                   "AND", 
-                   ["mainline","is","F"], 
-                   "AND", 
-                   ["taxline","is","F"], 
-                   "AND", 
-                   ["vendor.internalid","anyof",proveedor], 
-                   "AND", 
-                   ["appliedtotransaction.internalid","anyof",idFactProv]
-                ],
-                columns:
-                [
-                   "internalid",
-                   search.createColumn({
-                      name: "entityid",
-                      join: "vendor"
-                   }),
-                   "custbody_tko_tipo_operacion",
-                   search.createColumn({
-                      name: "custentity_tko_diot_prov_type",
-                      join: "vendor"
-                   }),
-                   search.createColumn({
-                      name: "internalid",
-                      join: "appliedToTransaction"
-                   }),
-                   "account",
-                   "amount",
-                   "netamountnotax",
-                   "taxamount",
-                   "taxcode"
-                ]
-            });
-            creditSearch.run().each(function(result){
-                
-                var id = result.getValue({ name: 'internalid' });
-                var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-                var tipoTercero = result.getValue({ name: 'custentity_tko_diot_prov_type', join: 'vendor' });
-                var idFactura = result.getValue({ name: 'internalid', join: 'appliedToTransaction' });
-                var importe = result.getValue({ name: 'netamountnotax' });
-                var impuesto = result.getValue({ name: 'taxamount' });
-
-                credito.push({
-                    id: id,
-                    proveedor: proveedor,
-                    tipoOperacion:tipoOperacion,
-                    tipoTercero: tipoTercero,
-                    idFactura: idFactura,
-                    importe: importe,
-                    impuesto: impuesto
+        function searchVendorCredit(proveedor, idFactProv, suitetax){
+            if(suitetax){
+                var credito = [];
+                var creditSearch = search.create({
+                    type: "vendorcredit",
+                    filters:
+                    [
+                       ["type","anyof","VendCred"], 
+                       "AND", 
+                       ["voided","is","F"], 
+                       "AND", 
+                       ["mainline","is","T"], 
+                       "AND", 
+                       ["taxline","is","F"], 
+                       "AND", 
+                       ["vendor.internalid","anyof",proveedor], 
+                       "AND", 
+                       ["appliedtotransaction.internalid","anyof",idFactProv]
+                    ],
+                    columns:
+                    [
+                       "internalid",
+                       "entity",
+                       "amount",
+                       "netamount",
+                       "taxtotal",
+                       "total",
+                       search.createColumn({
+                          name: "internalid",
+                          join: "appliedToTransaction"
+                       }),
+                    ]
+                });
+                creditSearch.run().each(function(result){
+                    
+                    var id = result.getValue({ name: 'internalid' });
+                    var proveedor = result.getValue({ name: 'entity' });
+                    var idFactura = result.getValue({ name: 'internalid', join: 'appliedToTransaction' });
+                    var impuesto = result.getValue({ name: 'taxtotal' });
+                    var total = result.getValue({ name: 'total' });
+                    var importe = total - impuesto;
+    
+                    credito.push({
+                        id: id,
+                        proveedor: proveedor,
+                        idFactura: idFactura,
+                        importe: importe,
+                        impuesto: impuesto
+                    });
+                    
+                    return true;
                 });
                 
-                return true;
-            });
-            
-            return credito;
+                return credito;
+            }else{
+                var credito = [];
+                var creditSearch = search.create({
+                    type: "vendorcredit",
+                    filters:
+                    [
+                       ["type","anyof","VendCred"], 
+                       "AND", 
+                       ["voided","is","F"], 
+                       "AND", 
+                       ["mainline","is","F"], 
+                       "AND", 
+                       ["taxline","is","F"], 
+                       "AND", 
+                       ["vendor.internalid","anyof",proveedor], 
+                       "AND", 
+                       ["appliedtotransaction.internalid","anyof",idFactProv]
+                    ],
+                    columns:
+                    [
+                       "internalid",
+                       search.createColumn({
+                          name: "entityid",
+                          join: "vendor"
+                       }),
+                       "custbody_tko_tipo_operacion",
+                       search.createColumn({
+                          name: "custentity_tko_diot_prov_type",
+                          join: "vendor"
+                       }),
+                       search.createColumn({
+                          name: "internalid",
+                          join: "appliedToTransaction"
+                       }),
+                       "account",
+                       "amount",
+                       "netamountnotax",
+                       "taxamount",
+                       "taxcode"
+                    ]
+                });
+                creditSearch.run().each(function(result){
+                    
+                    var id = result.getValue({ name: 'internalid' });
+                    var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                    var tipoTercero = result.getValue({ name: 'custentity_tko_diot_prov_type', join: 'vendor' });
+                    var idFactura = result.getValue({ name: 'internalid', join: 'appliedToTransaction' });
+                    var importe = result.getValue({ name: 'netamountnotax' });
+                    var impuesto = result.getValue({ name: 'taxamount' });
+    
+                    credito.push({
+                        id: id,
+                        proveedor: proveedor,
+                        tipoOperacion:tipoOperacion,
+                        tipoTercero: tipoTercero,
+                        idFactura: idFactura,
+                        importe: importe,
+                        impuesto: impuesto
+                    });
+                    
+                    return true;
+                });
+                
+                return credito; 
+            }
         }
         
         /**
