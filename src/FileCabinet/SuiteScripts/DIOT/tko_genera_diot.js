@@ -23,8 +23,10 @@ define(['N/runtime', 'N/search', 'N/url'],
 
                 var objScript = runtime.getCurrentScript();
                 /** Se obtienen los parametros dados por el usuario */
-                var subsidiaria = objScript.getParameter({ name: "custscript_tko_diot_subsidiary" });
-                var periodo = objScript.getParameter({ name: "custscript_tko_diot_periodo" });
+                // var subsidiaria = objScript.getParameter({ name: "custscript_tko_diot_subsidiary" });
+                // var periodo = objScript.getParameter({ name: "custscript_tko_diot_periodo" });
+
+                var subsidiaria = 2, periodo = 154;
                 
                 log.audit({title: 'MR', details: "Se esta ejecutando el MR: getInputData"});
                 var datos = [];
@@ -34,9 +36,10 @@ define(['N/runtime', 'N/search', 'N/url'],
                 })
                 log.debug('Datos', datos);
 
-                /** Se realiza la búsqueda de las distintas transacciones */
+                /** Se obtiene el motor que se esta usando (legacy or suitetax) */
                 var suitetax = runtime.isFeatureInEffect({ feature: 'tax_overhauling' });
                 log.audit({title: 'suitetax', details: suitetax});
+                /** Se realiza la búsqueda de las distintas transacciones */
                 var facturasProv = searchVendorBill(subsidiaria, periodo, suitetax);
                 var informesGastos = searchExpenseReports(subsidiaria, periodo, suitetax);
                 var polizasDiario = searchDailyPolicy(subsidiaria, periodo, suitetax);
@@ -83,21 +86,23 @@ define(['N/runtime', 'N/search', 'N/url'],
                         "AND", 
                         ["voided","is","F"], 
                         "AND", 
-                        ["status","anyof","VendBill:B"], 
+                        ["status","anyof","VendBill:B","VendBill:A"], 
                         "AND", 
                         ["postingperiod","abs",periodo], 
                         "AND", 
                         ["subsidiary","anyof",subsidiaria], 
                         "AND", 
-                        ["taxline","is","F"]
+                        ["taxline","is","F"], 
+                        "AND", 
+                        ["vendor.internalid","anyof","256"] // temporal para pruebas
                     ],
                     columns:
                     [
-                        //falta columna tipo tercero, tipo operacion y codigo de impuesto
+                        //falta columna tipo tercero, tipo operacion
                         "internalid",
                         "type",
                         search.createColumn({
-                            name: "entityid",
+                            name: "internalid",
                             join: "vendor"
                         }),
                         "amount",
@@ -117,7 +122,7 @@ define(['N/runtime', 'N/search', 'N/url'],
     
                 facturaSearch.run().each(function(result){
                     var id = result.getValue({ name: 'internalid' });
-                    var proveedor = result.getValue({ name: 'entityid', join: "vendor" });
+                    var proveedor = result.getValue({ name: 'internalid', join: "vendor" });
                     var impuestos = result.getValue({ name: 'taxtotal' });
                     var total = result.getValue({ name: 'total' });
                     var importe = total - impuestos;
@@ -125,36 +130,35 @@ define(['N/runtime', 'N/search', 'N/url'],
                     var tipoImpuesto = result.getValue({ name: 'taxtype', join: 'taxDetail' });
                     var iva = 0, errores = '', columnaDiot = '';
 
-                    //traer los datos de la fila que contenga todos
-                    if (idF == id && taxCode != '' && tipoImpuesto != ''){
-                        //iva = calculaIVA(impuestos,importe,iva);
-                        //var datos = buscaDatos(proveedor, tipoTercero, errores); aun no se tiene el tipo de tercero
-        
-                        //Realizar la búsqueda después de agrupar
-                        var credito = searchVendorCredit(proveedor, id, suitetax);
-                        if (credito.length == 0){
-                            credito = "";
-                        }
-        
-                        /* var rfc = datos[0].rfc;
-                        var taxID = datos[0].taxID;
-                        var nombreExtranjero = datos[0].nombreExtranjero;
-                        var paisResidencia = datos[0].paisResidencia;
-                        var nacionalidad = datos[0].nacionalidad;
-                        errores = datos[0].errores; */
-                        
-                        facturas.push({
-                            id: id,
-                            proveedor: proveedor,
-                            importe: importe,
-                            impuestos: impuestos,
-                            taxCode: taxCode,
-                            tipoImpuesto: tipoImpuesto,
-                            credito: credito
-                        });
+                    // Se calcula el IVA de dicha transacción
+                    //iva = calculaIVA(impuestos,importe,iva);
+                    // Se obtienen los datos del proveedor y se obtienen los errores de los campos que hagan falta
+                    //var datos = buscaDatos(proveedor, tipoTercero, errores); aun no se tiene el tipo de tercero
+                    /* var rfc = datos[0].rfc;
+                    var taxID = datos[0].taxID;
+                    var nombreExtranjero = datos[0].nombreExtranjero;
+                    var paisResidencia = datos[0].paisResidencia;
+                    var nacionalidad = datos[0].nacionalidad;
+                    errores = datos[0].errores; */
+    
+                    //Realizar la búsqueda después de agrupar
+                    //Se realiza la búsqueda de creditos de factura de acuerdo al proveedor y id de factura
+                    var credito = searchVendorCredit(proveedor, id, suitetax);
+                    if (credito.length == 0){
+                        credito = "";
                     }
+    
+                    facturas.push({
+                        id: id,
+                        proveedor: proveedor,
+                        importe: importe,
+                        impuestos: impuestos,
+                        taxCode: taxCode,
+                        tipoImpuesto: tipoImpuesto,
+                        credito: credito
+                    });
                     
-                    idF == id;
+                    //idF == id;
 
                     return true;
                 });
@@ -274,7 +278,7 @@ define(['N/runtime', 'N/search', 'N/url'],
 
             if(suitetax){   //no se manejan informes de gastos
                 var informes = [];
-                var informesSearch = search.create({
+                /* var informesSearch = search.create({
                     type: "expensereport",
                     filters:
                     [
@@ -363,7 +367,7 @@ define(['N/runtime', 'N/search', 'N/url'],
                     });
     
                     return true;
-                });
+                }); */
     
                 return informes;     
             } else {
@@ -763,9 +767,9 @@ define(['N/runtime', 'N/search', 'N/url'],
                        "AND", 
                        ["taxline","is","F"], 
                        "AND", 
-                       ["vendor.internalid","anyof",proveedor], 
-                       "AND", 
-                       ["appliedtotransaction.internalid","anyof",idFactProv]
+                       ["vendor.internalid","anyof",proveedor]
+                    //    "AND", 
+                    //    ["appliedtotransaction.internalid","anyof",idFactProv] ya no se va a usar
                     ],
                     columns:
                     [
@@ -789,8 +793,9 @@ define(['N/runtime', 'N/search', 'N/url'],
                        }),
                     ]
                 });
+
                 creditSearch.run().each(function(result){
-                    
+
                     var id = result.getValue({ name: 'internalid' });
                     var proveedor = result.getValue({ name: 'entity' });
                     var idFactura = result.getValue({ name: 'internalid', join: 'appliedToTransaction' });
@@ -798,26 +803,37 @@ define(['N/runtime', 'N/search', 'N/url'],
                     var total = result.getValue({ name: 'total' });
                     var taxCode = result.getValue({ name: 'taxcode', join: 'taxDetail' });
                     var tipoImpuesto = result.getValue({ name: 'taxtype', join: 'taxDetail' });
+                    total = -1 * (total);
                     var importe = total - impuesto;
 
-                    if (proveedor != '' || idFactura != ''){
-                        proveedorC = proveedor;
-                        idFact = idFactura;
+                    if(idFactProv == idFactura || idFactProv == idFact){
+                        
+                        if (proveedor != '' || idFactura != ''){
+                            proveedorC = proveedor;
+                            idFact = idFactura;
+                        }
+    
+                        log.debug('Tax Code', taxCode);
+    
+                        if (idFactProv == idFact){
+                            if ((idC == id) && (taxCode != '') && (tipoImpuesto != '')){
+                            
+                                credito.push({
+                                    id: id,
+                                    proveedor: proveedorC,
+                                    idFactura: idFact,
+                                    importe: importe,
+                                    total: total,
+                                    impuesto: impuesto,
+                                    taxCode: taxCode,
+                                    tipoImpuesto: tipoImpuesto
+                                });
+                            }
+                        }
+    
+                        idC = id;
                     }
 
-                    if (idC == id && taxCode != '' && tipoImpuesto != ''){
-                        credito.push({
-                            id: id,
-                            proveedor: proveedorC,
-                            idFactura: idFact,
-                            importe: importe,
-                            impuesto: impuesto,
-                            taxCode: taxCode,
-                            tipoImpuesto: tipoImpuesto
-                        });
-                    }
-
-                    idC = id;
                     
                     return true;
                 });
