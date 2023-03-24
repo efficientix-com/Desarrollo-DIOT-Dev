@@ -914,7 +914,12 @@ define(['N/runtime', 'N/search', 'N/url'],
             }
         }
 
-
+        /**
+         * Función que busca el código y tipo de impuesto para las pólizas
+         * @param {*} suitetax Motor (legacy o suitetax)
+         * @param {*} cuenta Cuenta de la línea de póliza a comparar con las cuentas asociadas a códigos de impuesto
+         * @returns Codigo y tipo de impuesto
+         */
         function searchTaxCode(suitetax, cuenta){
             if(suitetax){
                 var codigos = [];
@@ -931,6 +936,10 @@ define(['N/runtime', 'N/search', 'N/url'],
                        "description",
                        "taxtype",
                        search.createColumn({
+                          name: "name",
+                          join: "taxType"
+                       }),
+                       search.createColumn({
                           name: "receivablesaccount",
                           join: "taxType"
                        }),
@@ -943,7 +952,7 @@ define(['N/runtime', 'N/search', 'N/url'],
                 codigoSearch.run().each(function(result){
                     var id = result.getValue({ name: 'internalid' });
                     var taxCode = result.getValue({ name: 'name' });
-                    var tipoImpuesto = result.getValue({ name: 'taxtype' });
+                    var tipoImpuesto = result.getValue({ name: 'name', join:'taxType' });
                     var cuenta1 = result.getValue({ name: 'receivablesaccount', join:'taxType' });
                     var cuenta2 = result.getValue({ name: 'payablesaccount', join:'taxType' });
 
@@ -951,9 +960,7 @@ define(['N/runtime', 'N/search', 'N/url'],
                         codigos.push({
                             id: id,
                             taxCode: taxCode,
-                            tipoImpuesto: tipoImpuesto,
-                            cuenta1: cuenta1,
-                            cuenta2: cuenta2
+                            tipoImpuesto: tipoImpuesto
                         });
                     }
 
