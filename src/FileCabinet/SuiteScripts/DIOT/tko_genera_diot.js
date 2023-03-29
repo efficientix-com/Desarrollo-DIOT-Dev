@@ -2,9 +2,9 @@
  * @NApiVersion 2.1
  * @NScriptType MapReduceScript
  */
-define(['N/runtime', 'N/search', 'N/url'],
+define(['N/runtime', 'N/search', 'N/url', 'N/record'],
 
-    (runtime, search, url) => {
+    (runtime, search, url, record) => {
         /**
          * Defines the function that is executed at the beginning of the map/reduce process and generates the input data.
          * @param {Object} inputContext
@@ -301,64 +301,62 @@ define(['N/runtime', 'N/search', 'N/url'],
                        "AND", 
                        ["taxline","is","F"],
                        "AND", 
-                       ["vendor.custentity_tko_diot_prov_type","anyof","1","2","3"], 
+                       ["custcol_tko_diot_prov_type","anyof","1","2","3"], 
                        "AND", 
                        ["custbody_tko_tipo_operacion","anyof","1","2","3"]
                     ],
                     columns:
                     [
-                        //faltan columnas de tipo tercero, tipo operación y proveedor
                        "internalid",
-                       "type",
+                       "custcol_tkio_proveedor",
+                       "custcol_tko_diot_prov_type",
+                       "custbody_tko_tipo_operacion",
                        "amount",
                        "netamount",
                        "taxamount",
                        "taxtotal",
                        "total",
-                       search.createColumn({
+                        search.createColumn({
                           name: "taxcode",
                           join: "taxDetail"
-                       }),
-                       search.createColumn({
+                        }),
+                        search.createColumn({
                           name: "taxtype",
                           join: "taxDetail"
-                       })
+                        }),
+                        search.createColumn({
+                           name: "taxrate",
+                           join: "taxDetail",
+                        })
                     ],
                 });
 
                 informesSearch.run().each(function(result){
 
-                    /* if(result.length != 0){
-
-                    } */
-
                     var id = result.getValue({ name: 'internalid' });
-                    // var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
-                    // var tipoTercero = result.getValue({ name: 'custcol_tko_diot_prov_type' });
-                    // var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                    var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
+                    var tipoTercero = result.getValue({ name: 'custcol_tko_diot_prov_type' });
+                    var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
                     var importe = result.getValue({ name: 'netamount' });
                     var impuestos = result.getValue({ name: 'taxamount' });
                     var taxCode = result.getText({ name: 'taxcode', join: 'taxDetail' });
                     var tipoImpuesto = result.getText({ name: 'taxtype', join: 'taxDetail' });
-                    var iva = 0, errores = '';
+                    var iva = result.getValue({ name: 'taxrate', join: 'taxDetail' });
+                    var errores = ''; 
 
-                    iva = calculaIVA(impuestos, importe, iva);
-                    /* var datos = buscaDatos(proveedor, tipoTercero, errores);
-    
-                    var rfc = datos[0].rfc;
-                    var taxID = datos[0].taxID;
-                    var nombreExtranjero = datos[0].nombreExtranjero;
-                    var paisResidencia = datos[0].paisResidencia;
-                    var nacionalidad = datos[0].nacionalidad;
-                    errores = datos[0].errores; */
+                    var datos = buscaDatos(proveedor, tipoTercero, errores);
     
                     informes.push({
                         id: id,
-                        iva: iva,
+                        proveedor: proveedor,
+                        tipoTercero: tipoTercero,
+                        tipoOperacion: tipoOperacion,
                         importe: importe,
                         impuestos: impuestos,
+                        iva: iva,
                         taxCode: taxCode,
-                        tipoImpuesto: tipoImpuesto
+                        tipoImpuesto: tipoImpuesto,
+                        datos: datos
                     });
 
                     return true;
@@ -508,22 +506,26 @@ define(['N/runtime', 'N/search', 'N/url'],
                         impuestos = 0;
                     }
 
+                    // Se manda llamar a la función para la búsqueda de código y tipo de impuesto
                     var codigos = searchTaxCode(suitetax,cuenta);
-    
-                    // iva = calculaIVA(impuestos, importe, iva);
-                    var datos = buscaDatos(proveedor, tipoTercero, errores);
-    
-                    polizas.push({
-                        id: id,
-                        proveedor: proveedor,
-                        tipoTercero: tipoTercero,
-                        tipoOperacion: tipoOperacion,
-                        cuenta: cuenta,
-                        importe: importe,
-                        impuestos: impuestos,
-                        codigos: codigos,
-                        datos: datos
-                    })
+
+                    //Si la cuenta no tiene un código y/o tipo de impuesto asociado, no se toma en cuenta
+                    if(codigos.length != 0){
+                        // iva = calculaIVA(impuestos, importe, iva);
+                        var datos = buscaDatos(proveedor, tipoTercero, errores);
+        
+                        polizas.push({
+                            id: id,
+                            proveedor: proveedor,
+                            tipoTercero: tipoTercero,
+                            tipoOperacion: tipoOperacion,
+                            cuenta: cuenta,
+                            importe: importe,
+                            impuestos: impuestos,
+                            codigos: codigos,
+                            datos: datos
+                        })
+                    }
                     return true;
                 });
     
@@ -995,8 +997,15 @@ define(['N/runtime', 'N/search', 'N/url'],
 
             try{
                 var results = mapContext.value;
-                //log.debug('Resultados de getInput', results);
+                log.debug('Resultados de getInput', results);
+                log.debug('Estado', "Se esta ejecutando el Map");
 
+                var taxCodeRecord = record.load({
+                    type: record.Type.SALES_TAX_ITEM,
+                    id: 8
+                });
+
+                log.debug('Record Tax Code', taxCodeRecord);
 
             }catch(error){
                 log.error({ title: 'Error en el Map', details: error });
