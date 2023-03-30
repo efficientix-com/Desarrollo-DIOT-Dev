@@ -18,6 +18,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
          * @since 2015.2
          */
 
+        var taxRateArray = new Array();
+
         const getInputData = (inputContext) => {
             try{
 
@@ -39,6 +41,10 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
                 /** Se obtiene el motor que se esta usando (legacy or suitetax) */
                 var suitetax = runtime.isFeatureInEffect({ feature: 'tax_overhauling' });
                 log.audit({title: 'suitetax', details: suitetax});
+                
+                /* Se realiza la búsqueda de todos los códigos de impuesto */
+                var codigosImpuesto = searchCodigoImpuesto(suitetax);
+                
                 /** Se realiza la búsqueda de las distintas transacciones */
                 var facturasProv = searchVendorBill(subsidiaria, periodo, suitetax);
                 var informesGastos = searchExpenseReports(subsidiaria, periodo, suitetax);
@@ -57,12 +63,12 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
                     log.debug('Busquedas', 'No se encontaron transacciones en ese periodo');
                     // tener en cuenta que aqui se puede mandar ese texto en un key de objeto para manejar error directamente en el pantalla de la DIOT
                 } else {
-                    log.debug("Facturas", facturasProv);
+                    /* log.debug("Facturas", facturasProv);
                     log.debug("Informes", informesGastos);
-                    log.debug("Polizas", polizasDiario);
+                    log.debug("Polizas", polizasDiario); */
                 }
 
-                return resultados;
+                return codigosImpuesto;
 
             } catch (error) {
                 log.error({ title: 'Error en la busqueda de transacciones', details: error })
@@ -996,20 +1002,45 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
         const map = (mapContext) => {
 
             try{
-                var results = mapContext.value;
-                log.debug('Resultados de getInput', results);
                 log.debug('Estado', "Se esta ejecutando el Map");
+                var results = JSON.parse(mapContext.value);
+                log.debug('Resultados de getInput', results);
+                var suitetax = runtime.isFeatureInEffect({ feature: 'tax_overhauling' });
 
+                /* Registro de cada resultado del map */
                 var taxCodeRecord = record.load({
                     type: record.Type.SALES_TAX_ITEM,
-                    id: 8
+                    id: results.id
                 });
 
-                log.debug('Record Tax Code', taxCodeRecord);
+                //log.debug('Record Tax Code', taxCodeRecord);
+                var taxRate = taxCodeRecord.getValue({ fieldId: 'custrecord_ste_taxcode_taxrate' });
+                var codeName = taxCodeRecord.getValue({ fieldId: 'name' });
+                var taxType = taxCodeRecord.getText({ fieldId: 'taxtype' });
+
+                var numCodigos = searchCodigoImpuesto(suitetax).runPaged().count;
+
+                /* Ingresar datos necesarios a un arreglo para mandar el valor al reduce */
+                //taxRateArray.push(taxRate+"/"+codeName+"/"+taxType);
+
+                taxRateArray.push({
+                    taxRate: taxRate,
+                    codeName: codeName,
+                    taxType: taxType
+                })
+
+                if(taxRateArray.length == numCodigos){
+                    mapContext.write({
+                        key: "taxRate",
+                        value: JSON.stringify(taxRateArray)
+                    });
+                }
+                    
 
             }catch(error){
                 log.error({ title: 'Error en el Map', details: error });
             }
+
         }
 
         /**
@@ -1029,6 +1060,63 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
          */
         const reduce = (reduceContext) => {
 
+            log.debug('Estado', "Se esta ejecutando el Reduce");
+            log.debug('Reduce', reduceContext);
+            
+        }
+
+
+        /**
+         * Función que busca los códigos de impuesto
+         * @param {*} suitetax Motor (legacy o suitetax)
+         * @returns Búsqueda con todas las columnas
+         */
+        function searchCodigoImpuesto(suitetax){
+            if(suitetax){
+                var codigoSearch = search.create({
+                    type: "salestaxitem",
+                    filters:
+                    [
+                       ["country","anyof","MX"]
+                    ],
+                    columns:
+                    [
+                       "internalid",
+                       "name",
+                       search.createColumn({
+                          name: "name",
+                          join: "taxType"
+                       }),
+                       search.createColumn({
+                          name: "receivablesaccount",
+                          join: "taxType"
+                       }),
+                       search.createColumn({
+                          name: "payablesaccount",
+                          join: "taxType"
+                       })
+                    ]
+                });
+                return codigoSearch;
+            }else{
+                var codigoSearch = search.create({
+                    type: "salestaxitem",
+                    filters:
+                    [
+                       ["country","anyof","MX"]
+                    ],
+                    columns:
+                    [
+                       "internalid",
+                       "name",
+                       "rate",
+                       "taxtype",
+                       "purchaseaccount",
+                       "saleaccount"
+                    ]
+                });
+                return codigoSearch;
+            }
         }
 
 
