@@ -22,21 +22,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
 
         const getInputData = (inputContext) => {
             try{
-
-                var objScript = runtime.getCurrentScript();
-                /** Se obtienen los parametros dados por el usuario */
-                // var subsidiaria = objScript.getParameter({ name: "custscript_tko_diot_subsidiary" });
-                // var periodo = objScript.getParameter({ name: "custscript_tko_diot_periodo" });
-
-                var subsidiaria = 2, periodo = 154;
                 
                 log.audit({title: 'MR', details: "Se esta ejecutando el MR: getInputData"});
-                var datos = [];
-                datos.push({
-                    'Subsidiaria': subsidiaria,
-                    'Periodo': periodo
-                })
-                log.debug('Datos', datos);
 
                 /** Se obtiene el motor que se esta usando (legacy or suitetax) */
                 var suitetax = runtime.isFeatureInEffect({ feature: 'tax_overhauling' });
@@ -44,38 +31,141 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
                 
                 /* Se realiza la búsqueda de todos los códigos de impuesto */
                 var codigosImpuesto = searchCodigoImpuesto(suitetax);
+
+                return codigosImpuesto;
+
+            } catch (error) {
+                log.error({ title: 'Error en la busqueda de Códigos de Impuesto', details: error })
+            }
+
+        }
+        
+        /**
+         * Defines the function that is executed when the map entry point is triggered. This entry point is triggered automatically
+         * when the associated getInputData stage is complete. This function is applied to each key-value pair in the provided
+         * context.
+         * @param {Object} mapContext - Data collection containing the key-value pairs to process in the map stage. This parameter
+         *     is provided automatically based on the results of the getInputData stage.
+         * @param {Iterator} mapContext.errors - Serialized errors that were thrown during previous attempts to execute the map
+         *     function on the current key-value pair
+         * @param {number} mapContext.executionNo - Number of times the map function has been executed on the current key-value
+         *     pair
+         * @param {boolean} mapContext.isRestarted - Indicates whether the current invocation of this function is the first
+         *     invocation (if true, the current invocation is not the first invocation and this function has been restarted)
+         * @param {string} mapContext.key - Key to be processed during the map stage
+         * @param {string} mapContext.value - Value to be processed during the map stage
+         * @since 2015.2
+         */
+
+        const map = (mapContext) => {
+
+            try{
+                log.debug('Estado', "Se esta ejecutando el Map");
+                var results = JSON.parse(mapContext.value);
+                log.debug('Resultados de getInput', results);
+                var suitetax = runtime.isFeatureInEffect({ feature: 'tax_overhauling' });
+                var taxRate, codeName, taxType;
+
+                if(suitetax){
+                    /* Registro de cada resultado del map */
+                    var taxCodeRecord = record.load({
+                        type: record.Type.SALES_TAX_ITEM,
+                        id: results.id
+                    });
+    
+                    taxRate = taxCodeRecord.getValue({ fieldId: 'custrecord_ste_taxcode_taxrate' });
+                    codeName = taxCodeRecord.getValue({ fieldId: 'name' });
+                    taxType = taxCodeRecord.getText({ fieldId: 'taxtype' });
+                }else{
+                    /* Registro de cada resultado del map */
+                    var taxCodeRecord = record.load({
+                        type: record.Type.SALES_TAX_ITEM,
+                        id: results.id
+                    });
+    
+                    //log.debug('Record Tax Code', taxCodeRecord);
+                    taxRate = taxCodeRecord.getValue({ fieldId: 'rate' });
+                    codeName = taxCodeRecord.getValue({ fieldId: 'itemid' });
+                    taxType = taxCodeRecord.getText({ fieldId: 'taxtype' });
+                }
+
+                var numCodigos = searchCodigoImpuesto(suitetax).runPaged().count;
+
+                /* Ingresar datos necesarios a un arreglo para mandar el valor al reduce */
+                //taxRateArray.push(taxRate+"/"+codeName+"/"+taxType);
+
+                taxRateArray.push({
+                    taxRate: taxRate,
+                    codeName: codeName,
+                    taxType: taxType
+                })
+
+                /* Se manda el último arreglo al reduce, es decir el que ya contiene todos los datos */
+                if(taxRateArray.length == numCodigos){
+                    mapContext.write({
+                        key: "taxRate",
+                        value: JSON.stringify(taxRateArray)
+                    });
+                }
+                    
+
+            }catch(error){
+                log.error({ title: 'Error al realizar el registro de cada resultado', details: error });
+            }
+
+        }
+
+        /**
+         * Defines the function that is executed when the reduce entry point is triggered. This entry point is triggered
+         * automatically when the associated map stage is complete. This function is applied to each group in the provided context.
+         * @param {Object} reduceContext - Data collection containing the groups to process in the reduce stage. This parameter is
+         *     provided automatically based on the results of the map stage.
+         * @param {Iterator} reduceContext.errors - Serialized errors that were thrown during previous attempts to execute the
+         *     reduce function on the current group
+         * @param {number} reduceContext.executionNo - Number of times the reduce function has been executed on the current group
+         * @param {boolean} reduceContext.isRestarted - Indicates whether the current invocation of this function is the first
+         *     invocation (if true, the current invocation is not the first invocation and this function has been restarted)
+         * @param {string} reduceContext.key - Key to be processed during the reduce stage
+         * @param {List<String>} reduceContext.values - All values associated with a unique key that was passed to the reduce stage
+         *     for processing
+         * @since 2015.2
+         */
+        const reduce = (reduceContext) => {
+
+            try{
+                log.debug('Estado', "Se esta ejecutando el Reduce");
+                log.debug('Reduce', reduceContext);
                 
+                var objScript = runtime.getCurrentScript();
+                /** Se obtienen los parametros dados por el usuario */
+                /* var subsidiaria = objScript.getParameter({ name: "custscript_tko_diot_subsidiary" });
+                var periodo = objScript.getParameter({ name: "custscript_tko_diot_periodo" }); */
+                
+                var suitetax = runtime.isFeatureInEffect({ feature: 'tax_overhauling' });
+                var subsidiaria = 2, periodo = 154;
+
+                var valores = JSON.parse(reduceContext.values[0]);
+                log.debug('Valores', valores);
+    
                 /** Se realiza la búsqueda de las distintas transacciones */
                 var facturasProv = searchVendorBill(subsidiaria, periodo, suitetax);
                 var informesGastos = searchExpenseReports(subsidiaria, periodo, suitetax);
-                var polizasDiario = searchDailyPolicy(subsidiaria, periodo, suitetax);
-
-                /** Se ingresan los resultados de cada búsqueda en un arreglo */
-                var resultados = [];
-                resultados.push({
-                    'Facturas': facturasProv,
-                    'Informes': informesGastos,
-                    'Polizas': polizasDiario
-                });
-
+                var polizasDiario = searchDailyPolicy(subsidiaria, periodo, suitetax, valores);
+    
                 /** Verifica que las búsquedas no esten vacías */
                 if(facturasProv.length == 0 && informesGastos.length == 0 && polizasDiario.length == 0) {
                     log.debug('Busquedas', 'No se encontaron transacciones en ese periodo');
                     // tener en cuenta que aqui se puede mandar ese texto en un key de objeto para manejar error directamente en el pantalla de la DIOT
                 } else {
-                    /* log.debug("Facturas", facturasProv);
+                    log.debug("Facturas", facturasProv);
                     log.debug("Informes", informesGastos);
-                    log.debug("Polizas", polizasDiario); */
+                    log.debug("Polizas", polizasDiario);
                 }
-
-                return codigosImpuesto;
-
-            } catch (error) {
-                log.error({ title: 'Error en la busqueda de transacciones', details: error })
+            }catch(error){
+                log.error({ title: 'Error en las búsquedas de transacciones', details: error });
             }
-
         }
-
+        
         /**
          * Funcion para buscar las facturas de proveedores
          */
@@ -147,7 +237,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
                     var impuestos = result.getValue({ name: 'taxamount' });
                     var taxCode = result.getText({ name: 'taxcode', join: 'taxDetail' });
                     var tipoImpuesto = result.getText({ name: 'taxtype', join: 'taxDetail' });
-                    var iva = result.getValue({ name: 'taxrate', join: 'taxDetail' });
+                    var tasa = result.getValue({ name: 'taxrate', join: 'taxDetail' });
                     var errores = '';
 
                     // Se obtienen los datos del proveedor y se obtienen los errores de los campos que hagan falta
@@ -166,7 +256,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
                         tipoOperacion: tipoOperacion,
                         importe: importe,
                         impuestos: impuestos,
-                        iva: iva,
+                        tasa: tasa,
                         taxCode: taxCode,
                         tipoImpuesto: tipoImpuesto,
                         credito: credito,
@@ -347,7 +437,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
                     var impuestos = result.getValue({ name: 'taxamount' });
                     var taxCode = result.getText({ name: 'taxcode', join: 'taxDetail' });
                     var tipoImpuesto = result.getText({ name: 'taxtype', join: 'taxDetail' });
-                    var iva = result.getValue({ name: 'taxrate', join: 'taxDetail' });
+                    var tasa = result.getValue({ name: 'taxrate', join: 'taxDetail' });
                     var errores = ''; 
 
                     var datos = buscaDatos(proveedor, tipoTercero, errores);
@@ -359,7 +449,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
                         tipoOperacion: tipoOperacion,
                         importe: importe,
                         impuestos: impuestos,
-                        iva: iva,
+                        tasa: tasa,
                         taxCode: taxCode,
                         tipoImpuesto: tipoImpuesto,
                         datos: datos
@@ -397,6 +487,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
                     ],
                     columns:
                     [
+                        //falta columna tipo y tasa de impuesto
                         "internalid",
                         "type",
                         "custbody_tko_tipo_operacion",
@@ -419,36 +510,26 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
                     var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
                     var importe = result.getValue({ name: 'netamountnotax' });
                     var impuestos = result.getValue({ name: 'taxamount' });
-                    var taxCode = result.getValue({ name: 'taxcode' });
+                    //var taxCode = result.getValue({ name: 'taxcode' });
+                    var taxCode = result.getText({ name: 'taxcode' });
                     var taxCodeName = result.getValue({ name: 'name', join: 'taxItem' });
                     var iva = 0, errores = '';
-    
-                    iva = calculaIVA(impuestos, importe, iva);
+
+                    /* Obtener IVA con la columna no con fórmula */
+                    //iva = calculaIVA(impuestos, importe, iva);
                     var datos = buscaDatos(proveedor, tipoTercero, errores);
-    
-                    var rfc = datos[0].rfc;
-                    var taxID = datos[0].taxID;
-                    var nombreExtranjero = datos[0].nombreExtranjero;
-                    var paisResidencia = datos[0].paisResidencia;
-                    var nacionalidad = datos[0].nacionalidad;
-                    errores = datos[0].errores;
+
+                    // errores = datos[0].errores;
     
                     informes.push({
                         id: id,
                         proveedor: proveedor,
                         tipoTercero: tipoTercero,
                         tipoOperacion: tipoOperacion,
-                        iva: iva,
                         importe: importe,
-                        rfc: rfc,
-                        taxID: taxID,
-                        taxCode: taxCode,
-                        taxCodeName: taxCodeName,
                         impuestos: impuestos,
-                        nombreExtranjero: nombreExtranjero,
-                        paisResidencia: paisResidencia,
-                        nacionalidad: nacionalidad,
-                        errores: errores
+                        taxCode: taxCode,
+                        datos: datos
                     });
     
                     return true;
@@ -461,7 +542,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
         /**
          * Funcion para buscar las polizas de diario
          */
-        function searchDailyPolicy(subsidiaria, periodo, suitetax){
+        function searchDailyPolicy(subsidiaria, periodo, suitetax, valCodigos){
 
             if(suitetax){
                 var polizas = []
@@ -513,7 +594,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
                     }
 
                     // Se manda llamar a la función para la búsqueda de código y tipo de impuesto
-                    var codigos = searchTaxCode(suitetax,cuenta);
+                    var codigos = searchTaxCode(suitetax,cuenta, valCodigos);
 
                     //Si la cuenta no tiene un código y/o tipo de impuesto asociado, no se toma en cuenta
                     if(codigos.length != 0){
@@ -891,9 +972,10 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
          * Función que busca el código y tipo de impuesto para las pólizas
          * @param {*} suitetax Motor (legacy o suitetax)
          * @param {*} cuenta Cuenta de la línea de póliza a comparar con las cuentas asociadas a códigos de impuesto
+         * @param {*} valCodigos Registro de los códigos con tipo de impuesto y tasa
          * @returns Codigo y tipo de impuesto
          */
-        function searchTaxCode(suitetax, cuenta){
+        function searchTaxCode(suitetax, cuenta, valCodigos){
             if(suitetax){
                 var codigos = [];
                 var codigoSearch = search.create({
@@ -928,12 +1010,20 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
                     var tipoImpuesto = result.getValue({ name: 'name', join:'taxType' });
                     var cuenta1 = result.getValue({ name: 'receivablesaccount', join:'taxType' });
                     var cuenta2 = result.getValue({ name: 'payablesaccount', join:'taxType' });
+                    var tasa;
+
+                    for(var i = 0; i < valCodigos.length; i++){
+                        if(valCodigos[i].codeName == taxCode){
+                            tasa = valCodigos[i].taxRate;
+                        }
+                    }
 
                     if (cuenta == cuenta1 || cuenta == cuenta2){
                         codigos.push({
                             id: id,
                             taxCode: taxCode,
-                            tipoImpuesto: tipoImpuesto
+                            tipoImpuesto: tipoImpuesto,
+                            tasa: tasa
                         });
                     }
 
@@ -981,90 +1071,6 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
                 return codigos;
             }
         }
-        
-        /**
-         * Defines the function that is executed when the map entry point is triggered. This entry point is triggered automatically
-         * when the associated getInputData stage is complete. This function is applied to each key-value pair in the provided
-         * context.
-         * @param {Object} mapContext - Data collection containing the key-value pairs to process in the map stage. This parameter
-         *     is provided automatically based on the results of the getInputData stage.
-         * @param {Iterator} mapContext.errors - Serialized errors that were thrown during previous attempts to execute the map
-         *     function on the current key-value pair
-         * @param {number} mapContext.executionNo - Number of times the map function has been executed on the current key-value
-         *     pair
-         * @param {boolean} mapContext.isRestarted - Indicates whether the current invocation of this function is the first
-         *     invocation (if true, the current invocation is not the first invocation and this function has been restarted)
-         * @param {string} mapContext.key - Key to be processed during the map stage
-         * @param {string} mapContext.value - Value to be processed during the map stage
-         * @since 2015.2
-         */
-
-        const map = (mapContext) => {
-
-            try{
-                log.debug('Estado', "Se esta ejecutando el Map");
-                var results = JSON.parse(mapContext.value);
-                log.debug('Resultados de getInput', results);
-                var suitetax = runtime.isFeatureInEffect({ feature: 'tax_overhauling' });
-
-                /* Registro de cada resultado del map */
-                var taxCodeRecord = record.load({
-                    type: record.Type.SALES_TAX_ITEM,
-                    id: results.id
-                });
-
-                //log.debug('Record Tax Code', taxCodeRecord);
-                var taxRate = taxCodeRecord.getValue({ fieldId: 'custrecord_ste_taxcode_taxrate' });
-                var codeName = taxCodeRecord.getValue({ fieldId: 'name' });
-                var taxType = taxCodeRecord.getText({ fieldId: 'taxtype' });
-
-                var numCodigos = searchCodigoImpuesto(suitetax).runPaged().count;
-
-                /* Ingresar datos necesarios a un arreglo para mandar el valor al reduce */
-                //taxRateArray.push(taxRate+"/"+codeName+"/"+taxType);
-
-                taxRateArray.push({
-                    taxRate: taxRate,
-                    codeName: codeName,
-                    taxType: taxType
-                })
-
-                if(taxRateArray.length == numCodigos){
-                    mapContext.write({
-                        key: "taxRate",
-                        value: JSON.stringify(taxRateArray)
-                    });
-                }
-                    
-
-            }catch(error){
-                log.error({ title: 'Error en el Map', details: error });
-            }
-
-        }
-
-        /**
-         * Defines the function that is executed when the reduce entry point is triggered. This entry point is triggered
-         * automatically when the associated map stage is complete. This function is applied to each group in the provided context.
-         * @param {Object} reduceContext - Data collection containing the groups to process in the reduce stage. This parameter is
-         *     provided automatically based on the results of the map stage.
-         * @param {Iterator} reduceContext.errors - Serialized errors that were thrown during previous attempts to execute the
-         *     reduce function on the current group
-         * @param {number} reduceContext.executionNo - Number of times the reduce function has been executed on the current group
-         * @param {boolean} reduceContext.isRestarted - Indicates whether the current invocation of this function is the first
-         *     invocation (if true, the current invocation is not the first invocation and this function has been restarted)
-         * @param {string} reduceContext.key - Key to be processed during the reduce stage
-         * @param {List<String>} reduceContext.values - All values associated with a unique key that was passed to the reduce stage
-         *     for processing
-         * @since 2015.2
-         */
-        const reduce = (reduceContext) => {
-
-            log.debug('Estado', "Se esta ejecutando el Reduce");
-            log.debug('Reduce', reduceContext);
-            
-        }
-
 
         /**
          * Función que busca los códigos de impuesto
