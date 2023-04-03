@@ -119,6 +119,16 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                     type: serverWidget.FieldType.TEXT,  //se cambio RICHTEXT por TEXT 
                 });
 
+                sublist.addRefreshButton();
+
+                /* var fileObj = file.create({
+                    name    : 'test.txt',
+                    fileType: file.Type.PLAINTEXT,
+                    contents: 'Hello World\nHello World'
+                }); */
+                
+                
+
             } catch (UIError) {
                 log.error({ title: 'Error en createUI', details: UIError })
             }
@@ -138,16 +148,9 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                         [
                             "internalid",
                             "name",
-                            "city",
-                            "state",
-                            "country",
-                            "currency",
-                            "custrecord_company_uen",
-                            "custrecord_company_brn"
+                            "city"
                         ]
                 });
-                // var searchResultCount = subsiSearch.runPaged().count;
-                // log.debug("subsidiarySearchObj result count", searchResultCount);
                 subsiSearch.run().each(function (result) {
                     var id = result.getValue({ name: 'internalid' });
                     var name = result.getValue({ name: 'name' });
@@ -181,7 +184,7 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                             "periodname",
                             search.createColumn({
                                 name: "internalid",
-                                sort: search.Sort.ASC
+                                sort: search.Sort.DESC
                             })
                         ]
                 });

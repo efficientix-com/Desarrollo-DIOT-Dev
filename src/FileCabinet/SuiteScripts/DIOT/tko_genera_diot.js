@@ -62,7 +62,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
             try{
                 log.debug('Estado', "Se esta ejecutando el Map");
                 var results = JSON.parse(mapContext.value);
-                log.debug('Resultados de getInput', results);
+                //log.debug('Resultados de getInput', results);
+                /** Se obtiene el motor que se esta usando (legacy or suitetax) */
                 var suitetax = runtime.isFeatureInEffect({ feature: 'tax_overhauling' });
                 var taxRate, codeName, taxType;
 
@@ -136,16 +137,17 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
                 log.debug('Estado', "Se esta ejecutando el Reduce");
                 log.debug('Reduce', reduceContext);
                 
-                var objScript = runtime.getCurrentScript();
                 /** Se obtienen los parametros dados por el usuario */
-                /* var subsidiaria = objScript.getParameter({ name: "custscript_tko_diot_subsidiary" });
-                var periodo = objScript.getParameter({ name: "custscript_tko_diot_periodo" }); */
+                var objScript = runtime.getCurrentScript();
+                var subsidiaria = objScript.getParameter({ name: "custscript_tko_diot_subsidiary" });
+                var periodo = objScript.getParameter({ name: "custscript_tko_diot_periodo" });
                 
+                /** Se obtiene el motor que se esta usando (legacy or suitetax) */
                 var suitetax = runtime.isFeatureInEffect({ feature: 'tax_overhauling' });
-                var subsidiaria = 2, periodo = 154;
 
+                /** Se obtienen los valores enviados en el map (códigos de impuesto encontrados en la búsqueda ) */
                 var valores = JSON.parse(reduceContext.values[0]);
-                log.debug('Valores', valores);
+                //log.debug('Valores', valores);
     
                 /** Se realiza la búsqueda de las distintas transacciones */
                 var facturasProv = searchVendorBill(subsidiaria, periodo, suitetax);
@@ -576,7 +578,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
                         "amount",
                         "netamount",
                         "taxtotal",
-                        "total"
+                        "total",
+                        "custcol_tko_diot_importacion"
                     ]
                 });
                 polizasSearch.run().each(function(result){
@@ -584,21 +587,21 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
                     var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
                     var tipoTercero = result.getValue({ name: 'custcol_tko_diot_prov_type' });
                     var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                    var importacionBienes = result.getValue({ name: 'custcol_tko_diot_importacion' });
                     var cuenta = result.getValue({ name: 'account' });
                     var importe = result.getValue({ name: 'netamount' }); //importe negativo = crédito, importe positivo = débito
                     var impuestos = result.getValue({ name: 'taxtotal' });
-                    var iva = 0, errores = '';
+                    var errores = '';
 
                     if(impuestos == ''){
                         impuestos = 0;
                     }
 
-                    // Se manda llamar a la función para la búsqueda de código y tipo de impuesto
+                    // Se manda llamar a la función para la búsqueda de código, tipo y tasa de impuesto
                     var codigos = searchTaxCode(suitetax,cuenta, valCodigos);
 
                     //Si la cuenta no tiene un código y/o tipo de impuesto asociado, no se toma en cuenta
                     if(codigos.length != 0){
-                        // iva = calculaIVA(impuestos, importe, iva);
                         var datos = buscaDatos(proveedor, tipoTercero, errores);
         
                         polizas.push({
@@ -606,6 +609,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
                             proveedor: proveedor,
                             tipoTercero: tipoTercero,
                             tipoOperacion: tipoOperacion,
+                            importacionBienes: importacionBienes,
                             cuenta: cuenta,
                             importe: importe,
                             impuestos: impuestos,
@@ -1012,12 +1016,14 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
                     var cuenta2 = result.getValue({ name: 'payablesaccount', join:'taxType' });
                     var tasa;
 
+                    /** Se realiza un recorrido en el arreglo de valores y se ve si el id coincide con el código de impuesto para obtener los datos*/
                     for(var i = 0; i < valCodigos.length; i++){
                         if(valCodigos[i].codeName == taxCode){
                             tasa = valCodigos[i].taxRate;
                         }
                     }
 
+                    /** Si la cuenta coincide con una de las asociadas con un código de impuestos */
                     if (cuenta == cuenta1 || cuenta == cuenta2){
                         codigos.push({
                             id: id,
