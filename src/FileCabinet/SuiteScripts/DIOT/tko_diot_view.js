@@ -113,21 +113,19 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                     label: 'Status progress'
                 });
 
-                var archivo = sublist.addField({
-                    id: 'txt',
+                var archivo = form.addField({
+                    id: 'custpage_archivotxt',
                     label: 'Archivo TXT',
-                    type: serverWidget.FieldType.TEXT,  //se cambio RICHTEXT por TEXT 
+                    type: serverWidget.FieldType.URL,  //se cambio RICHTEXT por TEXT 
+                });
+
+                var status = form.addField({
+                    id: 'custpage_status',
+                    label: 'Estado',
+                    type: serverWidget.FieldType.TEXT, 
                 });
 
                 sublist.addRefreshButton();
-
-                /* var fileObj = file.create({
-                    name    : 'test.txt',
-                    fileType: file.Type.PLAINTEXT,
-                    contents: 'Hello World\nHello World'
-                }); */
-                
-                
 
             } catch (UIError) {
                 log.error({ title: 'Error en createUI', details: UIError })

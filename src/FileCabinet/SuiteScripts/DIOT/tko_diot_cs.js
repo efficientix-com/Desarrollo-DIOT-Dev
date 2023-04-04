@@ -3,9 +3,9 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/url', 'N/currentRecord', 'N/ui/message'],
+define(['N/url', 'N/currentRecord', 'N/ui/message', 'N/search'],
 
-function(url, currentRecord, message) {
+function(url, currentRecord, message, search) {
 
     
     var periodo, subsidiaria;
@@ -42,16 +42,53 @@ function(url, currentRecord, message) {
     }
 
     function actualizarPantalla(){
-        location.reload();
-        var output = url.resolveScript({
+        //location.reload();
+        /* var output = url.resolveScript({
             scriptId: 'customscript_tko_diot_view_sl',
             deploymentId: 'customdeploy_tko_diot_view_sl',
             params: {
-                'action': 'actualiza',
+                'action': 'actualiza'
             },
             returnExternalUrl: false,
+        }); */
+
+        var currentForm = currentRecord.get();
+
+        var datosRegistro = search.lookupFields({
+            type: 'customrecord_tko_diot',
+            id: 1,
+            columns: ['custrecord_tko_subsidiaria_diot','custrecord_tko_periodo_diot','custrecord_tko_archivotxt_diot','custrecord_tko_estado_diot']
         });
-        window.open(output, '_self');
+
+        var subsidiariaRegistro = datosRegistro.custrecord_tko_subsidiaria_diot;
+        var periodoRegistro = datosRegistro.custrecord_tko_periodo_diot;
+        var archivoRegistro = datosRegistro.custrecord_tko_archivotxt_diot[0].text;
+        var estadoRegistro = datosRegistro.custrecord_tko_estado_diot;
+
+        console.log('Subsidiaria', subsidiariaRegistro);
+        console.log('Periodo', periodoRegistro);
+        console.log('Archivo', archivoRegistro);
+        console.log('Estado', estadoRegistro);
+
+        currentForm.setValue({
+            fieldId: 'custpage_subsi',
+            value: subsidiariaRegistro
+        });
+        currentForm.setValue({
+            fieldId: 'custpage_period',
+            value: periodoRegistro
+        });
+        /* currentForm.setValue({
+            fieldId: 'custpage_archivotxt',
+            value: archivoRegistro
+        }); */
+        currentForm.setValue({
+            fieldId: 'custpage_status',
+            value: estadoRegistro
+        });
+
+
+        //window.open(output, '_self');
     }
 
     function generarReporte(){

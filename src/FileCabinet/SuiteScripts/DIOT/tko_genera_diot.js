@@ -2,9 +2,9 @@
  * @NApiVersion 2.1
  * @NScriptType MapReduceScript
  */
-define(['N/runtime', 'N/search', 'N/url', 'N/record'],
+define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect'],
 
-    (runtime, search, url, record) => {
+    (runtime, search, url, record, file, redirect) => {
         /**
          * Defines the function that is executed at the beginning of the map/reduce process and generates the input data.
          * @param {Object} inputContext
@@ -22,7 +22,38 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
 
         const getInputData = (inputContext) => {
             try{
+
+                /** Se obtienen los parametros dados por el usuario */
+                var objScript = runtime.getCurrentScript();
+                var subsidiaria = objScript.getParameter({ name: "custscript_tko_diot_subsidiary" });
+                var periodo = objScript.getParameter({ name: "custscript_tko_diot_periodo" });
+
+                /** Se crea un registro para guardar los datos de la pantalla del suitelet */
+                var registroDIOT = record.load({
+                    type: 'customrecord_tko_diot',
+                    id: 1, 
+                });
+
+                registroDIOT.setValue({
+                    fieldId: 'custrecord_tko_periodo_diot',
+                    value: periodo
+                });
                 
+                registroDIOT.setValue({
+                    fieldId: 'custrecord_tko_subsidiaria_diot',
+                    value: subsidiaria
+                });
+
+                registroDIOT.setValue({
+                    fieldId: 'custrecord_tko_estado_diot',
+                    value: 10
+                })
+
+                registroDIOT.save({
+                    enableSourcing: true,
+                    ignoreMandatoryFields: true
+                });
+
                 log.audit({title: 'MR', details: "Se esta ejecutando el MR: getInputData"});
 
                 /** Se obtiene el motor que se esta usando (legacy or suitetax) */
@@ -108,6 +139,14 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
                         value: JSON.stringify(taxRateArray)
                     });
                 }
+
+                var diot = record.submitFields({
+                    type: 'customrecord_tko_diot',
+                    id: 1,
+                    values: {
+                        'custrecord_tko_estado_diot': 45
+                    }
+                });
                     
 
             }catch(error){
@@ -153,6 +192,37 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
                 var facturasProv = searchVendorBill(subsidiaria, periodo, suitetax);
                 var informesGastos = searchExpenseReports(subsidiaria, periodo, suitetax);
                 var polizasDiario = searchDailyPolicy(subsidiaria, periodo, suitetax, valores);
+
+                /** Se crea el archivo txt, se indica el folder en el que se va a guardar*/
+                var fileObj = file.create({
+                    name    : 'test.txt',
+                    fileType: file.Type.PLAINTEXT,
+                    contents: 'Hello World\nHello World'
+                });
+
+                fileObj.folder = 1647;
+                var id = fileObj.save();
+
+                /** Se carga el registro y se pone el archivo para mostrar */
+                /* var registroDIOT = record.load({
+                    type: 'customrecord_tko_diot',
+                    id: 582, 
+                });
+
+                registroDIOT.setValue({
+                    fieldId: 'custrecord_tko_archivotxt_diot',
+                    value: id
+                }); */
+
+                var diot = record.submitFields({
+                    type: 'customrecord_tko_diot',
+                    id: 1,
+                    values: {
+                        'custrecord_tko_archivotxt_diot': id,
+                        'custrecord_tko_estado_diot': 90
+                    }
+                });
+
     
                 /** Verifica que las búsquedas no esten vacías */
                 if(facturasProv.length == 0 && informesGastos.length == 0 && polizasDiario.length == 0) {
@@ -1160,6 +1230,14 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record'],
             log.debug('Input Summary', summaryContext.inputSummary);
             log.debug('Map Summary', summaryContext.mapSummary);
             log.debug('Reduce Summary', summaryContext.reduceSummary); */
+
+            var diot = record.submitFields({
+                type: 'customrecord_tko_diot',
+                id: 1,
+                values: {
+                    'custrecord_tko_estado_diot': 97
+                }
+            });
 
         }
 
