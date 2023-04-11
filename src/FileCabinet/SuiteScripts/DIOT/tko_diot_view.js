@@ -2,12 +2,15 @@
  * @NApiVersion 2.1
  * @NScriptType Suitelet
  */
-define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
+define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_diot_constants_lib'],
     /**
  * @param{log} log
  * @param{serverWidget} serverWidget
  */
-    (log, serverWidget, search, task, runtime) => {
+    (log, serverWidget, search, task, runtime, values) => {
+
+        const FIELD_ID = values.FIELD_ID;
+
         /**
          * Defines the Suitelet script trigger point.
          * @param {Object} scriptContext
@@ -17,7 +20,7 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
          */
         const onRequest = (scriptContext) => {
             var request = scriptContext.request, response = scriptContext.response;
-            var parameters = scriptContext.request.parameters;
+            var parameters = request.parameters;
             try {
                 let form = createUI(parameters);
                 response.writePage({
@@ -28,9 +31,11 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                         log.debug("prueba", "Click en botón generar");
                         generaDIOT(parameters.subsidiaria, parameters.periodo);
                         break;
-                    case 'actualiza':
+                    /* case 'actualiza':
                         log.debug("prueba", "Click en botón actualiza");
-                        break;
+                        llenarDatos(parameters.idArchivo);
+                        log.debug('ID Archivo', parameters.idArchivo);
+                        break; */
                 }
             } catch (onRequestError) {
                 log.error({ title: 'Error en onRequest', details: onRequestError })
@@ -48,31 +53,32 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                  * Creacion de los campos para los filtros de la DIOT
                  */
 
-                /* form.addSubmitButton({
-                    label: 'Generar',
-                    functionName: 'generaDIOT'
-                }); */
-
-                form.addButton({
+                /* form.addButton({
                     id: "refresh",
                     label: "Actualizar",
                     functionName: "actualizarPantalla"
-                });
+                }); */
 
                 form.addButton({
-                    id: "genera",
+                    id: "btn_generar_diot",
                     label: "Generar",
                     functionName: "generarReporte"
                 });
                 log.debug( "parameters", parameters );
 
+                var fieldgroup_datos = form.addFieldGroup({
+                    id : FIELD_ID.PANTALLA.GRUPO_DATOS,
+                    label : 'Datos'
+                });
+
                 /**
                  * Lista de subsidiarias
                  */
                 var subsidiaryList = form.addField({
-                    id: "custpage_subsi",
+                    id: FIELD_ID.PANTALLA.SUBSIDIARIA,
                     type: serverWidget.FieldType.SELECT,
-                    label: 'Subsidiaria'
+                    label: 'Subsidiaria',
+                    container: FIELD_ID.PANTALLA.GRUPO_DATOS
                 });
 
                 var subsis = searchSubsidiaries();
@@ -89,9 +95,10 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                  * Lista de periodos
                  */
                 var periodList = form.addField({
-                    id: "custpage_period",
+                    id: FIELD_ID.PANTALLA.PERIODO,
                     type: serverWidget.FieldType.SELECT,
-                    label: "Periodo Contable"
+                    label: "Periodo Contable",
+                    container: FIELD_ID.PANTALLA.GRUPO_DATOS
                 });
 
                 var periods = searchAccountingPeriod();
@@ -104,29 +111,6 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                     });
                 }
 
-                /**
-                 * !Aqui se realizaran las actualizaciones de los stages del MR
-                 */
-                var sublist = form.addSublist({
-                    id: 'sublistid',
-                    type: serverWidget.SublistType.LIST,
-                    label: 'Status progress'
-                });
-
-                var archivo = form.addField({
-                    id: 'custpage_archivotxt',
-                    label: 'Archivo TXT',
-                    type: serverWidget.FieldType.URL,  //se cambio RICHTEXT por TEXT 
-                });
-
-                var status = form.addField({
-                    id: 'custpage_status',
-                    label: 'Estado',
-                    type: serverWidget.FieldType.TEXT, 
-                });
-
-                sublist.addRefreshButton();
-
             } catch (UIError) {
                 log.error({ title: 'Error en createUI', details: UIError })
             }
@@ -137,7 +121,7 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
             try {
                 var subsidiaries = []
                 var subsiSearch = search.create({
-                    type: "subsidiary",
+                    type: RECORD_INFO.SUBSIDIARY_RECORD.ID,
                     filters:
                         [
                             ["isinactive", "is", "F"]
@@ -208,6 +192,8 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
         function generaDIOT(subsidiaria, periodo) {
             try {
 
+                //Crear el registro
+
                 var mrTask = task.create({
                     taskType: task.TaskType.MAP_REDUCE,
                     scriptId: 'customscript_tko_generate_diot_mr',
@@ -221,10 +207,19 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime'],
                 log.audit({ title: 'idTask', details: idTask });
             }
             catch (e) {
-                log.debug({ title: "error", details: e });
-                log.error("summarize", "Aún esta corriendo el deployment: " + scriptdeploy_id);
+                log.debug({ title: "Error", details: e });
+                log.error({ title: 'Execution Error', details: "Aun esta corriendo la ejecución"});
             }
         }
+
+        /* function llenarDatos(idArchivo) {
+            var fileObj = file.load({
+                id: archivoRegistro
+            });
+            console.log('File', fileObj);
+            var url = fileObj.url;
+            console.log('URL:', url);
+        } */
 
         return { onRequest }
 

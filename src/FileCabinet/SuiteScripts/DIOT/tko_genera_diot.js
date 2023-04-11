@@ -95,6 +95,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect'],
                 var results = JSON.parse(mapContext.value);
                 //log.debug('Resultados de getInput', results);
                 /** Se obtiene el motor que se esta usando (legacy or suitetax) */
+                // Revisar la carga de registros de los códigos de impuesto
                 var suitetax = runtime.isFeatureInEffect({ feature: 'tax_overhauling' });
                 var taxRate, codeName, taxType;
 
@@ -193,11 +194,51 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect'],
                 var informesGastos = searchExpenseReports(subsidiaria, periodo, suitetax);
                 var polizasDiario = searchDailyPolicy(subsidiaria, periodo, suitetax, valores);
 
+                /** Se recorre cada uno de los resultados de las búsquedas de transacciones para ir obteniendo la información del txt */
+                /* var proveedoresArray = new Array();
+                var proveedores;
+                var importeDevoluciones = 0, importe16 = 0, impuestosBienes16 = 0, impuestosBienes10 = 0, importeBienesExentos = 0, importe0 = 0, importeExentos = 0, impuestosRet = 0;
+                if(facturasProv.length != 0){
+                    for(var i = 0; i < facturasProv.length; i++){
+                        var prov = facturasProv[i].proveedor;
+                        var tercero = facturasProv[i].tipoTercero;
+                        var operacion = facturasProv[i].tipoOperacion;
+                        if (tercero == 1){
+                            var rfc = facturasProv[i].datos[0].rfc;
+                        }else if(tercero == 2){
+                            var rfc = facturasProv[i].datos[0].rfc;
+                            var taxID = facturasProv[i].datos[0].taxID;
+                            var extranjero = facturasProv[i].datos[0].nombreExtranjero;
+                            if(extranjero != ""){
+                                var pais = facturasProv[i].datos[0].paisResidencia;
+                                var nacionalidad = facturasProv[i].datos[0].nacionalidad;
+                            }
+                        }else{
+                            var rfc = "";
+                        }
+                        var tipoImpuesto = facturasProv[i].tipoImpuesto;
+                        var tasa = facturasProv[i].tasa;
+                        var importe = facturasProv[i].importe;
+                        var impuestos = facturasProv[i].impuestos;
+                        // saber si es retencion o iva
+                        var tipo = tipoImpuesto.includes('RET');
+                        if(tipo == true){
+                            //es retencion
+                        }else{
+                            //es iva
+                        }
+                        if(credito.length != 0){
+                            var importeDevoluciones = importeDevoluciones + facturasProv[i].credito[0].impuesto;
+                        }
+                        proveedores = prov;
+                    }
+                } */
+
                 /** Se crea el archivo txt, se indica el folder en el que se va a guardar*/
                 var fileObj = file.create({
                     name    : 'test.txt',
                     fileType: file.Type.PLAINTEXT,
-                    contents: 'Hello World\nHello World'
+                    contents: 'Hello Lily\nHello World'
                 });
 
                 fileObj.folder = 1647;
@@ -253,7 +294,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect'],
                         "AND", 
                         ["voided","is","F"], 
                         "AND", 
-                        ["status","anyof","VendBill:B"], 
+                        ["status","anyof","VendBill:B","VendBill:A"], //,"VendBill:A" para pruebas
                         "AND", 
                         ["postingperiod","abs",periodo], 
                         "AND", 
@@ -909,6 +950,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect'],
                        "entity",
                        "amount",
                        "netamount",
+                       "taxamount",
                        "taxtotal",
                        "total",
                        search.createColumn({
@@ -939,7 +981,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect'],
                     var total = result.getValue({ name: 'total' });
                     var taxCode = result.getText({ name: 'taxcode', join: 'taxDetail' });
                     var tipoImpuesto = result.getText({ name: 'taxtype', join: 'taxDetail' });
-                    var iva = result.getValue({ name: 'taxrate', join: 'taxDetail' });
+                    var tasa = result.getValue({ name: 'taxrate', join: 'taxDetail' });
                     total = -1 * (total);
                     var importe = total - impuesto;
 
@@ -962,7 +1004,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect'],
                                     total: total,
                                     taxCode: taxCode,
                                     tipoImpuesto: tipoImpuesto,
-                                    iva: iva
+                                    tasa: tasa
                                 });
                             }
                         }

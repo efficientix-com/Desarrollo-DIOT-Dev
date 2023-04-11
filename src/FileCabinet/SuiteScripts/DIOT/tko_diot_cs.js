@@ -3,11 +3,12 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/url', 'N/currentRecord', 'N/ui/message', 'N/search'],
+define(['N/url', 'N/currentRecord', 'N/ui/message', 'N/search', 'N/file', './tko_diot_constants_lib'],
 
-function(url, currentRecord, message, search) {
+function(url, currentRecord, message, search, file, values) {
 
-    
+    const FIELD_ID = values.FIELD_ID;
+
     var periodo, subsidiaria;
 
     /**
@@ -27,9 +28,9 @@ function(url, currentRecord, message, search) {
     function fieldChanged(scriptContext) {
         try {
             var currentForm = currentRecord.get();
-            if ((scriptContext.fieldId == 'custpage_subsi') || (scriptContext.fieldId == 'custpage_period')) {
-                subsidiaria = currentForm.getValue({ fieldId: "custpage_subsi" });
-                periodo = currentForm.getValue({ fieldId: "custpage_period" });
+            if ((scriptContext.fieldId == FIELD_ID.PANTALLA.SUBSIDIARIA) || (scriptContext.fieldId == FIELD_ID.PANTALLA.PERIODO)) {
+                subsidiaria = currentForm.getValue({ fieldId: FIELD_ID.PANTALLA.SUBSIDIARIA });
+                periodo = currentForm.getValue({ fieldId: FIELD_ID.PANTALLA.PERIODO });
                 
                 console.log("Periodo", periodo);
                 console.log("Subsidiaria", subsidiaria);
@@ -41,19 +42,11 @@ function(url, currentRecord, message, search) {
 
     }
 
-    function actualizarPantalla(){
+    /* function actualizarPantalla(){
         //location.reload();
-        /* var output = url.resolveScript({
-            scriptId: 'customscript_tko_diot_view_sl',
-            deploymentId: 'customdeploy_tko_diot_view_sl',
-            params: {
-                'action': 'actualiza'
-            },
-            returnExternalUrl: false,
-        }); */
-
+        
         var currentForm = currentRecord.get();
-
+        
         var datosRegistro = search.lookupFields({
             type: 'customrecord_tko_diot',
             id: 1,
@@ -62,34 +55,49 @@ function(url, currentRecord, message, search) {
 
         var subsidiariaRegistro = datosRegistro.custrecord_tko_subsidiaria_diot;
         var periodoRegistro = datosRegistro.custrecord_tko_periodo_diot;
-        var archivoRegistro = datosRegistro.custrecord_tko_archivotxt_diot[0].text;
+        var archivoRegistro = datosRegistro.custrecord_tko_archivotxt_diot[0].value;
         var estadoRegistro = datosRegistro.custrecord_tko_estado_diot;
-
+        
         console.log('Subsidiaria', subsidiariaRegistro);
         console.log('Periodo', periodoRegistro);
         console.log('Archivo', archivoRegistro);
         console.log('Estado', estadoRegistro);
 
+        var output = url.resolveScript({
+            scriptId: 'customscript_tko_diot_view_sl',
+            deploymentId: 'customdeploy_tko_diot_view_sl',
+            params: {
+                'action': 'actualiza',
+                "idArchivo": archivoRegistro
+            },
+            returnExternalUrl: false,
+        });
+
         currentForm.setValue({
-            fieldId: 'custpage_subsi',
+            fieldId: FIELD_ID.PANTALLA.SUBSIDIARIA,
             value: subsidiariaRegistro
         });
         currentForm.setValue({
-            fieldId: 'custpage_period',
+            fieldId: FIELD_ID.PANTALLA.PERIODO,
             value: periodoRegistro
-        });
+        }); */
+
         /* currentForm.setValue({
             fieldId: 'custpage_archivotxt',
             value: archivoRegistro
-        }); */
-        currentForm.setValue({
+        }); 
+            Valor concatenado asi:
+            nlapiSetFieldValue("custpage_archivotxt","<a href='https://6736762-sbdr1.app.netsuite.com/core/media/media.nl?id=257887&c=6736762_SBDR1&h=VJdQi5sFwtvB6xZPybBm18wUOw7e6v68BEpu-ctiBg-6i3wc&_xt=.txt'> descargar </a>");
+        */
+
+        /* currentForm.setValue({
             fieldId: 'custpage_status',
             value: estadoRegistro
         });
 
 
-        //window.open(output, '_self');
-    }
+        window.open(output, '_self');
+    } */
 
     function generarReporte(){
 
@@ -127,7 +135,7 @@ function(url, currentRecord, message, search) {
 
     return {
         pageInit: pageInit,
-        actualizarPantalla:actualizarPantalla,
+        //actualizarPantalla:actualizarPantalla,
         generarReporte:generarReporte,
         fieldChanged: fieldChanged
     };
