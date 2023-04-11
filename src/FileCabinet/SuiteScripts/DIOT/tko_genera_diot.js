@@ -2,9 +2,9 @@
  * @NApiVersion 2.1
  * @NScriptType MapReduceScript
  */
-define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect'],
+define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N/config', './tko_diot_constants_lib'],
 
-    (runtime, search, url, record, file, redirect) => {
+    (runtime, search, url, record, file, redirect, config, values) => {
         /**
          * Defines the function that is executed at the beginning of the map/reduce process and generates the input data.
          * @param {Object} inputContext
@@ -20,16 +20,19 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect'],
 
         var taxRateArray = new Array();
 
+        const SCRIPTS_INFO = values.SCRIPTS_INFO;
+
         const getInputData = (inputContext) => {
             try{
 
                 /** Se obtienen los parametros dados por el usuario */
                 var objScript = runtime.getCurrentScript();
-                var subsidiaria = objScript.getParameter({ name: "custscript_tko_diot_subsidiary" });
-                var periodo = objScript.getParameter({ name: "custscript_tko_diot_periodo" });
+                var subsidiaria = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.SUBSIDIARY });
+                var periodo = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD });
+                log.debug('Datos', subsidiaria + " " + periodo);
 
                 /** Se crea un registro para guardar los datos de la pantalla del suitelet */
-                var registroDIOT = record.load({
+                /* var registroDIOT = record.load({
                     type: 'customrecord_tko_diot',
                     id: 1, 
                 });
@@ -52,7 +55,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect'],
                 registroDIOT.save({
                     enableSourcing: true,
                     ignoreMandatoryFields: true
-                });
+                }); */
 
                 log.audit({title: 'MR', details: "Se esta ejecutando el MR: getInputData"});
 
@@ -184,6 +187,22 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect'],
                 
                 /** Se obtiene el motor que se esta usando (legacy or suitetax) */
                 var suitetax = runtime.isFeatureInEffect({ feature: 'tax_overhauling' });
+
+                /** Se obtiene si es oneWorld y si no obtiene el nombre de la empresa */
+                var oneWorldFeature = runtime.isFeatureInEffect({ feature: 'subsidiaries' });
+                log.debug('OneWorld', oneWorldFeature);
+                var compname = '';
+                if(oneWorldFeature == false){
+                    //buscar nombre empresa principal
+                     var companyInfo = config.load({
+                        type: config.Type.COMPANY_INFORMATION
+                    });
+                    
+                    compname = companyInfo.getValue({
+                        fieldId: 'companyname'
+                    });
+                }
+                log.debug('Company', compname);
 
                 /** Se obtienen los valores enviados en el map (códigos de impuesto encontrados en la búsqueda ) */
                 var valores = JSON.parse(reduceContext.values[0]);

@@ -10,6 +10,10 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
     (log, serverWidget, search, task, runtime, values) => {
 
         const FIELD_ID = values.FIELD_ID;
+        const INTERFACE = values.INTERFACE;
+        const RECORD_INFO = values.RECORD_INFO;
+        const SCRIPTS_INFO = values.SCRIPTS_INFO;
+        const RUNTIME = values.RUNTIME;
 
         /**
          * Defines the Suitelet script trigger point.
@@ -21,6 +25,7 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
         const onRequest = (scriptContext) => {
             var request = scriptContext.request, response = scriptContext.response;
             var parameters = request.parameters;
+
             try {
                 let form = createUI(parameters);
                 response.writePage({
@@ -28,7 +33,6 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
                 });
                 switch(parameters.action){
                     case 'ejecuta':
-                        log.debug("prueba", "Click en botón generar");
                         generaDIOT(parameters.subsidiaria, parameters.periodo);
                         break;
                     /* case 'actualiza':
@@ -44,9 +48,13 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
 
         function createUI(parameters) {
             let form = serverWidget.createForm({
-                title: 'Reporte DIOT'
+                title: INTERFACE.FORM.TITLE
             });
-            form.clientScriptModulePath = './tko_diot_cs.js'
+            form.clientScriptModulePath = './'+SCRIPTS_INFO.CLIENT.FILE_NAME;
+
+            //Verificar si la empresa es one world
+            var oneWorldFeature = runtime.isFeatureInEffect({ feature: RUNTIME.FEATURES.SUBSIDIARIES });
+            log.debug('OneWorld', oneWorldFeature);
 
             try {
                 /**
@@ -60,9 +68,9 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
                 }); */
 
                 form.addButton({
-                    id: "btn_generar_diot",
-                    label: "Generar",
-                    functionName: "generarReporte"
+                    id: INTERFACE.FORM.BUTTONS.GENERAR.ID,
+                    label: INTERFACE.FORM.BUTTONS.GENERAR.LABEL,
+                    functionName: INTERFACE.FORM.BUTTONS.GENERAR.FUNCTION + '(' + oneWorldFeature + ')'
                 });
                 log.debug( "parameters", parameters );
 
@@ -81,15 +89,25 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
                     container: FIELD_ID.PANTALLA.GRUPO_DATOS
                 });
 
-                var subsis = searchSubsidiaries();
-                subsidiaryList.addSelectOption({ value: '', text: '' });
-                for (var sub = 0; sub < subsis.length; sub++) {
+                /* var user = runtime.getCurrentUser();
+                log.debug('EmpresaSubsi', user.subsidiary); */
 
-                    subsidiaryList.addSelectOption({
-                        value: subsis[sub].id,
-                        text: subsis[sub].name
+                if(oneWorldFeature){ //si es oneWorld hace la búsqueda de las subsidiarias
+                    var subsis = searchSubsidiaries();
+                    subsidiaryList.addSelectOption({ value: '', text: '' });
+                    for (var sub = 0; sub < subsis.length; sub++) {
+    
+                        subsidiaryList.addSelectOption({
+                            value: subsis[sub].id,
+                            text: subsis[sub].name
+                        });
+                    }
+                }else{ //si no es oneWorld se bloquea el campo
+                    subsidiaryList.updateDisplayType({
+                        displayType: serverWidget.FieldDisplayType.DISABLED
                     });
                 }
+
 
                 /**
                  * Lista de periodos
@@ -124,57 +142,52 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
                     type: RECORD_INFO.SUBSIDIARY_RECORD.ID,
                     filters:
                         [
-                            ["isinactive", "is", "F"]
+                            [RECORD_INFO.SUBSIDIARY_RECORD.FIELDS.INACTIVE, search.Operator.IS, "F"]
                         ],
                     columns:
                         [
-                            "internalid",
-                            "name",
-                            "city"
+                            RECORD_INFO.SUBSIDIARY_RECORD.FIELDS.ID,
+                            RECORD_INFO.SUBSIDIARY_RECORD.FIELDS.NAME
                         ]
                 });
                 subsiSearch.run().each(function (result) {
-                    var id = result.getValue({ name: 'internalid' });
-                    var name = result.getValue({ name: 'name' });
-                    var city = result.getValue({ name: 'city' });
+                    var id = result.getValue({ name: RECORD_INFO.SUBSIDIARY_RECORD.FIELDS.ID });
+                    var name = result.getValue({ name: RECORD_INFO.SUBSIDIARY_RECORD.FIELDS.NAME });
 
                     subsidiaries.push({
                         id: id,
-                        name: name,
-                        city: city
+                        name: name
                     });
                     return true;
                 });
-            } catch (searchError) {
-                log.error({ title: 'Error on searchSubsidiaries', details: searchError })
+            } catch (error) {
+                log.error({ title: 'Error on searchSubsidiaries', details: error });
             }
-            return subsidiaries
+            return subsidiaries;
         }
 
         function searchAccountingPeriod() {
             try {
                 var periods = []
                 var aPeriod = search.create({
-                    type: "accountingperiod",
+                    type: RECORD_INFO.ACCOUNTINGPERIOD_RECORD.ID,
                     filters:
-                        [
-                            ["isinactive", "is", "F"]
-                        ],
+                    [
+                        [RECORD_INFO.ACCOUNTINGPERIOD_RECORD.FIELDS.INACTIVE, search.Operator.IS, "F"]
+                    ],
                     columns:
-                        [
-                            "internalid",
-                            "periodname",
-                            search.createColumn({
-                                name: "internalid",
-                                sort: search.Sort.DESC
-                            })
-                        ]
+                    [
+                        RECORD_INFO.ACCOUNTINGPERIOD_RECORD.FIELDS.ID,
+                        RECORD_INFO.ACCOUNTINGPERIOD_RECORD.FIELDS.NAME,
+                        search.createColumn({
+                            name: RECORD_INFO.ACCOUNTINGPERIOD_RECORD.FIELDS.ID,
+                            sort: search.Sort.DESC
+                        })
+                    ]
                 });
-                // var searchResultCount = aPeriod.runPaged().count;
-                // log.debug("accountingperiodSearchObj result count", searchResultCount);
                 aPeriod.run().each(function (result) {
-                    var id = result.getValue({ name: 'internalid' });
-                    var name = result.getValue({ name: 'periodname' });
+                    var id = result.getValue({ name: RECORD_INFO.ACCOUNTINGPERIOD_RECORD.FIELDS.ID });
+                    var name = result.getValue({ name: RECORD_INFO.ACCOUNTINGPERIOD_RECORD.FIELDS.NAME });
 
                     periods.push({
                         id: id,
@@ -184,7 +197,7 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
                     return true;
                 });
             } catch (error) {
-                log.error({ title: 'Error on searchAccountingPeriod', details: error })
+                log.error({ title: 'Error on searchAccountingPeriod', details: error });
             }
             return periods;
         }
@@ -196,11 +209,11 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
 
                 var mrTask = task.create({
                     taskType: task.TaskType.MAP_REDUCE,
-                    scriptId: 'customscript_tko_generate_diot_mr',
-                    deploymentId: 'customdeploy_tko_diot_generate_1',
+                    scriptId: SCRIPTS_INFO.MAP_REDUCE.SCRIPT_ID,
+                    deploymentId: SCRIPTS_INFO.MAP_REDUCE.DEPLOYMENT_ID,
                     params: {
-                        'custscript_tko_diot_subsidiary': subsidiaria,
-                        'custscript_tko_diot_periodo': periodo
+                        [SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.SUBSIDIARY]: subsidiaria,
+                        [SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD]: periodo
                     }
                 });
                 var idTask = mrTask.submit();
@@ -208,18 +221,9 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
             }
             catch (e) {
                 log.debug({ title: "Error", details: e });
-                log.error({ title: 'Execution Error', details: "Aun esta corriendo la ejecución"});
+                //log.error({ title: 'Execution Error', details: "Aun esta corriendo la ejecución"});
             }
         }
-
-        /* function llenarDatos(idArchivo) {
-            var fileObj = file.load({
-                id: archivoRegistro
-            });
-            console.log('File', fileObj);
-            var url = fileObj.url;
-            console.log('URL:', url);
-        } */
 
         return { onRequest }
 

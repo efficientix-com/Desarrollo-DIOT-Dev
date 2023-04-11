@@ -8,6 +8,7 @@ define(['N/url', 'N/currentRecord', 'N/ui/message', 'N/search', 'N/file', './tko
 function(url, currentRecord, message, search, file, values) {
 
     const FIELD_ID = values.FIELD_ID;
+    const SCRIPTS_INFO = values.SCRIPTS_INFO;
 
     var periodo, subsidiaria;
 
@@ -99,36 +100,67 @@ function(url, currentRecord, message, search, file, values) {
         window.open(output, '_self');
     } */
 
-    function generarReporte(){
+    function generarReporte(oneWorld){
 
-        if(periodo && subsidiaria) {
-            var msgbody = message.create({
-                type: message.Type.INFORMATION,
-                title: "Datos procesados",
-                message: "Se esta generando el reporte DIOT"
-            });
-            var output = url.resolveScript({
-                scriptId: 'customscript_tko_diot_view_sl',
-                deploymentId: 'customdeploy_tko_diot_view_sl',
-                params: {
-                    'action': 'ejecuta',
-                    "periodo": periodo,
-                    "subsidiaria": subsidiaria
-                },
-                returnExternalUrl: false,
-            });
-            msgbody.show({ duration: 5000});
-            console.log(true);
-            window.open(output, '_self');
-        }
-        else {
-            var msgbody = message.create({
-                type: message.Type.ERROR,
-                title: "Datos incompletos",
-                message: "Asegurese de llenar todos los campos de la pantalla"
-            });
-            msgbody.show({ duration: 5000});
-            console.log(false);
+        if(oneWorld){ //si es oneWorld validar el campo de periodo y subsidiaria
+            if(periodo && subsidiaria) {
+                var msgbody = message.create({
+                    type: message.Type.INFORMATION,
+                    title: "Datos procesados",
+                    message: "Se esta generando el reporte DIOT"
+                });
+                var output = url.resolveScript({
+                    scriptId: SCRIPTS_INFO.SUITELET.SCRIPT_ID,
+                    deploymentId: SCRIPTS_INFO.SUITELET.DEPLOYMENT_ID,
+                    params: {
+                        'action': 'ejecuta',
+                        [SCRIPTS_INFO.SUITELET.PARAMETERS.PERIOD]: periodo,
+                        [SCRIPTS_INFO.SUITELET.PARAMETERS.SUBSIDIARY]: subsidiaria
+                    },
+                    returnExternalUrl: false,
+                });
+                msgbody.show({ duration: 5000});
+                console.log(true);
+                window.open(output, '_self');
+            }
+            else {
+                var msgbody = message.create({
+                    type: message.Type.ERROR,
+                    title: "Datos incompletos",
+                    message: "Asegurese de llenar todos los campos de la pantalla"
+                });
+                msgbody.show({ duration: 5000});
+                console.log(false);
+            }
+        }else{ //si no es oneWorld solo valida el campo de periodo
+            if(periodo){
+                var msgbody = message.create({
+                    type: message.Type.INFORMATION,
+                    title: "Datos procesados",
+                    message: "Se esta generando el reporte DIOT"
+                });
+                var output = url.resolveScript({
+                    scriptId: SCRIPTS_INFO.SUITELET.SCRIPT_ID,
+                    deploymentId: SCRIPTS_INFO.SUITELET.DEPLOYMENT_ID,
+                    params: {
+                        'action': 'ejecuta',
+                        [SCRIPTS_INFO.SUITELET.PARAMETERS.PERIOD]: periodo,
+                        [SCRIPTS_INFO.SUITELET.PARAMETERS.SUBSIDIARY]: subsidiaria
+                    },
+                    returnExternalUrl: false,
+                });
+                msgbody.show({ duration: 5000});
+                console.log(true);
+                window.open(output, '_self');
+            }else{
+                var msgbody = message.create({
+                    type: message.Type.ERROR,
+                    title: "Datos incompletos",
+                    message: "Asegurese de llenar todos los campos de la pantalla"
+                });
+                msgbody.show({ duration: 5000});
+                console.log(false);
+            }
         }
     }
     
