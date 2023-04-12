@@ -21,6 +21,9 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
         var taxRateArray = new Array();
 
         const SCRIPTS_INFO = values.SCRIPTS_INFO;
+        const RECORD_INFO = values.RECORD_INFO;
+        const RUNTIME = values.RUNTIME;
+        const COMPANY_INFORMATION = values.COMPANY_INFORMATION;
 
         const getInputData = (inputContext) => {
             try{
@@ -29,7 +32,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 var objScript = runtime.getCurrentScript();
                 var subsidiaria = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.SUBSIDIARY });
                 var periodo = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD });
-                log.debug('Datos', subsidiaria + " " + periodo);
+                //log.debug('Datos', subsidiaria + " " + periodo);
 
                 /** Se crea un registro para guardar los datos de la pantalla del suitelet */
                 /* var registroDIOT = record.load({
@@ -60,7 +63,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 log.audit({title: 'MR', details: "Se esta ejecutando el MR: getInputData"});
 
                 /** Se obtiene el motor que se esta usando (legacy or suitetax) */
-                var suitetax = runtime.isFeatureInEffect({ feature: 'tax_overhauling' });
+                var suitetax = runtime.isFeatureInEffect({ feature: RUNTIME.FEATURES.SUITETAX });
                 log.audit({title: 'suitetax', details: suitetax});
                 
                 /* Se realiza la búsqueda de todos los códigos de impuesto */
@@ -99,7 +102,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 //log.debug('Resultados de getInput', results);
                 /** Se obtiene el motor que se esta usando (legacy or suitetax) */
                 // Revisar la carga de registros de los códigos de impuesto
-                var suitetax = runtime.isFeatureInEffect({ feature: 'tax_overhauling' });
+                var suitetax = runtime.isFeatureInEffect({ feature: RUNTIME.FEATURES.SUITETAX });
                 var taxRate, codeName, taxType;
 
                 if(suitetax){
@@ -109,9 +112,9 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         id: results.id
                     });
     
-                    taxRate = taxCodeRecord.getValue({ fieldId: 'custrecord_ste_taxcode_taxrate' });
-                    codeName = taxCodeRecord.getValue({ fieldId: 'name' });
-                    taxType = taxCodeRecord.getText({ fieldId: 'taxtype' });
+                    taxRate = taxCodeRecord.getValue({ fieldId: RECORD_INFO.SALES_TAX_RECORD.FIELDS.SUITETAX.TAX_RATE });
+                    codeName = taxCodeRecord.getValue({ fieldId: RECORD_INFO.SALES_TAX_RECORD.FIELDS.SUITETAX.TAX_CODE });
+                    taxType = taxCodeRecord.getText({ fieldId: RECORD_INFO.SALES_TAX_RECORD.FIELDS.SUITETAX.TAX_TYPE });
                 }else{
                     /* Registro de cada resultado del map */
                     var taxCodeRecord = record.load({
@@ -119,10 +122,9 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         id: results.id
                     });
     
-                    //log.debug('Record Tax Code', taxCodeRecord);
-                    taxRate = taxCodeRecord.getValue({ fieldId: 'rate' });
-                    codeName = taxCodeRecord.getValue({ fieldId: 'itemid' });
-                    taxType = taxCodeRecord.getText({ fieldId: 'taxtype' });
+                    taxRate = taxCodeRecord.getValue({ fieldId: RECORD_INFO.SALES_TAX_RECORD.FIELDS.LEGACY.TAX_RATE });
+                    codeName = taxCodeRecord.getValue({ fieldId: RECORD_INFO.SALES_TAX_RECORD.FIELDS.LEGACY.TAX_CODE });
+                    taxType = taxCodeRecord.getText({ fieldId: RECORD_INFO.SALES_TAX_RECORD.FIELDS.LEGACY.TAX_TYPE });
                 }
 
                 var numCodigos = searchCodigoImpuesto(suitetax).runPaged().count;
@@ -144,13 +146,13 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     });
                 }
 
-                var diot = record.submitFields({
+               /*  var diot = record.submitFields({
                     type: 'customrecord_tko_diot',
                     id: 1,
                     values: {
                         'custrecord_tko_estado_diot': 45
                     }
-                });
+                }); */
                     
 
             }catch(error){
@@ -182,15 +184,14 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 
                 /** Se obtienen los parametros dados por el usuario */
                 var objScript = runtime.getCurrentScript();
-                var subsidiaria = objScript.getParameter({ name: "custscript_tko_diot_subsidiary" });
-                var periodo = objScript.getParameter({ name: "custscript_tko_diot_periodo" });
+                var subsidiaria = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.SUBSIDIARY });
+                var periodo = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD });
                 
                 /** Se obtiene el motor que se esta usando (legacy or suitetax) */
-                var suitetax = runtime.isFeatureInEffect({ feature: 'tax_overhauling' });
+                var suitetax = runtime.isFeatureInEffect({ feature: RUNTIME.FEATURES.SUITETAX });
 
                 /** Se obtiene si es oneWorld y si no obtiene el nombre de la empresa */
-                var oneWorldFeature = runtime.isFeatureInEffect({ feature: 'subsidiaries' });
-                log.debug('OneWorld', oneWorldFeature);
+                var oneWorldFeature = runtime.isFeatureInEffect({ feature: RUNTIME.FEATURES.SUBSIDIARIES });
                 var compname = '';
                 if(oneWorldFeature == false){
                     //buscar nombre empresa principal
@@ -199,7 +200,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     });
                     
                     compname = companyInfo.getValue({
-                        fieldId: 'companyname'
+                        fieldId: COMPANY_INFORMATION.FIELDS.ID
                     });
                 }
                 log.debug('Company', compname);
@@ -253,16 +254,39 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     }
                 } */
 
+                /** Se realiza una búsqueda para ver si ya existe la carpeta */
+                var nombreFolder = RECORD_INFO.FOLDER_RECORD.FIELDS.VALUE;
+                var folder = searchFolder(nombreFolder);
+                var folderId;
+                if(folder.runPaged().count != 0){ //existe
+                    folder.run().each(function(result){
+                        folderId = result.getValue({ name: RECORD_INFO.FOLDER_RECORD.FIELDS.ID });
+                        return true;
+                    });
+                    log.debug('Info', 'La carpeta existe' + id);
+                }else{ // si no existe se crea el folder
+                    var objRecord = record.create({
+                        type: record.Type.FOLDER,
+                        isDynamic: true
+                    });
+                    objRecord.setValue({
+                        fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,
+                        value: nombreFolder
+                    });
+                    folderId = objRecord.save({
+                        enableSourcing: true,
+                        ignoreMandatoryFields: true
+                    });
+                    fileObj.folder = folderId;
+                }
+                var id = fileObj.save();
+                
                 /** Se crea el archivo txt, se indica el folder en el que se va a guardar*/
                 var fileObj = file.create({
                     name    : 'test.txt',
                     fileType: file.Type.PLAINTEXT,
                     contents: 'Hello Lily\nHello World'
                 });
-
-                fileObj.folder = 1647;
-                var id = fileObj.save();
-
                 /** Se carga el registro y se pone el archivo para mostrar */
                 /* var registroDIOT = record.load({
                     type: 'customrecord_tko_diot',
@@ -274,14 +298,14 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     value: id
                 }); */
 
-                var diot = record.submitFields({
+                /* var diot = record.submitFields({
                     type: 'customrecord_tko_diot',
                     id: 1,
                     values: {
                         'custrecord_tko_archivotxt_diot': id,
                         'custrecord_tko_estado_diot': 90
                     }
-                });
+                }); */
 
     
                 /** Verifica que las búsquedas no esten vacías */
@@ -296,6 +320,25 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             }catch(error){
                 log.error({ title: 'Error en las búsquedas de transacciones', details: error });
             }
+        }
+
+        /**
+         * Funcion para ver si una carpeta ya existe
+         */
+        function searchFolder(nombreFolder){
+            var folderSearchObj = search.create({
+                type: RECORD_INFO.FOLDER_RECORD.ID,
+                filters:
+                [
+                   [RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,search.Operator.IS,nombreFolder]
+                ],
+                columns:
+                [
+                    RECORD_INFO.FOLDER_RECORD.FIELDS.ID,
+                    RECORD_INFO.FOLDER_RECORD.FIELDS.NAME
+                ]
+            });
+            return folderSearchObj;
         }
         
         /**
@@ -1292,13 +1335,13 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             log.debug('Map Summary', summaryContext.mapSummary);
             log.debug('Reduce Summary', summaryContext.reduceSummary); */
 
-            var diot = record.submitFields({
+            /* var diot = record.submitFields({
                 type: 'customrecord_tko_diot',
                 id: 1,
                 values: {
                     'custrecord_tko_estado_diot': 97
                 }
-            });
+            }); */
 
         }
 

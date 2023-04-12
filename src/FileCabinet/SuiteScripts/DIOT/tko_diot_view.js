@@ -9,7 +9,6 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
  */
     (log, serverWidget, search, task, runtime, values) => {
 
-        const FIELD_ID = values.FIELD_ID;
         const INTERFACE = values.INTERFACE;
         const RECORD_INFO = values.RECORD_INFO;
         const SCRIPTS_INFO = values.SCRIPTS_INFO;
@@ -75,18 +74,18 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
                 log.debug( "parameters", parameters );
 
                 var fieldgroup_datos = form.addFieldGroup({
-                    id : FIELD_ID.PANTALLA.GRUPO_DATOS,
-                    label : 'Datos'
+                    id : INTERFACE.FORM.FIELD_GROUP.DATOS.ID,
+                    label : INTERFACE.FORM.FIELD_GROUP.DATOS.LABEL
                 });
 
                 /**
                  * Lista de subsidiarias
                  */
                 var subsidiaryList = form.addField({
-                    id: FIELD_ID.PANTALLA.SUBSIDIARIA,
+                    id: INTERFACE.FORM.FIELDS.SUBSIDIARIA.ID,
                     type: serverWidget.FieldType.SELECT,
-                    label: 'Subsidiaria',
-                    container: FIELD_ID.PANTALLA.GRUPO_DATOS
+                    label: INTERFACE.FORM.FIELDS.SUBSIDIARIA.LABEL,
+                    container: INTERFACE.FORM.FIELD_GROUP.DATOS.ID
                 });
 
                 /* var user = runtime.getCurrentUser();
@@ -113,10 +112,10 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
                  * Lista de periodos
                  */
                 var periodList = form.addField({
-                    id: FIELD_ID.PANTALLA.PERIODO,
+                    id: INTERFACE.FORM.FIELDS.PERIODO.ID,
                     type: serverWidget.FieldType.SELECT,
-                    label: "Periodo Contable",
-                    container: FIELD_ID.PANTALLA.GRUPO_DATOS
+                    label: INTERFACE.FORM.FIELDS.PERIODO.LABEL,
+                    container: INTERFACE.FORM.FIELD_GROUP.DATOS.ID
                 });
 
                 var periods = searchAccountingPeriod();

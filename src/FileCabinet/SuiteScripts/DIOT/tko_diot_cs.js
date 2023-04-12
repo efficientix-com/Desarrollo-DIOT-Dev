@@ -7,7 +7,7 @@ define(['N/url', 'N/currentRecord', 'N/ui/message', 'N/search', 'N/file', './tko
 
 function(url, currentRecord, message, search, file, values) {
 
-    const FIELD_ID = values.FIELD_ID;
+    const INTERFACE = values.INTERFACE;
     const SCRIPTS_INFO = values.SCRIPTS_INFO;
 
     var periodo, subsidiaria;
@@ -29,9 +29,9 @@ function(url, currentRecord, message, search, file, values) {
     function fieldChanged(scriptContext) {
         try {
             var currentForm = currentRecord.get();
-            if ((scriptContext.fieldId == FIELD_ID.PANTALLA.SUBSIDIARIA) || (scriptContext.fieldId == FIELD_ID.PANTALLA.PERIODO)) {
-                subsidiaria = currentForm.getValue({ fieldId: FIELD_ID.PANTALLA.SUBSIDIARIA });
-                periodo = currentForm.getValue({ fieldId: FIELD_ID.PANTALLA.PERIODO });
+            if ((scriptContext.fieldId == INTERFACE.FORM.FIELDS.SUBSIDIARIA.ID) || (scriptContext.fieldId == INTERFACE.FORM.FIELDS.PERIODO.ID)) {
+                subsidiaria = currentForm.getValue({ fieldId: INTERFACE.FORM.FIELDS.SUBSIDIARIA.ID  });
+                periodo = currentForm.getValue({ fieldId: INTERFACE.FORM.FIELDS.PERIODO.ID });
                 
                 console.log("Periodo", periodo);
                 console.log("Subsidiaria", subsidiaria);
@@ -106,8 +106,8 @@ function(url, currentRecord, message, search, file, values) {
             if(periodo && subsidiaria) {
                 var msgbody = message.create({
                     type: message.Type.INFORMATION,
-                    title: "Datos procesados",
-                    message: "Se esta generando el reporte DIOT"
+                    title: INTERFACE.FORM.FIELDS.MESSAGE.SUCCESS.TITLE,
+                    message: INTERFACE.FORM.FIELDS.MESSAGE.SUCCESS.MESSAGE
                 });
                 var output = url.resolveScript({
                     scriptId: SCRIPTS_INFO.SUITELET.SCRIPT_ID,
@@ -126,8 +126,8 @@ function(url, currentRecord, message, search, file, values) {
             else {
                 var msgbody = message.create({
                     type: message.Type.ERROR,
-                    title: "Datos incompletos",
-                    message: "Asegurese de llenar todos los campos de la pantalla"
+                    title: INTERFACE.FORM.FIELDS.MESSAGE.ERROR.TITLE,
+                    message: INTERFACE.FORM.FIELDS.MESSAGE.ERROR.MESSAGE
                 });
                 msgbody.show({ duration: 5000});
                 console.log(false);
@@ -136,8 +136,8 @@ function(url, currentRecord, message, search, file, values) {
             if(periodo){
                 var msgbody = message.create({
                     type: message.Type.INFORMATION,
-                    title: "Datos procesados",
-                    message: "Se esta generando el reporte DIOT"
+                    title: INTERFACE.FORM.FIELDS.MESSAGE.SUCCESS.TITLE,
+                    message: INTERFACE.FORM.FIELDS.MESSAGE.SUCCESS.MESSAGE
                 });
                 var output = url.resolveScript({
                     scriptId: SCRIPTS_INFO.SUITELET.SCRIPT_ID,
@@ -155,8 +155,8 @@ function(url, currentRecord, message, search, file, values) {
             }else{
                 var msgbody = message.create({
                     type: message.Type.ERROR,
-                    title: "Datos incompletos",
-                    message: "Asegurese de llenar todos los campos de la pantalla"
+                    title: INTERFACE.FORM.FIELDS.MESSAGE.ERROR.TITLE,
+                    message: INTERFACE.FORM.FIELDS.MESSAGE.ERROR.MESSAGE
                 });
                 msgbody.show({ duration: 5000});
                 console.log(false);
