@@ -186,6 +186,12 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 var objScript = runtime.getCurrentScript();
                 var subsidiaria = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.SUBSIDIARY });
                 var periodo = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD });
+
+                /** Parámetros desde las preferencias de la empresa */
+                var tipoGuardado = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.TIPO_GUARDADO });
+                log.debug('Tipo guardado', tipoGuardado );
+                var notificar = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOTIFICAR });
+                log.debug('Notificar', notificar);
                 
                 /** Se obtiene el motor que se esta usando (legacy or suitetax) */
                 var suitetax = runtime.isFeatureInEffect({ feature: RUNTIME.FEATURES.SUITETAX });
@@ -254,7 +260,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     }
                 } */
 
-                /** Se realiza una búsqueda para ver si ya existe la carpeta */
+                /** Se realiza una búsqueda para ver si ya existe la carpeta de acuerdo al tipo de guardado */
+                // si es oneWorld el tipo de guardado solo será por periodo
                 var nombreFolder = RECORD_INFO.FOLDER_RECORD.FIELDS.VALUE;
                 var folder = searchFolder(nombreFolder);
                 var folderId;
@@ -263,7 +270,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         folderId = result.getValue({ name: RECORD_INFO.FOLDER_RECORD.FIELDS.ID });
                         return true;
                     });
-                    log.debug('Info', 'La carpeta existe' + id);
+                    log.debug('Info', 'La carpeta ' + folderId + ' existe');
                 }else{ // si no existe se crea el folder
                     var objRecord = record.create({
                         type: record.Type.FOLDER,
@@ -277,16 +284,19 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         enableSourcing: true,
                         ignoreMandatoryFields: true
                     });
-                    fileObj.folder = folderId;
+                    log.debug('Info', 'Se creo la carpeta con id ' + folderId);
                 }
-                var id = fileObj.save();
-                
+
                 /** Se crea el archivo txt, se indica el folder en el que se va a guardar*/
                 var fileObj = file.create({
                     name    : 'test.txt',
                     fileType: file.Type.PLAINTEXT,
+                    folder: folderId,
                     contents: 'Hello Lily\nHello World'
                 });
+                var fileId = fileObj.save();
+                log.debug('Info txt', 'Id: ' + fileId);
+                
                 /** Se carga el registro y se pone el archivo para mostrar */
                 /* var registroDIOT = record.load({
                     type: 'customrecord_tko_diot',
@@ -322,6 +332,43 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             }
         }
 
+        /** Funcion para crear una carpeta */
+        function createFolder(subsidiaria, periodo, tipoGuardado){
+            var nombreFolder = '';
+            var folderId;
+            var folder;
+            if(tipoGuardado == 1) { //guardado por subsidiarias
+                nombreFolder = subsidiaria;
+                folder = searchFolder(nombreFolder);
+            }else if(tipoGuardado == 2) { //guardado por periodo
+                nombreFolder = periodo;
+                folder = searchFolder(nombreFolder);
+            }else { //guardado por subsidiaria y periodo
+                
+            }
+
+            if(folder.runPaged().count != 0){ //existe
+                folder.run().each(function(result){
+                    folderId = result.getValue({ name: RECORD_INFO.FOLDER_RECORD.FIELDS.ID });
+                    return true;
+                });
+            }else{
+                var objRecord = record.create({
+                    type: record.Type.FOLDER,
+                    isDynamic: true
+                });
+                objRecord.setValue({
+                    fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,
+                    value: nombreFolder
+                });
+                folderId = objRecord.save({
+                    enableSourcing: true,
+                    ignoreMandatoryFields: true
+                });
+            }
+            return folderId;
+        }
+
         /**
          * Funcion para ver si una carpeta ya existe
          */
@@ -349,7 +396,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 // cuando el motor es suite tax
                 var facturas = [];
                 var facturaSearch = search.create({
-                    type: "vendorbill",
+                    type: RECORD_INFO.VENDOR_BILL_RECORD.ID,
                     filters:
                     [
                         ["type","anyof","VendBill"], 
