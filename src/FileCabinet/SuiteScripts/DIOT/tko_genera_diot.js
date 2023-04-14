@@ -186,13 +186,21 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 var objScript = runtime.getCurrentScript();
                 var subsidiaria = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.SUBSIDIARY });
                 var periodo = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD });
+                var nombreSub = search.lookupFields({
+                    type: search.Type.SUBSIDIARY,
+                    id: subsidiaria,
+                    columns: ['name']
+                });
+                var nombrePer = search.lookupFields({
+                    type: search.Type.ACCOUNTING_PERIOD,
+                    id: periodo,
+                    columns: ['periodname']
+                });
+                var nombreSubsidiaria = nombreSub.name;
+                var nombrePeriodo = nombrePer.periodname;
 
-                /** Parámetros desde las preferencias de la empresa */
-                var tipoGuardado = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.TIPO_GUARDADO });
-                log.debug('Tipo guardado', tipoGuardado );
-                var notificar = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOTIFICAR });
-                log.debug('Notificar', notificar);
-                
+                log.debug('Datos', nombreSubsidiaria + ' ' + nombrePeriodo);
+
                 /** Se obtiene el motor que se esta usando (legacy or suitetax) */
                 var suitetax = runtime.isFeatureInEffect({ feature: RUNTIME.FEATURES.SUITETAX });
 
@@ -261,7 +269,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 } */
 
                 /** Se realiza una búsqueda para ver si ya existe la carpeta de acuerdo al tipo de guardado */
-                // si es oneWorld el tipo de guardado solo será por periodo
+                // Se crea el folder raíz
                 var nombreFolder = RECORD_INFO.FOLDER_RECORD.FIELDS.VALUE;
                 var folder = searchFolder(nombreFolder);
                 var folderId;
@@ -287,11 +295,30 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     log.debug('Info', 'Se creo la carpeta con id ' + folderId);
                 }
 
+                /** Parámetros desde las preferencias de la empresa */
+                var tipoGuardado = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.TIPO_GUARDADO });
+                log.debug('Tipo guardado', tipoGuardado );
+                var notificar = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOTIFICAR });
+                log.debug('Notificar', notificar);
+
+                // si es oneWorld el tipo de guardado solo será por periodo
+                if(oneWorldFeature == false){
+                    tipoGuardado = 2;
+                }
+                // si no se especifico el tipo de guardado, el default será por subsidiarias
+                if(tipoGuardado == ''){
+                    tipoGuardado = 1;
+                }
+
+                //se manda crear el folder dentro de la carpeta raíz
+                var subFolderId = createFolder(nombreSubsidiaria, nombrePeriodo, tipoGuardado, folderId);
+                log.debug('SubFolder', subFolderId);
+
                 /** Se crea el archivo txt, se indica el folder en el que se va a guardar*/
                 var fileObj = file.create({
                     name    : 'test.txt',
                     fileType: file.Type.PLAINTEXT,
-                    folder: folderId,
+                    folder: subFolderId,
                     contents: 'Hello Lily\nHello World'
                 });
                 var fileId = fileObj.save();
@@ -333,38 +360,117 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
         }
 
         /** Funcion para crear una carpeta */
-        function createFolder(subsidiaria, periodo, tipoGuardado){
+        function createFolder(nombreSubsidiaria, nombrePeriodo, tipoGuardado, idPadre){
             var nombreFolder = '';
             var folderId;
             var folder;
-            if(tipoGuardado == 1) { //guardado por subsidiarias
-                nombreFolder = subsidiaria;
-                folder = searchFolder(nombreFolder);
-            }else if(tipoGuardado == 2) { //guardado por periodo
-                nombreFolder = periodo;
-                folder = searchFolder(nombreFolder);
-            }else { //guardado por subsidiaria y periodo
-                
-            }
 
-            if(folder.runPaged().count != 0){ //existe
+            if(tipoGuardado == 1) { //guardado por subsidiarias
+                nombreFolder = nombreSubsidiaria;
+                folder = searchFolderInPath(nombreFolder, idPadre);
+                if(folder.runPaged().count != 0){ //existe
+                    folder.run().each(function(result){
+                        folderId = result.getValue({ name: RECORD_INFO.FOLDER_RECORD.FIELDS.ID });
+                        return true;
+                    });
+                }else{ 
+                    var objRecord = record.create({
+                        type: record.Type.FOLDER,
+                        isDynamic: true
+                    });
+                    objRecord.setValue({
+                        fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,
+                        value: nombreFolder
+                    });
+                    objRecord.setValue({
+                        fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.PARENT,
+                        value: idPadre
+                    });
+                    folderId = objRecord.save({
+                        enableSourcing: true,
+                        ignoreMandatoryFields: true
+                    });
+                }
+            }else if(tipoGuardado == 2) { //guardado por periodo
+                nombreFolder = nombrePeriodo;
+                folder = searchFolderInPath(nombreFolder, idPadre);
+                if(folder.runPaged().count != 0){ //existe
+                    folder.run().each(function(result){
+                        folderId = result.getValue({ name: RECORD_INFO.FOLDER_RECORD.FIELDS.ID });
+                        return true;
+                    });
+                }else{
+                    var objRecord = record.create({
+                        type: record.Type.FOLDER,
+                        isDynamic: true
+                    });
+                    objRecord.setValue({
+                        fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,
+                        value: nombreFolder
+                    });
+                    objRecord.setValue({
+                        fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.PARENT,
+                        value: idPadre
+                    });
+                    folderId = objRecord.save({
+                        enableSourcing: true,
+                        ignoreMandatoryFields: true
+                    });
+                }
+            }else { //guardado por subsidiaria y periodo
+                nombreFolder = nombreSubsidiaria;
+                nombreSubfolder = nombrePeriodo;
+                var folderSubId;
+                folder = searchFolderInPath(nombreFolder, idPadre);
+                if(folder.runPaged().count != 0){ //existe folder subsidiaria
                 folder.run().each(function(result){
-                    folderId = result.getValue({ name: RECORD_INFO.FOLDER_RECORD.FIELDS.ID });
+                    folderSubId = result.getValue({ name: RECORD_INFO.FOLDER_RECORD.FIELDS.ID });
                     return true;
                 });
-            }else{
-                var objRecord = record.create({
-                    type: record.Type.FOLDER,
-                    isDynamic: true
-                });
-                objRecord.setValue({
-                    fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,
-                    value: nombreFolder
-                });
-                folderId = objRecord.save({
-                    enableSourcing: true,
-                    ignoreMandatoryFields: true
-                });
+                }else{ //se crea folder subsidiaria
+                    var objRecord = record.create({
+                        type: record.Type.FOLDER,
+                        isDynamic: true
+                    });
+                    objRecord.setValue({
+                        fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,
+                        value: nombreFolder
+                    });
+                    objRecord.setValue({
+                        fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.PARENT,
+                        value: idPadre
+                    });
+                    folderSubId = objRecord.save({
+                        enableSourcing: true,
+                        ignoreMandatoryFields: true
+                    });
+                }
+                log.debug('Folder', folderSubId);
+                //se busca el folder periodo dentro del folder subsidiaria
+                subfolder = searchFolderInPath(nombreSubfolder, folderSubId);
+                if(subfolder.runPaged().count != 0){ //existe
+                    subfolder.run().each(function(result){
+                        folderId = result.getValue({ name: RECORD_INFO.FOLDER_RECORD.FIELDS.ID });
+                        return true;
+                    });
+                }else{
+                    var objRecord = record.create({
+                        type: record.Type.FOLDER,
+                        isDynamic: true
+                    });
+                    objRecord.setValue({
+                        fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,
+                        value: nombreSubfolder
+                    });
+                    objRecord.setValue({
+                        fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.PARENT,
+                        value: folderSubId
+                    });
+                    folderId = objRecord.save({
+                        enableSourcing: true,
+                        ignoreMandatoryFields: true
+                    });
+                }
             }
             return folderId;
         }
@@ -378,6 +484,27 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 filters:
                 [
                    [RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,search.Operator.IS,nombreFolder]
+                ],
+                columns:
+                [
+                    RECORD_INFO.FOLDER_RECORD.FIELDS.ID,
+                    RECORD_INFO.FOLDER_RECORD.FIELDS.NAME
+                ]
+            });
+            return folderSearchObj;
+        }
+
+        /**
+         * Funcion para ver si la carpeta subsidiaria o periodo ya existe dentro de la carpeta raíz
+         */
+        function searchFolderInPath(nombreFolder, carpetaRaiz){
+            var folderSearchObj = search.create({
+                type: RECORD_INFO.FOLDER_RECORD.ID,
+                filters:
+                [
+                   [RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,search.Operator.IS,nombreFolder],
+                   "AND",
+                   [RECORD_INFO.FOLDER_RECORD.FIELDS.PARENT, search.Operator.IS, carpetaRaiz]
                 ],
                 columns:
                 [
