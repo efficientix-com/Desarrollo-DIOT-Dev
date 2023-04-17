@@ -97,6 +97,7 @@ define([],function(){
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.SUBSIDIARY = 'custscript_tko_diot_subsidiary';
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD = 'custscript_tko_diot_periodo';
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.TIPO_GUARDADO = 'custscript_tko_diot_tipo_guardado';
+    SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOMBRE_ARCHIVO = 'custscript_tko_diot_nombre_archivo';
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOTIFICAR = 'custscript_tko_diot_notificar_correo';
 
     SCRIPTS_INFO.SUITELET = {};

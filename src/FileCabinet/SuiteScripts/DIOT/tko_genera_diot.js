@@ -2,9 +2,9 @@
  * @NApiVersion 2.1
  * @NScriptType MapReduceScript
  */
-define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N/config', './tko_diot_constants_lib'],
+define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N/config', 'N/email', './tko_diot_constants_lib', './moment.js'],
 
-    (runtime, search, url, record, file, redirect, config, values) => {
+    (runtime, search, url, record, file, redirect, config, email, values, moment) => {
         /**
          * Defines the function that is executed at the beginning of the map/reduce process and generates the input data.
          * @param {Object} inputContext
@@ -189,17 +189,15 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 var nombreSub = search.lookupFields({
                     type: search.Type.SUBSIDIARY,
                     id: subsidiaria,
-                    columns: ['name']
+                    columns: ['namenohierarchy']
                 });
                 var nombrePer = search.lookupFields({
                     type: search.Type.ACCOUNTING_PERIOD,
                     id: periodo,
                     columns: ['periodname']
                 });
-                var nombreSubsidiaria = nombreSub.name;
+                var nombreSubsidiaria = nombreSub.namenohierarchy;
                 var nombrePeriodo = nombrePer.periodname;
-
-                log.debug('Datos', nombreSubsidiaria + ' ' + nombrePeriodo);
 
                 /** Se obtiene el motor que se esta usando (legacy or suitetax) */
                 var suitetax = runtime.isFeatureInEffect({ feature: RUNTIME.FEATURES.SUITETAX });
@@ -268,9 +266,9 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     }
                 } */
 
-                /** Se realiza una búsqueda para ver si ya existe la carpeta de acuerdo al tipo de guardado */
-                // Se crea el folder raíz
+                /** Se crea el folder raíz */
                 var nombreFolder = RECORD_INFO.FOLDER_RECORD.FIELDS.VALUE;
+                //se realiza una búsqueda para ver si ya existe la carpeta
                 var folder = searchFolder(nombreFolder);
                 var folderId;
                 if(folder.runPaged().count != 0){ //existe
@@ -298,8 +296,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 /** Parámetros desde las preferencias de la empresa */
                 var tipoGuardado = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.TIPO_GUARDADO });
                 log.debug('Tipo guardado', tipoGuardado );
-                var notificar = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOTIFICAR });
-                log.debug('Notificar', notificar);
+                var nombreArchivo = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOMBRE_ARCHIVO });
+                log.debug('Nombre archivo', nombreArchivo);
 
                 // si es oneWorld el tipo de guardado solo será por periodo
                 if(oneWorldFeature == false){
@@ -310,9 +308,28 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     tipoGuardado = 1;
                 }
 
-                //se manda crear el folder dentro de la carpeta raíz
+                //se manda crear el folder dentro de la carpeta raíz y se obtiene el id de la carpeta
                 var subFolderId = createFolder(nombreSubsidiaria, nombrePeriodo, tipoGuardado, folderId);
                 log.debug('SubFolder', subFolderId);
+
+                /** Se obtienen los datos con el que se va a guardar el nombre del archivo */
+                nombreArchivo = nombreArchivo.toUpperCase();
+                var arrayDatos = nombreArchivo.split('_');
+                var fecha = new Date();
+                //se quitan los espacios de nombre subsidiaria y periodo
+                var subsi = nombreSubsidiaria.replace(/\s+/g, '');
+                var per = nombrePeriodo.replace(/\s+/g, '')
+                //log.debug('Fecha', fecha);
+                //log.debug('Hora actual', moment().zone("-06:00").format('HH:mm:ss'));
+                var nombreTxt = '';
+                for(var i = 0; i < arrayDatos.length; i++){
+                    var dato = getData(arrayDatos[i], subsi, per, fecha);
+                    nombreTxt = nombreTxt + dato;
+                    if((i+1) != arrayDatos.length){
+                        nombreTxt = nombreTxt + '_';
+                    }
+                }
+                log.debug('NombreTXT', nombreTxt);
 
                 /** Se crea el archivo txt, se indica el folder en el que se va a guardar*/
                 var fileObj = file.create({
@@ -359,7 +376,41 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             }
         }
 
-        /** Funcion para crear una carpeta */
+        /** Funcion para obtener el dato de acuerdo a la palabra clave */
+        function getData (dato, subsidiaria, periodo, fecha){
+            var data;
+            switch (dato) {
+                case 'SUBSIDIARIA':
+                    data = subsidiaria;
+                    break;
+                case 'PERIODO':
+                    data = periodo;
+                    break;
+                case 'DD':
+                    data = fecha.getDate();
+                    break;
+                case 'MM':
+                    data = fecha.getMonth() + 1;
+                    break;
+                case 'YYYY':
+                    data = fecha.getFullYear();
+                    break;
+                case 'HH':
+                    data = moment().zone("-06:00").format('HH');
+                    break;
+                case 'MIN':
+                    data = fecha.getMinutes();
+                    break;
+                case 'SS':
+                    data = fecha.getSeconds();
+                    break;
+                default:
+                    break;
+            }
+            return data;
+        }
+
+        /** Funcion para crear una carpeta dentro de la carpeta raíz*/
         function createFolder(nombreSubsidiaria, nombrePeriodo, tipoGuardado, idPadre){
             var nombreFolder = '';
             var folderId;
@@ -1516,6 +1567,18 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     'custrecord_tko_estado_diot': 97
                 }
             }); */
+
+            /** Cuando ya termine, enviar correo notificando al usuario */
+            var objScript = runtime.getCurrentScript();
+            var notificar = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOTIFICAR });
+            log.debug('Notificar', notificar);
+            // se obtiene el correo del usuario que ejecuto
+            var userObj = runtime.getCurrentUser();
+            log.debug('Current user email: ' , userObj.email);
+
+            if(notificar){
+
+            }
 
         }
 
