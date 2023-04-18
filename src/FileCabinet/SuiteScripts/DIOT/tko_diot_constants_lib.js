@@ -87,6 +87,25 @@ define([],function(){
     RECORD_INFO.FOLDER_RECORD.FIELDS.PARENT = 'parent';
     RECORD_INFO.FOLDER_RECORD.FIELDS.VALUE = 'DIOT txt';
 
+    RECORD_INFO.DIOT_RECORD = {};
+    RECORD_INFO.DIOT_RECORD.ID = 'customrecord_tko_diot';
+    RECORD_INFO.DIOT_RECORD.FIELDS = {};
+    RECORD_INFO.DIOT_RECORD.FIELDS.ID = 'custrecord_tko_id_interno_diot';
+    RECORD_INFO.DIOT_RECORD.FIELDS.SUBSIDIARY = 'custrecord_tko_subsidiaria_diot';
+    RECORD_INFO.DIOT_RECORD.FIELDS.PERIOD = 'custrecord_tko_periodo_diot';
+    RECORD_INFO.DIOT_RECORD.FIELDS.FOLDER_ID = 'custrecord_tko_id_carpeta_diot';
+    RECORD_INFO.DIOT_RECORD.FIELDS.FILE = 'custrecord_tko_archivotxt_diot';
+    RECORD_INFO.DIOT_RECORD.FIELDS.STATUS = 'custrecord_tko_estado_diot';
+    RECORD_INFO.DIOT_RECORD.FIELDS.PERCENTAGE = 'custrecord_tko_porcentaje_diot';
+
+    const STATUS_LIST_DIOT = {};
+
+    STATUS_LIST_DIOT.PENDING = 'Pendiente..';
+    STATUS_LIST_DIOT.OBTAINING_DATA = 'Obteniendo Datos...';
+    STATUS_LIST_DIOT.VALIDATING_DATA = 'Validando Datos....';
+    STATUS_LIST_DIOT.BUILDING = 'Construyendo DIOT....';
+    STATUS_LIST_DIOT.ERROR = 'Error';
+    STATUS_LIST_DIOT.COMPLETE = 'Completado';
 
     const SCRIPTS_INFO = {};
 
@@ -96,6 +115,7 @@ define([],function(){
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS = {};
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.SUBSIDIARY = 'custscript_tko_diot_subsidiary';
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD = 'custscript_tko_diot_periodo';
+    SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID = 'custscript_tko_diot_record_id';
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.TIPO_GUARDADO = 'custscript_tko_diot_tipo_guardado';
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOMBRE_ARCHIVO = 'custscript_tko_diot_nombre_archivo';
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOTIFICAR = 'custscript_tko_diot_notificar_correo';
@@ -124,6 +144,7 @@ define([],function(){
     return {
         INTERFACE: INTERFACE,
         RECORD_INFO: RECORD_INFO,
+        STATUS_LIST_DIOT: STATUS_LIST_DIOT,
         SCRIPTS_INFO: SCRIPTS_INFO,
         RUNTIME: RUNTIME,
         COMPANY_INFORMATION: COMPANY_INFORMATION

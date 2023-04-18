@@ -2,15 +2,16 @@
  * @NApiVersion 2.1
  * @NScriptType Suitelet
  */
-define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_diot_constants_lib'],
+define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_diot_constants_lib', 'N/record', 'N/redirect'],
     /**
  * @param{log} log
  * @param{serverWidget} serverWidget
  */
-    (log, serverWidget, search, task, runtime, values) => {
+    (log, serverWidget, search, task, runtime, values, record, redirect) => {
 
         const INTERFACE = values.INTERFACE;
         const RECORD_INFO = values.RECORD_INFO;
+        const STATUS_LIST_DIOT = values.STATUS_LIST_DIOT;
         const SCRIPTS_INFO = values.SCRIPTS_INFO;
         const RUNTIME = values.RUNTIME;
 
@@ -205,6 +206,45 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
             try {
 
                 //Crear el registro
+                var customRecord_diot = record.create({
+                    type: RECORD_INFO.DIOT_RECORD.ID,
+                    isDynamic: true
+                });
+
+                customRecord_diot.setValue({
+                    fieldId: RECORD_INFO.DIOT_RECORD.FIELDS.SUBSIDIARY,
+                    value: subsidiaria
+                });
+
+                customRecord_diot.setValue({
+                    fieldId: RECORD_INFO.DIOT_RECORD.FIELDS.PERIOD,
+                    value: periodo
+                });
+
+                customRecord_diot.setValue({
+                    fieldId: RECORD_INFO.DIOT_RECORD.FIELDS.STATUS,
+                    value: STATUS_LIST_DIOT.PENDING
+                });
+
+                var recordId_diot = customRecord_diot.save({
+                    enableSourcing: true,
+                    ignoreMandatoryFields: true
+                });
+
+                var otherId = record.submitFields({
+                    type: RECORD_INFO.DIOT_RECORD.ID,
+                    id: recordId_diot,
+                    values: {
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.ID]: recordId_diot
+                    }
+                });
+
+
+                //redirigir al registro
+                redirect.toRecord({
+                    type: RECORD_INFO.DIOT_RECORD.ID,
+                    id: recordId_diot
+                });
 
                 var mrTask = task.create({
                     taskType: task.TaskType.MAP_REDUCE,
@@ -212,7 +252,8 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
                     deploymentId: SCRIPTS_INFO.MAP_REDUCE.DEPLOYMENT_ID,
                     params: {
                         [SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.SUBSIDIARY]: subsidiaria,
-                        [SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD]: periodo
+                        [SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD]: periodo,
+                        [SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID]: recordId_diot
                     }
                 });
                 var idTask = mrTask.submit();
