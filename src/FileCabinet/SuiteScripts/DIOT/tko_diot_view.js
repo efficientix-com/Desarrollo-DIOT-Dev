@@ -2,12 +2,19 @@
  * @NApiVersion 2.1
  * @NScriptType Suitelet
  */
-define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task'],
+define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_diot_constants_lib', 'N/record', 'N/redirect'],
     /**
  * @param{log} log
  * @param{serverWidget} serverWidget
  */
-    (log, serverWidget, search, task) => {
+    (log, serverWidget, search, task, runtime, values, record, redirect) => {
+
+        const INTERFACE = values.INTERFACE;
+        const RECORD_INFO = values.RECORD_INFO;
+        const STATUS_LIST_DIOT = values.STATUS_LIST_DIOT;
+        const SCRIPTS_INFO = values.SCRIPTS_INFO;
+        const RUNTIME = values.RUNTIME;
+
         /**
          * Defines the Suitelet script trigger point.
          * @param {Object} scriptContext
@@ -16,87 +23,111 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task'],
          * @since 2015.2
          */
         const onRequest = (scriptContext) => {
-            var request = scriptContext.request, params = request.params, response = scriptContext.response
+            var request = scriptContext.request, response = scriptContext.response;
+            var parameters = request.parameters;
+
             try {
-                let form = createUI(params);
+                let form = createUI(parameters);
                 response.writePage({
                     pageObject: form
                 });
+                switch(parameters.action){
+                    case 'ejecuta':
+                        generaDIOT(parameters.subsidiaria, parameters.periodo);
+                        break;
+                    /* case 'actualiza':
+                        log.debug("prueba", "Click en botón actualiza");
+                        llenarDatos(parameters.idArchivo);
+                        log.debug('ID Archivo', parameters.idArchivo);
+                        break; */
+                }
             } catch (onRequestError) {
                 log.error({ title: 'Error en onRequest', details: onRequestError })
             }
         }
 
-        function createUI(params) {
+        function createUI(parameters) {
             let form = serverWidget.createForm({
-                title: 'Reporte DIOT'
+                title: INTERFACE.FORM.TITLE
             });
-            form.clientScriptModulePath = './tko_diot_cs.js'
+            form.clientScriptModulePath = './'+SCRIPTS_INFO.CLIENT.FILE_NAME;
+
+            //Verificar si la empresa es one world
+            var oneWorldFeature = runtime.isFeatureInEffect({ feature: RUNTIME.FEATURES.SUBSIDIARIES });
+            log.debug('OneWorld', oneWorldFeature);
 
             try {
                 /**
-                 * *Creacion de los campos para los filtro de la DIOT
+                 * Creacion de los campos para los filtros de la DIOT
                  */
-                form.addButton({
+
+                /* form.addButton({
                     id: "refresh",
                     label: "Actualizar",
                     functionName: "actualizarPantalla"
-                });
+                }); */
+
                 form.addButton({
-                    id: "refresh",
-                    label: "Actualizar 2",
-                    
+                    id: INTERFACE.FORM.BUTTONS.GENERAR.ID,
+                    label: INTERFACE.FORM.BUTTONS.GENERAR.LABEL,
+                    functionName: INTERFACE.FORM.BUTTONS.GENERAR.FUNCTION + '(' + oneWorldFeature + ')'
+                });
+                log.debug( "parameters", parameters );
+
+                var fieldgroup_datos = form.addFieldGroup({
+                    id : INTERFACE.FORM.FIELD_GROUP.DATOS.ID,
+                    label : INTERFACE.FORM.FIELD_GROUP.DATOS.LABEL
                 });
 
                 /**
-                 * *Debe llenarse con las subsidiarias
+                 * Lista de subsidiarias
                  */
                 var subsidiaryList = form.addField({
-                    id: "custpage_subsi",
+                    id: INTERFACE.FORM.FIELDS.SUBSIDIARIA.ID,
                     type: serverWidget.FieldType.SELECT,
-                    label: 'Subsidiaria'
+                    label: INTERFACE.FORM.FIELDS.SUBSIDIARIA.LABEL,
+                    container: INTERFACE.FORM.FIELD_GROUP.DATOS.ID
                 });
 
-                var subsis = searchSubsidiaries();
-                for (let sub = 0; sub < subsis.length; sub++) {
+                /* var user = runtime.getCurrentUser();
+                log.debug('EmpresaSubsi', user.subsidiary); */
 
-                    subsidiaryList.addSelectOption({
-                        value: subsis[sub].id,
-                        text: subsis[sub].name
+                if(oneWorldFeature){ //si es oneWorld hace la búsqueda de las subsidiarias
+                    var subsis = searchSubsidiaries();
+                    subsidiaryList.addSelectOption({ value: '', text: '' });
+                    for (var sub = 0; sub < subsis.length; sub++) {
+    
+                        subsidiaryList.addSelectOption({
+                            value: subsis[sub].id,
+                            text: subsis[sub].name
+                        });
+                    }
+                }else{ //si no es oneWorld se bloquea el campo
+                    subsidiaryList.updateDisplayType({
+                        displayType: serverWidget.FieldDisplayType.DISABLED
                     });
                 }
 
+
                 /**
-                 * *Debe llenarse con loa periodos contables
+                 * Lista de periodos
                  */
-                var accPeriod = form.addField({
-                    id: "custpage_periodo",
+                var periodList = form.addField({
+                    id: INTERFACE.FORM.FIELDS.PERIODO.ID,
                     type: serverWidget.FieldType.SELECT,
-                    label: 'Periodo'
+                    label: INTERFACE.FORM.FIELDS.PERIODO.LABEL,
+                    container: INTERFACE.FORM.FIELD_GROUP.DATOS.ID
                 });
 
                 var periods = searchAccountingPeriod();
-                for (let period = 0; period < periods.length; period++) {
-                    accPeriod.addSelectOption({
-                        value: periods[period].id,
-                        text: periods[period].name
-                    })
+                periodList.addSelectOption({ value: '', text: '' });
+                for (var per = 0; per < periods.length; per++) {
+
+                    periodList.addSelectOption({
+                        value: periods[per].id,
+                        text: periods[per].name
+                    });
                 }
-
-                /**
-                 * !Aqui se realizaran las actualizaciones de los stages del MR
-                 */
-                var sublist = form.addSublist({
-                    id: 'sublistid',
-                    type: serverWidget.SublistType.LIST,
-                    label: 'Status progress'
-                });
-
-                var archivo = sublist.addField({
-                    id: 'txt',
-                    label: 'Archivo TXT',
-                    type: serverWidget.FieldType.RICHTEXT,
-                });
 
             } catch (UIError) {
                 log.error({ title: 'Error en createUI', details: UIError })
@@ -108,104 +139,129 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task'],
             try {
                 var subsidiaries = []
                 var subsiSearch = search.create({
-                    type: "subsidiary",
+                    type: RECORD_INFO.SUBSIDIARY_RECORD.ID,
                     filters:
                         [
-                            ["isinactive", "is", "F"]
+                            [RECORD_INFO.SUBSIDIARY_RECORD.FIELDS.INACTIVE, search.Operator.IS, "F"]
                         ],
                     columns:
                         [
-                            "internalid",
-                            "name",
-                            "city",
-                            "state",
-                            "country",
-                            "currency",
-                            "custrecord_company_uen",
-                            "custrecord_company_brn"
+                            RECORD_INFO.SUBSIDIARY_RECORD.FIELDS.ID,
+                            RECORD_INFO.SUBSIDIARY_RECORD.FIELDS.NAME
                         ]
                 });
-                var searchResultCount = subsiSearch.runPaged().count;
-                log.debug("subsidiarySearchObj result count", searchResultCount);
                 subsiSearch.run().each(function (result) {
-                    var id = result.getValue({ name: 'internalid' });
-                    var name = result.getValue({ name: 'name' });
-                    var city = result.getValue({ name: 'city' });
+                    var id = result.getValue({ name: RECORD_INFO.SUBSIDIARY_RECORD.FIELDS.ID });
+                    var name = result.getValue({ name: RECORD_INFO.SUBSIDIARY_RECORD.FIELDS.NAME });
 
                     subsidiaries.push({
                         id: id,
-                        name: name,
-                        city: city
+                        name: name
                     });
                     return true;
                 });
-            } catch (searchError) {
-                log.error({ title: 'Error on searchSubsidiaries', details: searchError })
+            } catch (error) {
+                log.error({ title: 'Error on searchSubsidiaries', details: error });
             }
-            return subsidiaries
+            return subsidiaries;
         }
 
         function searchAccountingPeriod() {
             try {
                 var periods = []
                 var aPeriod = search.create({
-                    type: "accountingperiod",
+                    type: RECORD_INFO.ACCOUNTINGPERIOD_RECORD.ID,
                     filters:
-                        [
-                            ["isinactive", "is", "F"]
-                        ],
+                    [
+                        [RECORD_INFO.ACCOUNTINGPERIOD_RECORD.FIELDS.INACTIVE, search.Operator.IS, "F"]
+                    ],
                     columns:
-                        [
-                            "periodname",
-                            search.createColumn({
-                                name: "internalid",
-                                sort: search.Sort.ASC
-                            })
-                            // "internalid"
-                        ]
+                    [
+                        RECORD_INFO.ACCOUNTINGPERIOD_RECORD.FIELDS.ID,
+                        RECORD_INFO.ACCOUNTINGPERIOD_RECORD.FIELDS.NAME,
+                        search.createColumn({
+                            name: RECORD_INFO.ACCOUNTINGPERIOD_RECORD.FIELDS.ID,
+                            sort: search.Sort.DESC
+                        })
+                    ]
                 });
-                var searchResultCount = aPeriod.runPaged().count;
-                log.debug("accountingperiodSearchObj result count", searchResultCount);
                 aPeriod.run().each(function (result) {
-                    var id = result.getValue({ name: 'internalid' });
-                    var name = result.getValue({ name: 'periodname' });
+                    var id = result.getValue({ name: RECORD_INFO.ACCOUNTINGPERIOD_RECORD.FIELDS.ID });
+                    var name = result.getValue({ name: RECORD_INFO.ACCOUNTINGPERIOD_RECORD.FIELDS.NAME });
 
                     periods.push({
                         id: id,
                         name: name
-                    })
+                    });
+
                     return true;
                 });
             } catch (error) {
-                log.error({ title: 'Error on searchAccountingPeriod', details: error })
+                log.error({ title: 'Error on searchAccountingPeriod', details: error });
             }
-            return periods
+            return periods;
         }
 
-        function generaDIOT() {
-            var objTransacciones = {
-                "custscript_tko_diot_subsidiary": '',
-                "custscript_tko_diot_periodo": '',
+        function generaDIOT(subsidiaria, periodo) {
+            try {
+
+                //Crear el registro
+                var customRecord_diot = record.create({
+                    type: RECORD_INFO.DIOT_RECORD.ID,
+                    isDynamic: true
+                });
+
+                customRecord_diot.setValue({
+                    fieldId: RECORD_INFO.DIOT_RECORD.FIELDS.SUBSIDIARY,
+                    value: subsidiaria
+                });
+
+                customRecord_diot.setValue({
+                    fieldId: RECORD_INFO.DIOT_RECORD.FIELDS.PERIOD,
+                    value: periodo
+                });
+
+                customRecord_diot.setValue({
+                    fieldId: RECORD_INFO.DIOT_RECORD.FIELDS.STATUS,
+                    value: STATUS_LIST_DIOT.PENDING
+                });
+
+                var recordId_diot = customRecord_diot.save({
+                    enableSourcing: true,
+                    ignoreMandatoryFields: true
+                });
+
+                var otherId = record.submitFields({
+                    type: RECORD_INFO.DIOT_RECORD.ID,
+                    id: recordId_diot,
+                    values: {
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.ID]: recordId_diot
+                    }
+                });
+
+
+                //redirigir al registro
+                redirect.toRecord({
+                    type: RECORD_INFO.DIOT_RECORD.ID,
+                    id: recordId_diot
+                });
+
+                var mrTask = task.create({
+                    taskType: task.TaskType.MAP_REDUCE,
+                    scriptId: SCRIPTS_INFO.MAP_REDUCE.SCRIPT_ID,
+                    deploymentId: SCRIPTS_INFO.MAP_REDUCE.DEPLOYMENT_ID,
+                    params: {
+                        [SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.SUBSIDIARY]: subsidiaria,
+                        [SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD]: periodo,
+                        [SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID]: recordId_diot
+                    }
+                });
+                var idTask = mrTask.submit();
+                log.audit({ title: 'idTask', details: idTask });
             }
-            for (var i = 1; i <= 10; i++) {
-                var scriptdeploy_id = 'customdeploy_tko_diot_generate_' + i;
-                log.debug('scriptdeploy_id', scriptdeploy_id);
-
-                var mrTask = task.create({ taskType: task.TaskType.MAP_REDUCE });
-                mrTask.scriptId = 'customscript_tko_generate_diot_mr';
-                mrTask.deploymentId = scriptdeploy_id;
-                mrTask.params = objTransacciones;
-
-                try {
-                    var mrTaskId = mrTask.submit();
-                    log.debug("scriptTaskId tarea ejecutada", mrTaskId);
-                    log.audit("Tarea ejecutada", mrTaskId);
-                    break;
-                }
-                catch (e) {
-                    log.debug({ title: "error", details: e });
-                    log.error("summarize", "Aún esta corriendo el deployment: " + scriptdeploy_id);
-                }
+            catch (e) {
+                log.debug({ title: "Error", details: e });
+                //log.error({ title: 'Execution Error', details: "Aun esta corriendo la ejecución"});
             }
         }
 
