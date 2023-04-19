@@ -1727,7 +1727,12 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             log.debug('Current user email: ' , userObj.email);
 
             if(notificar){
-
+                email.send({
+                    author: 1756,
+                    recipients: userObj.email,
+                    subject: 'DIOT',
+                    body: 'El proceso de la DIOT ha terminado',
+                });
             }
 
         }

@@ -21,7 +21,7 @@ define(['N/record', 'N/runtime'],
             var nRecord = context.newRecord;
             var record_type = nRecord.type;
 
-            if ((context.type == context.UserEventType.VIEW || context.type == context.UserEventType.EDIT) && record_type == 'customrecord_tko_diot') {
+            if (context.type == context.UserEventType.VIEW && record_type == 'customrecord_tko_diot') {
                 var form = context.form;
                 // se agrega el CS para traer funciones de allá
                 form.clientScriptModulePath = "./tko_diot_cs.js";
@@ -32,6 +32,12 @@ define(['N/record', 'N/runtime'],
                     label: "Actualizar",
                     functionName: "actualizarPantalla"
                 });
+
+                // se quita el boton de editar
+                form.removeButton({
+                    id: 'edit'
+                });
+
                 var progress = form.addField({
                     id:'custpage_progress',
                     type: 'INLINEHTML',
@@ -51,7 +57,7 @@ define(['N/record', 'N/runtime'],
                     porcentaje.innerHTML='<progress class="error" id="progress" max="100" value="100"></progress>';
                 }
                 else if(str.trim()=='Pendiente...'){
-                    porcentaje.innerHTML='<progress class="pending" id="progress" max="100" value="20"></progress>';
+                    porcentaje.innerHTML='<progress class="pending" id="progress" max="100" value="9"></progress>';
                 }
                 else if(str.trim()=='Obteniendo Datos...'){
                     porcentaje.innerHTML='<progress class="loading" id="progress" max="100" value="40"></progress>';
