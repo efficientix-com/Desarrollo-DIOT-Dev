@@ -45,18 +45,7 @@ function(url, currentRecord, message, search, file, values) {
 
     function actualizarPantalla(){
         console.log('entra a funcin de actualizar');
-        var data = document.createElement('barra_progreso');
-        
-        var progress = '';
-        progress += '<hr>';
-
-        data.innerHTML =
-            /* '<style media-all type=text/css>'+
-            '</style>'+ */
-            '<progress id="progress" max="100" value="70"> 70% </progress>'+
-            ''+
-            '';
-        //location.reload();
+        location.reload();
     }
 
     function generarReporte(oneWorld){

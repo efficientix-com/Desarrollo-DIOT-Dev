@@ -685,7 +685,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         search.createColumn({
                            name: "taxrate",
                            join: "taxDetail",
-                        })
+                        }),
+                        'custbody_efx_fe_comercio_exterior'
                     ]
                 });
     
@@ -699,6 +700,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var taxCode = result.getText({ name: 'taxcode', join: 'taxDetail' });
                     var tipoImpuesto = result.getText({ name: 'taxtype', join: 'taxDetail' });
                     var tasa = result.getValue({ name: 'taxrate', join: 'taxDetail' });
+                    var importacionBienes = result.getValue({ name: 'custbody_efx_fe_comercio_exterior' });
                     var errores = '';
 
                     var tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
@@ -723,6 +725,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         tasa: tasa,
                         tipoImpuesto: tipoImpuesto,
                         tipoDesglose: tipoDesglose,
+                        importacionBienes: importacionBienes,
                         credito: credito,
                         datos: datos
                     });
@@ -780,7 +783,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         search.createColumn({
                            name: "name",
                            join: "taxItem"
-                        })
+                        }),
+                        'custbody_efx_fe_comercio_exterior'
                     ]
                 });
     
@@ -793,6 +797,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var impuestos = result.getValue({ name: 'taxamount' });
                     //var taxCode = result.getValue({ name: 'taxcode' });
                     var taxCode = result.getValue({ name: 'name', join: 'taxItem' });
+                    var importacionBienes = result.getValue({ name: 'custbody_efx_fe_comercio_exterior' });
                     var tasa = 0, errores = '';
     
                     //tasa = calculaIVA(impuestos,importe,tasa);
@@ -828,6 +833,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         taxCode: taxCode,
                         tasa: tasa,
                         tipoDesglose: tipoDesglose,
+                        importacionBienes: importacionBienes,
                         /* rfc: rfc,
                         taxID: taxID,
                         nombreExtranjero: nombreExtranjero,
