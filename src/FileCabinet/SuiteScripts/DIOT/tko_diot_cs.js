@@ -43,62 +43,21 @@ function(url, currentRecord, message, search, file, values) {
 
     }
 
-    /* function actualizarPantalla(){
+    function actualizarPantalla(){
+        console.log('entra a funcin de actualizar');
+        var data = document.createElement('barra_progreso');
+        
+        var progress = '';
+        progress += '<hr>';
+
+        data.innerHTML =
+            /* '<style media-all type=text/css>'+
+            '</style>'+ */
+            '<progress id="progress" max="100" value="70"> 70% </progress>'+
+            ''+
+            '';
         //location.reload();
-        
-        var currentForm = currentRecord.get();
-        
-        var datosRegistro = search.lookupFields({
-            type: 'customrecord_tko_diot',
-            id: 1,
-            columns: ['custrecord_tko_subsidiaria_diot','custrecord_tko_periodo_diot','custrecord_tko_archivotxt_diot','custrecord_tko_estado_diot']
-        });
-
-        var subsidiariaRegistro = datosRegistro.custrecord_tko_subsidiaria_diot;
-        var periodoRegistro = datosRegistro.custrecord_tko_periodo_diot;
-        var archivoRegistro = datosRegistro.custrecord_tko_archivotxt_diot[0].value;
-        var estadoRegistro = datosRegistro.custrecord_tko_estado_diot;
-        
-        console.log('Subsidiaria', subsidiariaRegistro);
-        console.log('Periodo', periodoRegistro);
-        console.log('Archivo', archivoRegistro);
-        console.log('Estado', estadoRegistro);
-
-        var output = url.resolveScript({
-            scriptId: 'customscript_tko_diot_view_sl',
-            deploymentId: 'customdeploy_tko_diot_view_sl',
-            params: {
-                'action': 'actualiza',
-                "idArchivo": archivoRegistro
-            },
-            returnExternalUrl: false,
-        });
-
-        currentForm.setValue({
-            fieldId: FIELD_ID.PANTALLA.SUBSIDIARIA,
-            value: subsidiariaRegistro
-        });
-        currentForm.setValue({
-            fieldId: FIELD_ID.PANTALLA.PERIODO,
-            value: periodoRegistro
-        }); */
-
-        /* currentForm.setValue({
-            fieldId: 'custpage_archivotxt',
-            value: archivoRegistro
-        }); 
-            Valor concatenado asi:
-            nlapiSetFieldValue("custpage_archivotxt","<a href='https://6736762-sbdr1.app.netsuite.com/core/media/media.nl?id=257887&c=6736762_SBDR1&h=VJdQi5sFwtvB6xZPybBm18wUOw7e6v68BEpu-ctiBg-6i3wc&_xt=.txt'> descargar </a>");
-        */
-
-        /* currentForm.setValue({
-            fieldId: 'custpage_status',
-            value: estadoRegistro
-        });
-
-
-        window.open(output, '_self');
-    } */
+    }
 
     function generarReporte(oneWorld){
 
@@ -167,7 +126,7 @@ function(url, currentRecord, message, search, file, values) {
 
     return {
         pageInit: pageInit,
-        //actualizarPantalla:actualizarPantalla,
+        actualizarPantalla:actualizarPantalla,
         generarReporte:generarReporte,
         fieldChanged: fieldChanged
     };

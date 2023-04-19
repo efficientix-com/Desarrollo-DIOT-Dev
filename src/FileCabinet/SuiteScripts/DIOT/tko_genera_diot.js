@@ -268,8 +268,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 log.debug('Retenciones', retenciones);
     
                 /** Se realiza la búsqueda de las distintas transacciones */
-                var facturasProv = searchVendorBill(subsidiaria, periodo, suitetax, exentos, iva, retenciones);
-                var informesGastos = searchExpenseReports(subsidiaria, periodo, suitetax, exentos, iva, retenciones);
+                var facturasProv = searchVendorBill(subsidiaria, periodo, suitetax, valores, exentos, iva, retenciones);
+                var informesGastos = searchExpenseReports(subsidiaria, periodo, suitetax, valores, exentos, iva, retenciones);
                 var polizasDiario = searchDailyPolicy(subsidiaria, periodo, suitetax, valores, exentos, iva, retenciones);
 
                 /** Verifica si existe algún error */
@@ -280,32 +280,40 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         if(facturasProv[i].datos[0].errores != ''){
                             error = true;
                             erroresTran = erroresTran + facturasProv[i].datos[0].errores;
-                            log.debug('errores f', facturasProv[i].datos[0].errores);
                         }
                     }
                 }
-                log.debug('Errores F', erroresTran);
                 if(informesGastos.length != 0){
                     for(var i = 0; i < informesGastos.length; i++){
                         if(informesGastos[i].datos[0].errores != ''){
                             error = true;
                             erroresTran = erroresTran + informesGastos[i].datos[0].errores;
-                            log.debug('errores i', informesGastos[i].datos[0].errores);
                         }
                     }
                 }
-                log.debug('Errores I', erroresTran);
                 if(polizasDiario.length != 0){
                     for(var i = 0; i < polizasDiario.length; i++){
                         if(polizasDiario[i].datos[0].errores != ''){
                             error = true;
                             erroresTran = erroresTran + polizasDiario[i].datos[0].errores;
-                            log.debug('errores i', polizasDiario[i].datos[0].errores);
                         }
                     }
                 }
 
-                log.debug('Errores P', erroresTran);
+                //Se separan los errores y se meten en un arreglo
+                var erroresArrayAux = erroresTran.split(',');
+                var erroresArray = [];
+                //Se meten en un arreglo final para evitar los errores repetidos
+                for (var i = 0; i < erroresArrayAux.length; i++){
+                    if(erroresArray.length != 0){
+                        var existe = buscarError(erroresArrayAux[i], erroresArray);
+                        if(!existe){
+                            erroresArray.push(erroresArrayAux[i]);
+                        }
+                    }else{
+                        erroresArray.push(erroresArrayAux[i]);
+                    }
+                }
 
                 /** Se crea el folder raíz y el archivo si no hay errores */
                 if(!error){
@@ -399,7 +407,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         id: recordID,
                         values: {
                             [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
-                            [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: erroresTran
+                            [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: erroresArray
                         }
                     });
                 }
@@ -416,6 +424,17 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             }catch(error){
                 log.error({ title: 'Error en las búsquedas de transacciones', details: error });
             }
+        }
+
+        /** Funcion que busca que no exista el error para no repetirlos */
+        function buscarError(error, arrayErrores){
+            var errorFlag = false;
+            for (var x = 0; x < arrayErrores.length; x++){
+                if (error == arrayErrores[x]){
+                    errorFlag = true;
+                }
+            }
+            return errorFlag;
         }
 
         /** Funcion para obtener el dato de acuerdo a la palabra clave */
@@ -611,7 +630,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
         /**
          * Funcion para buscar las facturas de proveedores
          */
-        function searchVendorBill(subsidiaria, periodo, suitetax, exentos, iva, retenciones){
+        function searchVendorBill(subsidiaria, periodo, suitetax, valores, exentos, iva, retenciones){
             if (suitetax) {
                 // cuando el motor es suite tax
                 var facturas = [];
@@ -700,8 +719,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         tipoOperacion: tipoOperacion,
                         importe: importe,
                         impuestos: impuestos,
-                        tasa: tasa,
                         taxCode: taxCode,
+                        tasa: tasa,
                         tipoImpuesto: tipoImpuesto,
                         tipoDesglose: tipoDesglose,
                         credito: credito,
@@ -776,7 +795,13 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var taxCode = result.getValue({ name: 'name', join: 'taxItem' });
                     var tasa = 0, errores = '';
     
-                    tasa = calculaIVA(impuestos,importe,tasa);
+                    //tasa = calculaIVA(impuestos,importe,tasa);
+                    for(var i = 0; i < valores.length; i++){
+                        if(valores[i].codeName == taxCode){
+                            tasa = valores[i].taxRate;
+                        }
+                    }
+
                     var tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
                     var datos = buscaDatos(proveedor, tipoTercero, errores);
     
@@ -823,7 +848,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
         /**
          * Funcion para buscar los informes de gastos
          */
-        function searchExpenseReports(subsidiaria, periodo, suitetax, exentos, iva, retenciones){
+        function searchExpenseReports(subsidiaria, periodo, suitetax, valores, exentos, iva, retenciones){
 
             if(suitetax){   
                 var informes = [];
@@ -871,7 +896,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         search.createColumn({
                            name: "taxrate",
                            join: "taxDetail",
-                        })
+                        }),
+                        'custcol_tko_diot_importacion'
                     ],
                 });
 
@@ -885,6 +911,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var impuestos = result.getValue({ name: 'taxamount' });
                     var taxCode = result.getText({ name: 'taxcode', join: 'taxDetail' });
                     var tipoImpuesto = result.getText({ name: 'taxtype', join: 'taxDetail' });
+                    var importacionBienes = result.getValue({ name: 'custcol_tko_diot_importacion' });
                     var tasa = result.getValue({ name: 'taxrate', join: 'taxDetail' });
                     var errores = ''; 
 
@@ -898,10 +925,11 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         tipoOperacion: tipoOperacion,
                         importe: importe,
                         impuestos: impuestos,
-                        tasa: tasa,
                         taxCode: taxCode,
+                        tasa: tasa,
                         tipoImpuesto: tipoImpuesto,
                         tipoDesglose: tipoDesglose,
+                        importacionBienes: importacionBienes,
                         datos: datos
                     });
 
@@ -950,7 +978,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         search.createColumn({
                            name: "name",
                            join: "taxItem"
-                        })
+                        }),
+                        'custcol_tko_diot_importacion'
                     ]
                 });
                 informesSearch.run().each(function(result){
@@ -960,10 +989,16 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
                     var importe = result.getValue({ name: 'netamountnotax' });
                     var impuestos = result.getValue({ name: 'taxamount' });
-                    //var taxCode = result.getValue({ name: 'taxcode' });
                     var taxCode = result.getText({ name: 'taxcode' });
                     var taxCodeName = result.getValue({ name: 'name', join: 'taxItem' });
+                    var importacionBienes = result.getValue({ name: 'custcol_tko_diot_importacion' });
                     var tasa = 0, errores = '';
+
+                    for(var i = 0; i < valores.length; i++){
+                        if(valores[i].codeName == taxCode){
+                            tasa = valores[i].taxRate;
+                        }
+                    }
 
                     /* Obtener la tasa con la columna no con fórmula */
                     //tasa = calculaIVA(impuestos, importe, tasa);
@@ -980,7 +1015,9 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         importe: importe,
                         impuestos: impuestos,
                         taxCode: taxCode,
+                        tasa: tasa,
                         tipoDesglose: tipoDesglose,
+                        importacionBienes: importacionBienes,
                         datos: datos
                     });
     
@@ -1119,7 +1156,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         search.createColumn({
                            name: "name",
                            join: "taxItem"
-                        })
+                        }),
+                        'custcol_tko_diot_importacion'
                     ]
                 });
                 polizasSearch.run().each(function(result){
@@ -1132,6 +1170,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var impuestos = result.getValue({ name: 'taxamount' });
                     //var taxCode = result.getValue({ name: 'taxcode' });
                     var taxCode = result.getValue({ name: 'name', join: 'taxItem' });
+                    var importacionBienes = result.getValue({ name: 'custcol_tko_diot_importacion' });
                     var tasa = 0, errores = '';
     
                     tasa = calculaIVA(impuestos, importe, tasa);
@@ -1162,6 +1201,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         importe: importe,
                         impuestos: impuestos,
                         taxCode: taxCode,
+                        tipoDesglose: tipoDesglose,
+                        importacionBienes: importacionBienes,
                         datos: datos,
                         /* rfc: rfc,
                         taxID: taxID,
@@ -1169,8 +1210,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         paisResidencia: paisResidencia,
                         nacionalidad: nacionalidad,
                         errores: errores, */
-                        codigos: codigos,
-                        tipoDesglose: tipoDesglose
+                        codigos: codigos
                     })
                     return true;
                 });
@@ -1230,7 +1270,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             if (tipoTercero == 1){ //si es proveedor nacional -> RFC obligatorio
                 if(rfc == ''){
                     error = "El proveedor " + proveedor + " no tiene asignado el RFC";
-                    errores = errores + error + ", ";
+                    errores = errores + error + ",";
                 }
                 /** Los siguientes campos son vacíos porque solo aplican para proveedores extranjeros */
                 taxID = "";
@@ -1240,16 +1280,16 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             } else if (tipoTercero == 2){ // si es proveedor extranjero -> RFC opcional, TaxID obligatorio, nombreExtranjero opcional
                 if(taxID == ''){
                     error = "El proveedor " + proveedor + " no tiene asignado el número de ID Fiscal";
-                    errores = errores + error + ", ";
+                    errores = errores + error + ",";
                 }
                 /** Si tiene asignado un valor el campo nombre extranjero, se tiene que tener el pais y la nacionalidad */
                 if (nombreExtranjero != ""  && paisResidencia == ""){
                     error = "El proveedor " + proveedor + " no tiene asignado el pais de residencia";
-                    errores = errores + error + ", ";
+                    errores = errores + error + ",";
                 }
                 if(nombreExtranjero != "" && nacionalidad == ""){
                     error = "El proveedor " + proveedor + " no tiene asignada la nacionalidad";
-                    errores = errores + error + ", ";
+                    errores = errores + error + ",";
                 }
                 /** Si no tiene un valor en nombre extranjero los otros campos no importan */
                 if(nombreExtranjero == ""){ 
