@@ -97,6 +97,7 @@ define([],function(){
     RECORD_INFO.DIOT_RECORD.FIELDS.FILE = 'custrecord_tko_archivotxt_diot';
     RECORD_INFO.DIOT_RECORD.FIELDS.STATUS = 'custrecord_tko_estado_diot';
     RECORD_INFO.DIOT_RECORD.FIELDS.PERCENTAGE = 'custrecord_tko_porcentaje_diot';
+    RECORD_INFO.DIOT_RECORD.FIELDS.ERROR = 'custrecord_tko_errores_diot';
 
     const STATUS_LIST_DIOT = {};
 

@@ -272,156 +272,118 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 var informesGastos = searchExpenseReports(subsidiaria, periodo, suitetax, exentos, iva, retenciones);
                 var polizasDiario = searchDailyPolicy(subsidiaria, periodo, suitetax, valores, exentos, iva, retenciones);
 
-                /** Se recorre cada uno de los resultados de las búsquedas de transacciones para ir obteniendo la información del txt */
-                /* var proveedoresArray = new Array();
-                var proveedores;
-                var importeDevoluciones = 0, importe16 = 0, impuestosBienes16 = 0, impuestosBienes10 = 0, importeBienesExentos = 0, importe0 = 0, importeExentos = 0, impuestosRet = 0;
-                if(facturasProv.length != 0){
-                    for(var i = 0; i < facturasProv.length; i++){
-                        var prov = facturasProv[i].proveedor;
-                        var tercero = facturasProv[i].tipoTercero;
-                        var operacion = facturasProv[i].tipoOperacion;
-                        if (tercero == 1){
-                            var rfc = facturasProv[i].datos[0].rfc;
-                        }else if(tercero == 2){
-                            var rfc = facturasProv[i].datos[0].rfc;
-                            var taxID = facturasProv[i].datos[0].taxID;
-                            var extranjero = facturasProv[i].datos[0].nombreExtranjero;
-                            if(extranjero != ""){
-                                var pais = facturasProv[i].datos[0].paisResidencia;
-                                var nacionalidad = facturasProv[i].datos[0].nacionalidad;
-                            }
-                        }else{
-                            var rfc = "";
-                        }
-                        var tipoImpuesto = facturasProv[i].tipoImpuesto;
-                        var tasa = facturasProv[i].tasa;
-                        var importe = facturasProv[i].importe;
-                        var impuestos = facturasProv[i].impuestos;
-                        // saber si es retencion o iva
-                        var tipo = tipoImpuesto.includes('RET');
-                        if(tipo == true){
-                            //es retencion
-                        }else{
-                            //es iva
-                        }
-                        if(credito.length != 0){
-                            var importeDevoluciones = importeDevoluciones + facturasProv[i].credito[0].impuesto;
-                        }
-                        proveedores = prov;
-                    }
-                } */
-
-                /** Se crea el folder raíz */
-                var nombreFolder = RECORD_INFO.FOLDER_RECORD.FIELDS.VALUE;
-                //se realiza una búsqueda para ver si ya existe la carpeta
-                var folder = searchFolder(nombreFolder);
-                var folderId;
-                if(folder.runPaged().count != 0){ //existe
-                    folder.run().each(function(result){
-                        folderId = result.getValue({ name: RECORD_INFO.FOLDER_RECORD.FIELDS.ID });
-                        return true;
-                    });
-                    log.debug('Info', 'La carpeta ' + folderId + ' existe');
-                }else{ // si no existe se crea el folder
-                    var objRecord = record.create({
-                        type: record.Type.FOLDER,
-                        isDynamic: true
-                    });
-                    objRecord.setValue({
-                        fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,
-                        value: nombreFolder
-                    });
-                    folderId = objRecord.save({
-                        enableSourcing: true,
-                        ignoreMandatoryFields: true
-                    });
-                    log.debug('Info', 'Se creo la carpeta con id ' + folderId);
-                }
-
-                /** Parámetros desde las preferencias de la empresa */
-                var tipoGuardado = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.TIPO_GUARDADO });
-                log.debug('Tipo guardado', tipoGuardado );
-                var nombreArchivo = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOMBRE_ARCHIVO });
-                log.debug('Nombre archivo', nombreArchivo);
-
-                // si es oneWorld el tipo de guardado solo será por periodo
-                if(oneWorldFeature == false){
-                    tipoGuardado = 2;
-                }
-                // si no se especifico el tipo de guardado, el default será por subsidiarias
-                if(tipoGuardado == ''){
-                    tipoGuardado = 1;
-                }
-
-                //se manda crear el folder dentro de la carpeta raíz y se obtiene el id de la carpeta
-                var subFolderId = createFolder(nombreSubsidiaria, nombrePeriodo, tipoGuardado, folderId);
-                log.debug('SubFolder', subFolderId);
-
-                
-                /** Se obtienen los datos con el que se va a guardar el nombre del archivo */
-                nombreArchivo = nombreArchivo.toUpperCase();
-                var arrayDatos = nombreArchivo.split('_');
-                var fecha = new Date();
-                //se quitan los espacios de nombre subsidiaria y periodo
-                var subsi = nombreSubsidiaria.replace(/\s+/g, '');
-                var per = nombrePeriodo.replace(/\s+/g, '')
-                //log.debug('Fecha', fecha);
-                //log.debug('Hora actual', moment().zone("-06:00").format('HH:mm:ss'));
-                var nombreTxt = '';
-                for(var i = 0; i < arrayDatos.length; i++){
-                    var dato = getData(arrayDatos[i], subsi, per, fecha);
-                    nombreTxt = nombreTxt + dato;
-                    if((i+1) != arrayDatos.length){
-                        nombreTxt = nombreTxt + '_';
-                    }
-                }
-                log.debug('NombreTXT', nombreTxt);
-
-                /** Se crea el archivo txt, se indica el folder en el que se va a guardar*/
-                var fileObj = file.create({
-                    name    : 'test.txt',
-                    fileType: file.Type.PLAINTEXT,
-                    folder: subFolderId,
-                    contents: 'Hello Lily\nHello World'
-                });
-                var fileId = fileObj.save();
-                log.debug('Info txt', 'Id: ' + fileId);
+                /** Verifica si existe algún error */
+                var erroresTran = '';
 
                 if(facturasProv.length != 0){
                     for(var i = 0; i < facturasProv.length; i++){
                         if(facturasProv[i].datos[0].errores != ''){
                             error = true;
+                            erroresTran = erroresTran + facturasProv[i].datos[0].errores;
+                            log.debug('errores f', facturasProv[i].datos[0].errores);
                         }
-                        break;
                     }
                 }
+                log.debug('Errores F', erroresTran);
                 if(informesGastos.length != 0){
                     for(var i = 0; i < informesGastos.length; i++){
                         if(informesGastos[i].datos[0].errores != ''){
                             error = true;
+                            erroresTran = erroresTran + informesGastos[i].datos[0].errores;
+                            log.debug('errores i', informesGastos[i].datos[0].errores);
                         }
-                        break;
                     }
                 }
+                log.debug('Errores I', erroresTran);
                 if(polizasDiario.length != 0){
                     for(var i = 0; i < polizasDiario.length; i++){
                         if(polizasDiario[i].datos[0].errores != ''){
                             error = true;
+                            erroresTran = erroresTran + polizasDiario[i].datos[0].errores;
+                            log.debug('errores i', polizasDiario[i].datos[0].errores);
                         }
-                        break;
                     }
                 }
 
-                if(error){
-                    otherId = record.submitFields({
-                        type: RECORD_INFO.DIOT_RECORD.ID,
-                        id: recordID,
-                        values: {
-                            [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR
+                log.debug('Errores P', erroresTran);
+
+                /** Se crea el folder raíz y el archivo si no hay errores */
+                if(!error){
+                    var nombreFolder = RECORD_INFO.FOLDER_RECORD.FIELDS.VALUE;
+                    //se realiza una búsqueda para ver si ya existe la carpeta
+                    var folder = searchFolder(nombreFolder);
+                    var folderId;
+                    if(folder.runPaged().count != 0){ //existe
+                        folder.run().each(function(result){
+                            folderId = result.getValue({ name: RECORD_INFO.FOLDER_RECORD.FIELDS.ID });
+                            return true;
+                        });
+                        log.debug('Info', 'La carpeta ' + folderId + ' existe');
+                    }else{ // si no existe se crea el folder
+                        var objRecord = record.create({
+                            type: record.Type.FOLDER,
+                            isDynamic: true
+                        });
+                        objRecord.setValue({
+                            fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,
+                            value: nombreFolder
+                        });
+                        folderId = objRecord.save({
+                            enableSourcing: true,
+                            ignoreMandatoryFields: true
+                        });
+                        log.debug('Info', 'Se creo la carpeta con id ' + folderId);
+                    }
+    
+                    /** Parámetros desde las preferencias de la empresa */
+                    var tipoGuardado = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.TIPO_GUARDADO });
+                    log.debug('Tipo guardado', tipoGuardado );
+                    var nombreArchivo = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOMBRE_ARCHIVO });
+                    log.debug('Nombre archivo', nombreArchivo);
+    
+                    // si es oneWorld el tipo de guardado solo será por periodo
+                    if(oneWorldFeature == false){
+                        tipoGuardado = 2;
+                    }
+                    // si no se especifico el tipo de guardado, el default será por subsidiarias
+                    if(tipoGuardado == ''){
+                        tipoGuardado = 1;
+                    }
+    
+                    //se manda crear el folder dentro de la carpeta raíz y se obtiene el id de la carpeta
+                    var subFolderId = createFolder(nombreSubsidiaria, nombrePeriodo, tipoGuardado, folderId);
+                    log.debug('SubFolder', subFolderId);
+    
+                    
+                    /** Se obtienen los datos con el que se va a guardar el nombre del archivo */
+                    nombreArchivo = nombreArchivo.toUpperCase();
+                    var arrayDatos = nombreArchivo.split('_');
+                    var fecha = new Date();
+                    //se quitan los espacios de nombre subsidiaria y periodo
+                    var subsi = nombreSubsidiaria.replace(/\s+/g, '');
+                    var per = nombrePeriodo.replace(/\s+/g, '')
+                    //log.debug('Fecha', fecha);
+                    //log.debug('Hora actual', moment().zone("-06:00").format('HH:mm:ss'));
+                    var nombreTxt = '';
+                    for(var i = 0; i < arrayDatos.length; i++){
+                        var dato = getData(arrayDatos[i], subsi, per, fecha);
+                        nombreTxt = nombreTxt + dato;
+                        if((i+1) != arrayDatos.length){
+                            nombreTxt = nombreTxt + '_';
                         }
+                    }
+                    log.debug('NombreTXT', nombreTxt);
+    
+                    /** Se crea el archivo txt, se indica el folder en el que se va a guardar*/
+                    var fileObj = file.create({
+                        name    : 'test.txt',
+                        fileType: file.Type.PLAINTEXT,
+                        folder: subFolderId,
+                        contents: 'Hello Lily\nHello World'
                     });
-                }else{
+                    var fileId = fileObj.save();
+                    log.debug('Info txt', 'Id: ' + fileId);
+
                     otherId = record.submitFields({
                         type: RECORD_INFO.DIOT_RECORD.ID,
                         id: recordID,
@@ -429,6 +391,15 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                             [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.COMPLETE,
                             [RECORD_INFO.DIOT_RECORD.FIELDS.FOLDER_ID]: subFolderId,
                             [RECORD_INFO.DIOT_RECORD.FIELDS.FILE]: fileId
+                        }
+                    });
+                } else{ //si hay error no se crea el folder ni el archivo, solo se actualiza el campo de estado
+                    otherId = record.submitFields({
+                        type: RECORD_INFO.DIOT_RECORD.ID,
+                        id: recordID,
+                        values: {
+                            [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
+                            [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: erroresTran
                         }
                     });
                 }
