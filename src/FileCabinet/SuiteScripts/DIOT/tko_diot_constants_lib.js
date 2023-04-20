@@ -101,10 +101,10 @@ define([],function(){
 
     const STATUS_LIST_DIOT = {};
 
-    STATUS_LIST_DIOT.PENDING = 'Pendiente..';
+    STATUS_LIST_DIOT.PENDING = 'Pendiente...';
     STATUS_LIST_DIOT.OBTAINING_DATA = 'Obteniendo Datos...';
-    STATUS_LIST_DIOT.VALIDATING_DATA = 'Validando Datos....';
-    STATUS_LIST_DIOT.BUILDING = 'Construyendo DIOT....';
+    STATUS_LIST_DIOT.VALIDATING_DATA = 'Validando Datos...';
+    STATUS_LIST_DIOT.BUILDING = 'Construyendo DIOT...';
     STATUS_LIST_DIOT.ERROR = 'Error';
     STATUS_LIST_DIOT.COMPLETE = 'Completado';
 

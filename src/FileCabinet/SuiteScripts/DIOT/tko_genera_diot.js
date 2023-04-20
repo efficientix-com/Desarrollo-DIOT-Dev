@@ -2,7 +2,7 @@
  * @NApiVersion 2.1
  * @NScriptType MapReduceScript
  */
-define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N/config', 'N/email', './tko_diot_constants_lib', './moment.js'],
+define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N/config', 'N/email', './tko_diot_constants_lib', './moment_diot.js'],
 
     (runtime, search, url, record, file, redirect, config, email, values, moment) => {
         /**
@@ -634,6 +634,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             if (suitetax) {
                 // cuando el motor es suite tax
                 var facturas = [];
+                var idPastBill = '', idPastVendor = '';
                 var facturaSearch = search.create({
                     type: RECORD_INFO.VENDOR_BILL_RECORD.ID,
                     filters:
@@ -693,8 +694,14 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 facturaSearch.run().each(function(result){
                     var id = result.getValue({ name: 'internalid' });
                     var proveedor = result.getValue({ name: 'internalid', join: "vendor" });
-                    var tipoTercero = result.getValue({ name: 'custentity_tko_diot_prov_type', join: "vendor" });
-                    var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                    var tipoTer = result.getValue({ name: 'custentity_tko_diot_prov_type', join: "vendor" });
+                    var tercero = result.getText({ name: 'custentity_tko_diot_prov_type', join: "vendor" });
+                    var tipoTercero = tercero.split(' ',1);
+                    tipoTercero = tipoTercero.toString();
+                    //var operacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                    var operacion = result.getText({ name: 'custbody_tko_tipo_operacion' });
+                    var tipoOperacion = operacion.split(' ',1);
+                    tipoOperacion = tipoOperacion.toString();
                     var importe = result.getValue({ name: 'netamount' });
                     var impuestos = result.getValue({ name: 'taxamount' });
                     var taxCode = result.getText({ name: 'taxcode', join: 'taxDetail' });
@@ -706,13 +713,22 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
 
                     // Se obtienen los datos del proveedor y se obtienen los errores de los campos que hagan falta
-                    var datos = buscaDatos(proveedor, tipoTercero, errores);
-
+                    var datos = buscaDatos(proveedor, tipoTer, errores);
+                   
                     //Se realiza la búsqueda de creditos de factura de acuerdo al proveedor y id de factura
-                    var credito = searchVendorCredit(proveedor, id, suitetax);
-                    if (credito.length == 0){
-                        credito = "";
+                    //solo manda a buscar si es una factura diferente
+                    var credito = '';
+                    if((proveedor != idPastVendor) && (id != idPastBill)){
+                        credito = searchVendorCredit(proveedor, id, suitetax);
+                        if (credito.length == 0){
+                            credito = '';
+                        }
+                    }else{
+                        credito = '';
                     }
+
+                    idPastBill = id;
+                    idPastVendor = proveedor;
     
                     facturas.push({
                         id: id,
@@ -737,7 +753,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
 
             } else {
                 // cuando el motor es legacy
-                var facturas = [], creditoFacturas = [];
+                var facturas = [];
+                var idPastBill = '', idPastVendor = '';
                 var facturaSearch = search.create({
                     type: RECORD_INFO.VENDOR_BILL_RECORD.ID,
                     filters:
@@ -791,8 +808,14 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 facturaSearch.run().each(function(result){
                     var id = result.getValue({ name: 'internalid' });
                     var proveedor = result.getValue({ name: 'internalid', join: "vendor" });
-                    var tipoTercero = result.getValue({ name: 'custentity_tko_diot_prov_type', join: "vendor" });
-                    var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                    var tipoTer = result.getValue({ name: 'custentity_tko_diot_prov_type', join: "vendor" });
+                    var tercero = result.getText({ name: 'custentity_tko_diot_prov_type', join: "vendor" });
+                    var tipoTercero = tercero.split(' ',1);
+                    tipoTercero = tipoTercero.toString();
+                    //var operacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                    var operacion = result.getText({ name: 'custbody_tko_tipo_operacion' });
+                    var tipoOperacion = operacion.split(' ',1);
+                    tipoOperacion = tipoOperacion.toString();
                     var importe = result.getValue({ name: 'netamountnotax' });
                     var impuestos = result.getValue({ name: 'taxamount' });
                     //var taxCode = result.getValue({ name: 'taxcode' });
@@ -808,13 +831,21 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     }
 
                     var tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
-                    var datos = buscaDatos(proveedor, tipoTercero, errores);
+                    var datos = buscaDatos(proveedor, tipoTer, errores);
     
                     //Realizar la búsqueda después de agrupar
-                    var credito = searchVendorCredit(proveedor, id, suitetax);
-                    if (credito.length == 0){
-                        credito = "";
+                    var credito = '';
+                    if((proveedor != idPastVendor) && (id != idPastBill)){
+                        credito = searchVendorCredit(proveedor, id, suitetax);
+                        if (credito.length == 0){
+                            credito = '';
+                        }
+                    }else{
+                        credito = '';
                     }
+
+                    idPastBill = id;
+                    idPastVendor = proveedor;
     
                    /*  var rfc = datos[0].rfc;
                     var taxID = datos[0].taxID;
@@ -911,8 +942,14 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
 
                     var id = result.getValue({ name: 'internalid' });
                     var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
-                    var tipoTercero = result.getValue({ name: 'custcol_tko_diot_prov_type' });
-                    var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                    var tipoTer = result.getValue({ name: 'custcol_tko_diot_prov_type' });
+                    var tercero = result.getText({ name: 'custcol_tko_diot_prov_type' });
+                    var tipoTercero = tercero.split(' ',1);
+                    tipoTercero = tipoTercero.toString();
+                    //var operacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                    var operacion = result.getText({ name: 'custbody_tko_tipo_operacion' });
+                    var tipoOperacion = operacion.split(' ',1);
+                    tipoOperacion = tipoOperacion.toString();
                     var importe = result.getValue({ name: 'netamount' });
                     var impuestos = result.getValue({ name: 'taxamount' });
                     var taxCode = result.getText({ name: 'taxcode', join: 'taxDetail' });
@@ -922,7 +959,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var errores = ''; 
 
                     var tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
-                    var datos = buscaDatos(proveedor, tipoTercero, errores);
+                    var datos = buscaDatos(proveedor, tipoTer, errores);
     
                     informes.push({
                         id: id,
@@ -991,8 +1028,14 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 informesSearch.run().each(function(result){
                     var id = result.getValue({ name: 'internalid' });
                     var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
-                    var tipoTercero = result.getValue({ name: 'custcol_tko_diot_prov_type' });
-                    var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                    var tipoTer = result.getValue({ name: 'custcol_tko_diot_prov_type' });
+                    var tercero = result.getText({ name: 'custcol_tko_diot_prov_type' });
+                    var tipoTercero = tercero.split(' ',1);
+                    tipoTercero = tipoTercero.toString();
+                    //var operacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                    var operacion = result.getText({ name: 'custbody_tko_tipo_operacion' });
+                    var tipoOperacion = operacion.split(' ',1);
+                    tipoOperacion = tipoOperacion.toString();
                     var importe = result.getValue({ name: 'netamountnotax' });
                     var impuestos = result.getValue({ name: 'taxamount' });
                     var taxCode = result.getText({ name: 'taxcode' });
@@ -1009,7 +1052,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     /* Obtener la tasa con la columna no con fórmula */
                     //tasa = calculaIVA(impuestos, importe, tasa);
                     var tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
-                    var datos = buscaDatos(proveedor, tipoTercero, errores);
+                    var datos = buscaDatos(proveedor, tipoTer, errores);
 
                     // errores = datos[0].errores;
     
@@ -1078,8 +1121,14 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 polizasSearch.run().each(function(result){
                     var id = result.getValue({ name: 'internalid' });
                     var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
-                    var tipoTercero = result.getValue({ name: 'custcol_tko_diot_prov_type' });
-                    var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                    var tipoTer = result.getValue({ name: 'custcol_tko_diot_prov_type' });
+                    var tercero = result.getText({ name: 'custcol_tko_diot_prov_type' });
+                    var tipoTercero = tercero.split(' ',1);
+                    tipoTercero = tipoTercero.toString();
+                    //var operacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                    var operacion = result.getText({ name: 'custbody_tko_tipo_operacion' });
+                    var tipoOperacion = operacion.split(' ',1);
+                    tipoOperacion = tipoOperacion.toString();
                     var importacionBienes = result.getValue({ name: 'custcol_tko_diot_importacion' });
                     var cuenta = result.getValue({ name: 'account' });
                     var importe = result.getValue({ name: 'netamount' }); //importe negativo = crédito, importe positivo = débito
@@ -1091,17 +1140,17 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     }
 
                     // Se manda llamar a la función para la búsqueda de código, tipo y tasa de impuesto
-                    var codigos = searchTaxCode(suitetax,cuenta, valCodigos);
+                    var codigos = searchTaxCode(suitetax, cuenta, valCodigos, exentos, iva, retenciones);
 
                     //Se obtiene el desglose de impuesto de acuerdo al código de impuesto
-                    var tipoDesglose;
+                    /* var tipoDesglose;
                     for (var i = 0; i < codigos.length; i++){
                         tipoDesglose = buscaDesgloseImpuesto(codigos[i].taxCode, exentos, iva, retenciones);
-                    }
+                    } */
 
                     //Si la cuenta no tiene un código y/o tipo de impuesto asociado, no se toma en cuenta
                     if(codigos.length != 0){
-                        var datos = buscaDatos(proveedor, tipoTercero, errores);
+                        var datos = buscaDatos(proveedor, tipoTer, errores);
         
                         polizas.push({
                             id: id,
@@ -1113,7 +1162,6 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                             importe: importe,
                             impuestos: impuestos,
                             codigos: codigos,
-                            tipoDesglose: tipoDesglose,
                             datos: datos
                         })
                     }
@@ -1170,8 +1218,14 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var id = result.getValue({ name: 'internalid' });
                     var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
                     var cuenta = result.getValue({ name: 'account' });
-                    var tipoTercero = result.getValue({ name: 'custcol_tko_diot_prov_type' });
-                    var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                    var tipoTer = result.getValue({ name: 'custcol_tko_diot_prov_type' });
+                    var tercero = result.getText({ name: 'custcol_tko_diot_prov_type' });
+                    var tipoTercero = tercero.split(' ',1);
+                    tipoTercero = tipoTercero.toString();
+                    //var operacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
+                    var operacion = result.getText({ name: 'custbody_tko_tipo_operacion' });
+                    var tipoOperacion = operacion.split(' ',1);
+                    tipoOperacion = tipoOperacion.toString();
                     var importe = result.getValue({ name: 'netamountnotax' });
                     var impuestos = result.getValue({ name: 'taxamount' });
                     //var taxCode = result.getValue({ name: 'taxcode' });
@@ -1179,9 +1233,14 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var importacionBienes = result.getValue({ name: 'custcol_tko_diot_importacion' });
                     var tasa = 0, errores = '';
     
-                    tasa = calculaIVA(impuestos, importe, tasa);
-                    var datos = buscaDatos(proveedor, tipoTercero, errores);
-    
+                    for(var i = 0; i < valCodigos.length; i++){
+                        if(valCodigos[i].codeName == taxCode){
+                            tasa = valCodigos[i].taxRate;
+                        }
+                    }
+                    //tasa = calculaIVA(impuestos, importe, tasa);
+                    var datos = buscaDatos(proveedor, tipoTer, errores);
+                    var tipoDesglose, codigos;
                     /* var rfc = datos[0].rfc;
                     var taxID = datos[0].taxID;
                     var nombreExtranjero = datos[0].nombreExtranjero;
@@ -1189,13 +1248,16 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var nacionalidad = datos[0].nacionalidad;
                     errores = datos[0].errores; */
 
-                    var codigos = searchTaxCode(suitetax, cuenta);
-
+                    //si no tiene un codigo de impuesto, se busca en base a la cuenta
+                    if(taxCode == ''){
+                        codigos = searchTaxCode(suitetax, cuenta, exentos, iva, retenciones);
+                    }
+                    tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
                     //Se obtiene el desglose de impuesto de acuerdo al código de impuesto
-                    var tipoDesglose;
+                    /* var tipoDesglose;
                     for (var i = 0; i < codigos.length; i++){
                         tipoDesglose = buscaDesgloseImpuesto(codigos[i].taxCode, exentos, iva, retenciones);
-                    }
+                    } */
     
                     polizas.push({
                         id: id,
@@ -1203,21 +1265,14 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         cuenta: cuenta,
                         tipoTercero: tipoTercero,
                         tipoOperacion: tipoOperacion,
-                        tasa: tasa,
                         importe: importe,
                         impuestos: impuestos,
                         taxCode: taxCode,
+                        tasa: tasa,
                         tipoDesglose: tipoDesglose,
                         importacionBienes: importacionBienes,
-                        datos: datos,
-                        /* rfc: rfc,
-                        taxID: taxID,
-                        nombreExtranjero: nombreExtranjero,
-                        paisResidencia: paisResidencia,
-                        nacionalidad: nacionalidad,
-                        errores: errores, */
-                        codigos: codigos
-                    })
+                        datos: datos
+                    });
                     return true;
                 });
 
@@ -1528,7 +1583,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
          * @param {*} valCodigos Registro de los códigos con tipo de impuesto y tasa
          * @returns Codigo y tipo de impuesto
          */
-        function searchTaxCode(suitetax, cuenta, valCodigos){
+        function searchTaxCode(suitetax, cuenta, valCodigos, exentos, iva, retenciones){
             if(suitetax){
                 var codigos = [];
                 var codigoSearch = search.create({
@@ -1572,14 +1627,21 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         }
                     }
 
+                    var tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
                     /** Si la cuenta coincide con una de las asociadas con un código de impuestos */
                     if (cuenta == cuenta1 || cuenta == cuenta2){
-                        codigos.push({
-                            id: id,
-                            taxCode: taxCode,
-                            tipoImpuesto: tipoImpuesto,
-                            tasa: tasa
-                        });
+                        //No hay iva 0 o exentos en polizas
+                        if(tipoDesglose != 'Exento'){
+                            if((tipoDesglose == 'Iva' && tasa != 0) || (tipoDesglose == 'Retenciones')){
+                                codigos.push({
+                                    id: id,
+                                    taxCode: taxCode,
+                                    tipoImpuesto: tipoImpuesto,
+                                    tasa: tasa,
+                                    tipoDesglose: tipoDesglose
+                                });
+                            }
+                        }
                     }
 
                     return true;
@@ -1729,11 +1791,19 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             if(notificar){
                 email.send({
                     author: 1756,
-                    recipients: userObj.email,
+                    recipients: userObj.id,
                     subject: 'DIOT',
                     body: 'El proceso de la DIOT ha terminado',
                 });
             }
+
+            /* array = [dato1,"|",dato2...]
+
+            var variable = ""
+            variable += dato1
+            variable += "|" */
+            
+            
 
         }
 
