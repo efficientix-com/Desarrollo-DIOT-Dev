@@ -1251,28 +1251,43 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     //si no tiene un codigo de impuesto, se busca en base a la cuenta
                     if(taxCode == ''){
                         codigos = searchTaxCode(suitetax, cuenta, exentos, iva, retenciones);
+
+                        polizas.push({
+                            id: id,
+                            proveedor: proveedor,
+                            cuenta: cuenta,
+                            tipoTercero: tipoTercero,
+                            tipoOperacion: tipoOperacion,
+                            importacionBienes: importacionBienes,
+                            importe: importe,
+                            impuestos: impuestos,
+                            codigos: codigos,
+                            datos: datos
+                        });
+                    }else{
+                        tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
+
+                        polizas.push({
+                            id: id,
+                            proveedor: proveedor,
+                            cuenta: cuenta,
+                            tipoTercero: tipoTercero,
+                            tipoOperacion: tipoOperacion,
+                            importe: importe,
+                            impuestos: impuestos,
+                            taxCode: taxCode,
+                            tasa: tasa,
+                            tipoDesglose: tipoDesglose,
+                            importacionBienes: importacionBienes,
+                            datos: datos
+                        });
                     }
-                    tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
                     //Se obtiene el desglose de impuesto de acuerdo al código de impuesto
                     /* var tipoDesglose;
                     for (var i = 0; i < codigos.length; i++){
                         tipoDesglose = buscaDesgloseImpuesto(codigos[i].taxCode, exentos, iva, retenciones);
                     } */
-    
-                    polizas.push({
-                        id: id,
-                        proveedor: proveedor,
-                        cuenta: cuenta,
-                        tipoTercero: tipoTercero,
-                        tipoOperacion: tipoOperacion,
-                        importe: importe,
-                        impuestos: impuestos,
-                        taxCode: taxCode,
-                        tasa: tasa,
-                        tipoDesglose: tipoDesglose,
-                        importacionBienes: importacionBienes,
-                        datos: datos
-                    });
+                    
                     return true;
                 });
 
@@ -1630,7 +1645,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
                     /** Si la cuenta coincide con una de las asociadas con un código de impuestos */
                     if (cuenta == cuenta1 || cuenta == cuenta2){
-                        //No hay iva 0 o exentos en polizas
+                        //Se verifica que no sea iva 0 o exentos
                         if(tipoDesglose != 'Exento'){
                             if((tipoDesglose == 'Iva' && tasa != 0) || (tipoDesglose == 'Retenciones')){
                                 codigos.push({
@@ -1673,13 +1688,21 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var cuenta1 = result.getValue({ name: 'purchaseaccount' });
                     var cuenta2 = result.getValue({ name: 'saleaccount' });
 
+                    var tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
+
                     if(cuenta == cuenta1 || cuenta == cuenta2){
-                        codigos.push({
-                            id: id,
-                            taxCode: taxCode,
-                            tipoImpuesto: tipoImpuesto,
-                            tasa: tasa,
-                        });
+                        //Se verifica que no sea iva 0 o exentos
+                        if(tipoDesglose != 'Exento'){
+                            if((tipoDesglose == 'Iva' && tasa != 0) || (tipoDesglose == 'Retenciones')){
+                                codigos.push({
+                                    id: id,
+                                    taxCode: taxCode,
+                                    tipoImpuesto: tipoImpuesto,
+                                    tasa: tasa,
+                                    tipoDesglose: tipoDesglose
+                                });
+                            }
+                        }
                     }
 
                     return true;
