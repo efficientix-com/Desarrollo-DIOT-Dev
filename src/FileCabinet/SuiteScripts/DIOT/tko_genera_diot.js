@@ -20,6 +20,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
 
         var taxRateArray = new Array();
         var error = false; 
+        var erroresArray = new Array();
 
         const SCRIPTS_INFO = values.SCRIPTS_INFO;
         const RECORD_INFO = values.RECORD_INFO;
@@ -36,32 +37,6 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 var periodo = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD });
                 var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID }); 
                 //log.debug('Datos', subsidiaria + " " + periodo);
-
-                /** Se crea un registro para guardar los datos de la pantalla del suitelet */
-                /* var registroDIOT = record.load({
-                    type: 'customrecord_tko_diot',
-                    id: 1, 
-                });
-
-                registroDIOT.setValue({
-                    fieldId: 'custrecord_tko_periodo_diot',
-                    value: periodo
-                });
-                
-                registroDIOT.setValue({
-                    fieldId: 'custrecord_tko_subsidiaria_diot',
-                    value: subsidiaria
-                });
-
-                registroDIOT.setValue({
-                    fieldId: 'custrecord_tko_estado_diot',
-                    value: 10
-                })
-
-                registroDIOT.save({
-                    enableSourcing: true,
-                    ignoreMandatoryFields: true
-                }); */
 
                 log.audit({title: 'MR', details: "Se esta ejecutando el MR: getInputData"});
 
@@ -83,7 +58,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 return codigosImpuesto;
 
             } catch (error) {
-                log.error({ title: 'Error en la busqueda de Códigos de Impuesto', details: error })
+                erroresArray.push(error);
+                log.error({ title: 'Error en la busqueda de Códigos de Impuesto', details: error });
             }
 
         }
@@ -176,6 +152,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     
 
             }catch(error){
+                erroresArray.push(error);
                 log.error({ title: 'Error al realizar el registro de cada resultado', details: error });
             }
 
@@ -302,7 +279,6 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
 
                 //Se separan los errores y se meten en un arreglo
                 var erroresArrayAux = erroresTran.split(',');
-                var erroresArray = [];
                 //Se meten en un arreglo final para evitar los errores repetidos
                 for (var i = 0; i < erroresArrayAux.length; i++){
                     if(erroresArray.length != 0){
@@ -1135,9 +1111,9 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var impuestos = result.getValue({ name: 'taxtotal' });
                     var errores = '';
 
-                    if(impuestos == ''){
+                    /* if(impuestos == ''){
                         impuestos = 0;
-                    }
+                    } */
 
                     // Se manda llamar a la función para la búsqueda de código, tipo y tasa de impuesto
                     var codigos = searchTaxCode(suitetax, cuenta, valCodigos, exentos, iva, retenciones);
@@ -1163,7 +1139,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                             impuestos: impuestos,
                             codigos: codigos,
                             datos: datos
-                        })
+                        });
                     }
                     return true;
                 });
@@ -1231,57 +1207,37 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     //var taxCode = result.getValue({ name: 'taxcode' });
                     var taxCode = result.getValue({ name: 'name', join: 'taxItem' });
                     var importacionBienes = result.getValue({ name: 'custcol_tko_diot_importacion' });
-                    var tasa = 0, errores = '';
-    
-                    for(var i = 0; i < valCodigos.length; i++){
-                        if(valCodigos[i].codeName == taxCode){
-                            tasa = valCodigos[i].taxRate;
-                        }
-                    }
-                    //tasa = calculaIVA(impuestos, importe, tasa);
+                    var tasa = '', errores = '', tipoDesglose = '', codigos = '';
+
                     var datos = buscaDatos(proveedor, tipoTer, errores);
-                    var tipoDesglose, codigos;
-                    /* var rfc = datos[0].rfc;
-                    var taxID = datos[0].taxID;
-                    var nombreExtranjero = datos[0].nombreExtranjero;
-                    var paisResidencia = datos[0].paisResidencia;
-                    var nacionalidad = datos[0].nacionalidad;
-                    errores = datos[0].errores; */
 
                     //si no tiene un codigo de impuesto, se busca en base a la cuenta
                     if(taxCode == ''){
-                        codigos = searchTaxCode(suitetax, cuenta, exentos, iva, retenciones);
-
-                        polizas.push({
-                            id: id,
-                            proveedor: proveedor,
-                            cuenta: cuenta,
-                            tipoTercero: tipoTercero,
-                            tipoOperacion: tipoOperacion,
-                            importacionBienes: importacionBienes,
-                            importe: importe,
-                            impuestos: impuestos,
-                            codigos: codigos,
-                            datos: datos
-                        });
+                        codigos = searchTaxCode(suitetax, cuenta, valCodigos, exentos, iva, retenciones);
                     }else{
+                        for(var i = 0; i < valCodigos.length; i++){
+                            if(valCodigos[i].codeName == taxCode){
+                                tasa = valCodigos[i].taxRate;
+                            }
+                        }
                         tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
-
-                        polizas.push({
-                            id: id,
-                            proveedor: proveedor,
-                            cuenta: cuenta,
-                            tipoTercero: tipoTercero,
-                            tipoOperacion: tipoOperacion,
-                            importe: importe,
-                            impuestos: impuestos,
-                            taxCode: taxCode,
-                            tasa: tasa,
-                            tipoDesglose: tipoDesglose,
-                            importacionBienes: importacionBienes,
-                            datos: datos
-                        });
                     }
+
+                    polizas.push({
+                        id: id,
+                        proveedor: proveedor,
+                        tipoTercero: tipoTercero,
+                        tipoOperacion: tipoOperacion,
+                        importacionBienes: importacionBienes,
+                        importe: importe,
+                        impuestos: impuestos,
+                        taxCode: taxCode,
+                        tasa: tasa,
+                        tipoDesglose: tipoDesglose,
+                        codigos: codigos,
+                        datos: datos
+                    });
+
                     //Se obtiene el desglose de impuesto de acuerdo al código de impuesto
                     /* var tipoDesglose;
                     for (var i = 0; i < codigos.length; i++){
@@ -1683,10 +1639,17 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 codigoSearch.run().each(function(result){
                     var id = result.getValue({ name: 'internalid' });
                     var taxCode = result.getValue({ name: 'name' });
-                    var tasa = result.getValue({ name: 'rate' });
+                    //var tasa = result.getValue({ name: 'rate' });
                     var tipoImpuesto = result.getValue({ name: 'taxtype' });
                     var cuenta1 = result.getValue({ name: 'purchaseaccount' });
                     var cuenta2 = result.getValue({ name: 'saleaccount' });
+                    var tasa;
+
+                    for(var i = 0; i < valCodigos.length; i++){
+                        if(valCodigos[i].codeName == taxCode){
+                            tasa = valCodigos[i].taxRate;
+                        }
+                    }
 
                     var tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
 
@@ -1786,48 +1749,42 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
          * @since 2015.2
          */
         const summarize = (summaryContext) => {
-
-            /* log.debug('Summary Time', summaryContext.seconds);
-            log.debug('Summary Usage', summaryContext.usage);
-            log.debug('Summary Yields', summaryContext.yields);
-
-            log.debug('Input Summary', summaryContext.inputSummary);
-            log.debug('Map Summary', summaryContext.mapSummary);
-            log.debug('Reduce Summary', summaryContext.reduceSummary); */
-
-            /* var diot = record.submitFields({
-                type: 'customrecord_tko_diot',
-                id: 1,
-                values: {
-                    'custrecord_tko_estado_diot': 97
+            try {
+                /* log.debug('Summary Time', summaryContext.seconds);
+                log.debug('Summary Usage', summaryContext.usage);
+                log.debug('Summary Yields', summaryContext.yields);
+    
+                log.debug('Input Summary', summaryContext.inputSummary);
+                log.debug('Map Summary', summaryContext.mapSummary);
+                log.debug('Reduce Summary', summaryContext.reduceSummary); */
+    
+                /* var diot = record.submitFields({
+                    type: 'customrecord_tko_diot',
+                    id: 1,
+                    values: {
+                        'custrecord_tko_estado_diot': 97
+                    }
+                }); */
+    
+                /** Cuando ya termine, enviar correo notificando al usuario */
+                var objScript = runtime.getCurrentScript();
+                var notificar = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOTIFICAR });
+                log.debug('Notificar', notificar);
+                // se obtiene el correo del usuario que ejecuto
+                var userObj = runtime.getCurrentUser();
+                log.debug('Current user email: ' , userObj.email);
+    
+                if(notificar){
+                    email.send({
+                        author: 1756,
+                        recipients: userObj.id,
+                        subject: 'DIOT',
+                        body: 'El proceso de la DIOT ha terminado',
+                    });
                 }
-            }); */
-
-            /** Cuando ya termine, enviar correo notificando al usuario */
-            var objScript = runtime.getCurrentScript();
-            var notificar = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOTIFICAR });
-            log.debug('Notificar', notificar);
-            // se obtiene el correo del usuario que ejecuto
-            var userObj = runtime.getCurrentUser();
-            log.debug('Current user email: ' , userObj.email);
-
-            if(notificar){
-                email.send({
-                    author: 1756,
-                    recipients: userObj.id,
-                    subject: 'DIOT',
-                    body: 'El proceso de la DIOT ha terminado',
-                });
+            } catch (error) {
+                log.error({ title: 'Error en el envío de correo', details: error })
             }
-
-            /* array = [dato1,"|",dato2...]
-
-            var variable = ""
-            variable += dato1
-            variable += "|" */
-            
-            
-
         }
 
 
