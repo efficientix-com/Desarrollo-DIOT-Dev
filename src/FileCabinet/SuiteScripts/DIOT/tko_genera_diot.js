@@ -19,7 +19,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
          */
 
         var taxRateArray = new Array();
-        var error = false; 
+        var error = false;
         var erroresArray = new Array();
 
         const SCRIPTS_INFO = values.SCRIPTS_INFO;
@@ -58,7 +58,15 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 return codigosImpuesto;
 
             } catch (error) {
-                erroresArray.push(error);
+                var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID });
+                otherId = record.submitFields({
+                    type: RECORD_INFO.DIOT_RECORD.ID,
+                    id: recordID,
+                    values: {
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: error.message
+                    }
+                });
                 log.error({ title: 'Error en la busqueda de Códigos de Impuesto', details: error });
             }
 
@@ -152,7 +160,15 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     
 
             }catch(error){
-                erroresArray.push(error);
+                var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID });
+                otherId = record.submitFields({
+                    type: RECORD_INFO.DIOT_RECORD.ID,
+                    id: recordID,
+                    values: {
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: error.message
+                    }
+                });
                 log.error({ title: 'Error al realizar el registro de cada resultado', details: error });
             }
 
@@ -407,13 +423,40 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     if(idProv.length != 0){
                         
                         //se estructuran los datos
-                        arrayTxt = estructuraDatos(idProv, facturasProv, informesGastos, polizasDiario);
+                        arrayTxt = estructuraDatos(idProv, facturasProv, informesGastos, polizasDiario, suitetax);
                         var txt = arrayTxt.toString();
                         var txtFinal = txt.replace(/,+/g,'');
                         
+                        /** Se busca que no exista el nombre del archivo en la carpeta */
+                        var fileExist = false;
+                        var searchFile = search.create({
+                            type: "folder",
+                            filters:
+                            [
+                               ["internalid","anyof",subFolderId]
+                            ],
+                            columns:
+                            [
+                               search.createColumn({
+                                  name: "name",
+                                  join: "file"
+                               })
+                            ]
+                        });
+                         searchFile.run().each(function(result){
+                            var fileName = result.getValue({ name: 'name', join: 'file' });
+                            if(fileName == nombreTxt){
+                                fileExist = true;
+                            }
+                            return true;
+                        });
+                        if(fileExist){
+                            //nombreTxt = nombreTxt;
+                        }
+
                         /** Se crea el archivo txt, se indica el folder en el que se va a guardar*/
                         var fileObj = file.create({
-                            name    : 'test.txt',
+                            name    : nombreTxt,
                             fileType: file.Type.PLAINTEXT,
                             folder: subFolderId,
                             contents: txtFinal
@@ -458,14 +501,14 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     id: recordID,
                     values: {
                         [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
-                        [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: error
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: error.message
                     }
                 });
                 log.error({ title: 'Error en las búsquedas de transacciones', details: error });
             }
         }
 
-        function estructuraDatos(idProv, facturasProv, informesGastos, polizasDiario){
+        function estructuraDatos(idProv, facturasProv, informesGastos, polizasDiario, suitetax){
             var arrayTxt = new Array();
             for (var id_prov = 0; id_prov < idProv.length; id_prov++) {
                 var prov = idProv[id_prov];
@@ -481,10 +524,20 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                             nombreExtranjero = facturasProv[factura].datos[0].nombreExtranjero;
                             pais = facturasProv[factura].datos[0].paisResidencia;
                             nacionalidad = facturasProv[factura].datos[0].nacionalidad;
-                            var importe = parseFloat(facturasProv[factura].importe);
-                            importe = Math.abs(importe);
-                            var impuestos = parseFloat(facturasProv[factura].impuestos);
-                            impuestos = Math.abs(impuestos);
+                            var importe;
+                            if(facturasProv[factura].importe != ""){
+                                importe = parseFloat(facturasProv[factura].importe);
+                                importe = Math.abs(importe);
+                            }else{
+                                importe = 0;
+                            }
+                            var impuestos;
+                            if(facturasProv[factura].impuestos != ""){
+                                impuestos = parseFloat(facturasProv[factura].impuestos);
+                                impuestos = Math.abs(impuestos);
+                            }else{
+                                impuestos = 0;
+                            }
                             var credito = facturasProv[factura].credito;
                             var tasa = parseFloat(facturasProv[factura].tasa);
                             tasa = Math.abs(tasa);
@@ -510,7 +563,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                                         importacion1011 = importacion1011 + impuestos;
                                     }
                                 }
-                            }else{
+                            }else if(facturasProv[factura].tipoDesglose == 'Retenciones'){
                                 retencion = retencion + impuestos;
                             }
 
@@ -535,10 +588,20 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                             nombreExtranjero = informesGastos[informe].datos[0].nombreExtranjero;
                             pais = informesGastos[informe].datos[0].paisResidencia;
                             nacionalidad = informesGastos[informe].datos[0].nacionalidad;
-                            var importe = parseFloat(informesGastos[informe].importe);
-                            importe = Math.abs(importe);
-                            var impuestos = parseFloat(informesGastos[informe].impuestos);
-                            impuestos = Math.abs(impuestos);
+                            var importe;
+                            if(informesGastos[informe].importe != ""){
+                                importe = parseFloat(informesGastos[informe].importe);
+                                importe = Math.abs(importe);
+                            }else{
+                                importe = 0;
+                            }
+                            var impuestos;
+                            if(informesGastos[informe].impuestos != ""){
+                                impuestos = parseFloat(informesGastos[informe].impuestos);
+                                impuestos = Math.abs(impuestos);
+                            }else{
+                                impuestos = 0;
+                            }
                             var tasa = parseFloat(informesGastos[informe].tasa);
                             tasa = Math.abs(tasa);
                             if(informesGastos[informe].tipoDesglose == 'Exento'){
@@ -563,7 +626,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                                         importacion1011 = importacion1011 + impuestos;
                                     }
                                 }
-                            }else{
+                            }else if(informesGastos[informe].tipoDesglose == 'Retenciones'){
                                 retencion = retencion + impuestos;
                             }
                         }
@@ -580,6 +643,44 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                             nombreExtranjero = polizasDiario[poliza].datos[0].nombreExtranjero;
                             pais = polizasDiario[poliza].datos[0].paisResidencia;
                             nacionalidad = polizasDiario[poliza].datos[0].nacionalidad;
+                            var importe;
+                            if(polizasDiario[poliza].importe != ""){
+                                importe = parseFloat(polizasDiario[poliza].importe);
+                                importe = Math.abs(importe);
+                            }else{
+                                importe = 0;
+                            }
+                            var impuestos;
+                            if(polizasDiario[poliza].impuestos != ""){
+                                impuestos = parseFloat(polizasDiario[poliza].impuestos);
+                                impuestos = Math.abs(impuestos);
+                            }else{
+                                impuestos = 0;
+                            }
+                            var tasa;
+                            if(suitetax){
+                                if(polizasDiario[poliza].codigos != ''){
+                                    tasa = parseFloat(polizasDiario[poliza].codigos[0].tasa);
+                                    tasa = Math.abs(tasa);
+                                    if(polizasDiario[poliza].codigos[0].tipoDesglose == 'Iva'){
+                                        if(tasa == 8){ //zona fronteriza
+                                            regionNorte = regionNorte + impuestos;
+                                        }else if(tasa == 15 || tasa == 16){
+                                            if(polizasDiario[poliza].importacionBienes == true){
+                                                importacion1516 = importacion1516 + impuestos;
+                                            }else{
+                                                iva1516 = iva1516 + importe;
+                                            }
+                                        }else if(tasa == 10 || tasa == 11){
+                                            if(polizasDiario[poliza].importacionBienes == true){
+                                                importacion1011 = importacion1011 + impuestos;
+                                            }
+                                        }
+                                    }else if(polizasDiario[poliza].codigos[0].tipoDesglose == 'Retenciones'){
+                                        retencion = retencion + impuestos;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -594,8 +695,22 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 retencion = evaluar(retencion);
                 devoluciones = evaluar(devoluciones);
 
-                var linea = tercero+'|'+operacion+'|'+rfc+'|'+taxid+'|'+nombreExtranjero+'|'+pais+'|'+nacionalidad+'|'+iva1516+'|||||'+regionNorte+'|||'+importacion1516+'||'+importacion1011+'||'+importacionExento+'|'+iva0+'|'+exento+'|'+retencion+'|'+devoluciones;
-                arrayTxt.push(linea+'\n');
+                var arrayCampos = new Array();
+                arrayCampos.push(iva1516,regionNorte,importacion1516,importacion1011,importacionExento,iva0,exento,retencion,devoluciones);
+                var linea;
+                var camposVacios = 0;
+                for(var i = 0; i < arrayCampos.length; i++){
+                    if(arrayCampos[i] == ''){
+                        camposVacios = camposVacios + 1;
+                    }
+                }
+                if(camposVacios < 9){
+                    linea = tercero+'|'+operacion+'|'+rfc+'|'+taxid+'|'+nombreExtranjero+'|'+pais+'|'+nacionalidad+'|'+iva1516+'|||||'+regionNorte+'|||'+importacion1516+'||'+importacion1011+'||'+importacionExento+'|'+iva0+'|'+exento+'|'+retencion+'|'+devoluciones+'\n';
+                }
+                else{
+                    linea = '';
+                }
+                arrayTxt.push(linea);
             }
 
             return arrayTxt;
@@ -2645,14 +2760,6 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 log.debug('Map Summary', summaryContext.mapSummary);
                 log.debug('Reduce Summary', summaryContext.reduceSummary); */
     
-                /* var diot = record.submitFields({
-                    type: 'customrecord_tko_diot',
-                    id: 1,
-                    values: {
-                        'custrecord_tko_estado_diot': 97
-                    }
-                }); */
-    
                 /** Cuando ya termine, enviar correo notificando al usuario */
                 var objScript = runtime.getCurrentScript();
                 var notificar = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOTIFICAR });
@@ -2663,13 +2770,22 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
     
                 if(notificar){
                     email.send({
-                        author: 1756,
-                        recipients: userObj.id,
+                        author: userObj.id,
+                        recipients: userObj.email,
                         subject: 'DIOT',
                         body: 'El proceso de la DIOT ha terminado',
                     });
                 }
             } catch (error) {
+                var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID });
+                otherId = record.submitFields({
+                    type: RECORD_INFO.DIOT_RECORD.ID,
+                    id: recordID,
+                    values: {
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: error.message
+                    }
+                });
                 log.error({ title: 'Error en el envío de correo', details: error })
             }
         }
