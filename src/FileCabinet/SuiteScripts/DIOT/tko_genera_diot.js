@@ -428,31 +428,48 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         var txtFinal = txt.replace(/,+/g,'');
                         
                         /** Se busca que no exista el nombre del archivo en la carpeta */
-                        var fileExist = false;
-                        var searchFile = search.create({
+                        var archivos = [];
+                        var folderSearchObj = search.create({
                             type: "folder",
                             filters:
                             [
-                               ["internalid","anyof",subFolderId]
+                               ["internalid","anyof",subFolderId], 
+                               "AND", 
+                               ["file.name","startswith",nombreTxt]
                             ],
                             columns:
                             [
                                search.createColumn({
                                   name: "name",
-                                  join: "file"
+                                  join: "file",
+                                  sort: search.Sort.DESC
                                })
                             ]
-                        });
-                         searchFile.run().each(function(result){
-                            var fileName = result.getValue({ name: 'name', join: 'file' });
-                            if(fileName == nombreTxt){
-                                fileExist = true;
-                            }
+                         });
+                        var numArchivos = folderSearchObj.runPaged().count;
+                        folderSearchObj.run().each(function(result){
+                            var archivo = result.getValue({ name: 'name', join: 'file' });
+                            archivos.push(archivo);
                             return true;
                         });
-                        if(fileExist){
-                            //nombreTxt = nombreTxt;
+                        if(numArchivos == 0){//no existe
+                        
+                        }else{
+                            var numCaracteres = nombreTxt.length;
+                            log.debug('Archivos',archivos);
+                            log.debug('Archivos', archivos[0]);
+                            var lastFile = archivos[0];
+                            var n = lastFile.substring(numCaracteres); //obtiene el ultimo numero de archivo
+                            if(n != ''){
+                                var num = n.replace(/_+/g,'');
+                                num = parseFloat(num) + 1;
+                                nombreTxt = nombreTxt + '_' + num;
+                            }else{
+                                nombreTxt = nombreTxt + '_' + 1;
+                            }
                         }
+                        log.debug('Nombre Final', nombreTxt);
+                        //nombreTxt = nombreTxt;
 
                         /** Se crea el archivo txt, se indica el folder en el que se va a guardar*/
                         var fileObj = file.create({
