@@ -15,6 +15,8 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
         const SCRIPTS_INFO = values.SCRIPTS_INFO;
         const RUNTIME = values.RUNTIME;
 
+        //Cambio de nombre en el archivo
+
         /**
          * Defines the Suitelet script trigger point.
          * @param {Object} scriptContext
@@ -257,6 +259,14 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
                     }
                 });
                 var idTask = mrTask.submit();
+                var otherId = record.submitFields({
+                    type: RECORD_INFO.DIOT_RECORD.ID,
+                    id: recordId_diot,
+                    values: {
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.TASK_ID]: idTask
+                    }
+                });
+                
                 log.audit({ title: 'idTask', details: idTask });
             }
             catch (e) {

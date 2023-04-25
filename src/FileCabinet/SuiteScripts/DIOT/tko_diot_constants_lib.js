@@ -31,6 +31,12 @@ define([],function(){
     INTERFACE.FORM.BUTTONS.GENERAR.ID = 'btn_generar_diot';
     INTERFACE.FORM.BUTTONS.GENERAR.LABEL = 'Generar';
     INTERFACE.FORM.BUTTONS.GENERAR.FUNCTION = 'generarReporte';
+    INTERFACE.FORM.BUTTONS.ACTUALIZAR = {};
+    INTERFACE.FORM.BUTTONS.ACTUALIZAR.ID = 'custpage_btn_reload_page';
+    INTERFACE.FORM.BUTTONS.ACTUALIZAR.LABEL = 'Actualizar';
+    INTERFACE.FORM.BUTTONS.ACTUALIZAR.FUNCTION = 'actualizarPantalla';
+    INTERFACE.FORM.BUTTONS.EDITAR = {};
+    INTERFACE.FORM.BUTTONS.EDITAR.ID = 'edit';
 
     INTERFACE.FORM.FIELD_GROUP = {};
     INTERFACE.FORM.FIELD_GROUP.DATOS = {};
@@ -98,6 +104,8 @@ define([],function(){
     RECORD_INFO.DIOT_RECORD.FIELDS.STATUS = 'custrecord_tko_estado_diot';
     RECORD_INFO.DIOT_RECORD.FIELDS.PERCENTAGE = 'custrecord_tko_porcentaje_diot';
     RECORD_INFO.DIOT_RECORD.FIELDS.ERROR = 'custrecord_tko_errores_diot';
+    RECORD_INFO.DIOT_RECORD.FIELDS.TASK_ID = 'custrecord_tko_task_id';
+    RECORD_INFO.DIOT_RECORD.FIELDS.PROGRESS = 'custrecord_tko_porcentaje_avance';
 
     const STATUS_LIST_DIOT = {};
 
@@ -122,8 +130,8 @@ define([],function(){
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOTIFICAR = 'custscript_tko_diot_notificar_correo';
 
     SCRIPTS_INFO.SUITELET = {};
-    SCRIPTS_INFO.SUITELET.SCRIPT_ID = 'customscript_tko_diot_view_sl';
-    SCRIPTS_INFO.SUITELET.DEPLOYMENT_ID = 'customdeploy_tko_diot_view_sl';
+    SCRIPTS_INFO.SUITELET.SCRIPT_ID = 'customscript_fb_diot_view_sl';
+    SCRIPTS_INFO.SUITELET.DEPLOYMENT_ID = 'customdeploy_fb_diot_view_sl';
     SCRIPTS_INFO.SUITELET.PARAMETERS = {};
     SCRIPTS_INFO.SUITELET.PARAMETERS.SUBSIDIARY = 'subsidiaria';
     SCRIPTS_INFO.SUITELET.PARAMETERS.PERIOD = 'periodo';

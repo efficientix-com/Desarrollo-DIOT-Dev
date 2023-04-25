@@ -227,8 +227,6 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         id: recordID,
                         values: {
                             [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.BUILDING,
-                            [RECORD_INFO.DIOT_RECORD.FIELDS.SUBSIDIARY]: nombreSubsidiaria,
-                            [RECORD_INFO.DIOT_RECORD.FIELDS.PERIOD]: nombrePeriodo
                         }
                     });
                 }else{
@@ -246,8 +244,6 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         id: recordID,
                         values: {
                             [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.BUILDING,
-                            [RECORD_INFO.DIOT_RECORD.FIELDS.SUBSIDIARY]: compname,
-                            [RECORD_INFO.DIOT_RECORD.FIELDS.PERIOD]: nombrePeriodo
                         }
                     });
                 }
@@ -317,7 +313,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 }
 
                 //Se separan los errores y se meten en un arreglo
-                var erroresArrayAux = erroresTran.split(',');
+                var erroresArrayAux = erroresTran.split('/');
                 //Se meten en un arreglo final para evitar los errores repetidos
                 for (var i = 0; i < erroresArrayAux.length; i++){
                     if(erroresArray.length != 0){
@@ -2303,13 +2299,14 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             var datos = search.lookupFields({
                 type: search.Type.VENDOR,
                 id: proveedor,
-                columns: ['custentity_mx_rfc', 'custentity_efx_fe_numregidtrib' , 'custentity_tko_nombre_extranjero', 'custentity_tko_pais_residencia', 'custentity_tko_nacionalidad']
+                columns: ['custentity_mx_rfc', 'custentity_efx_fe_numregidtrib' , 'custentity_tko_nombre_extranjero', 'custentity_tko_pais_residencia', 'custentity_tko_nacionalidad', 'companyname']
             });
 
             var rfc = datos.custentity_mx_rfc;
             var taxID = datos.custentity_efx_fe_numregidtrib;
             var nombreExtranjero = datos.custentity_tko_nombre_extranjero;
             var paisResidencia = datos.custentity_tko_pais_residencia;
+            var nombreProv = datos.companyname;
             if(paisResidencia.length != 0){
                 var paisText = paisResidencia[0].text;
                 paisResidencia = paisText;
@@ -2320,8 +2317,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
 
             if (tipoTercero == 1){ //si es proveedor nacional -> RFC obligatorio
                 if(rfc == ''){
-                    error = "El proveedor " + proveedor + " no tiene asignado el RFC";
-                    errores = errores + error + ",";
+                    error = "El proveedor " + nombreProv + " no tiene asignado el RFC";
+                    errores = errores + error + "/";
                 }
                 /** Los siguientes campos son vacíos porque solo aplican para proveedores extranjeros */
                 taxID = "";
@@ -2330,17 +2327,17 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 nacionalidad = "";
             } else if (tipoTercero == 2){ // si es proveedor extranjero -> RFC opcional, TaxID obligatorio, nombreExtranjero opcional
                 if(taxID == ''){
-                    error = "El proveedor " + proveedor + " no tiene asignado el número de ID Fiscal";
-                    errores = errores + error + ",";
+                    error = "El proveedor " + nombreProv + " no tiene asignado el número de ID Fiscal";
+                    errores = errores + error + "/";
                 }
                 /** Si tiene asignado un valor el campo nombre extranjero, se tiene que tener el pais y la nacionalidad */
                 if (nombreExtranjero != ""  && paisResidencia == ""){
-                    error = "El proveedor " + proveedor + " no tiene asignado el pais de residencia";
-                    errores = errores + error + ",";
+                    error = "El proveedor " + nombreProv + " no tiene asignado el pais de residencia";
+                    errores = errores + error + "/";
                 }
                 if(nombreExtranjero != "" && nacionalidad == ""){
-                    error = "El proveedor " + proveedor + " no tiene asignada la nacionalidad";
-                    errores = errores + error + ",";
+                    error = "El proveedor " + nombreProv + " no tiene asignada la nacionalidad";
+                    errores = errores + error + "/";
                 }
                 /** Si no tiene un valor en nombre extranjero los otros campos no importan */
                 if(nombreExtranjero == ""){ 
