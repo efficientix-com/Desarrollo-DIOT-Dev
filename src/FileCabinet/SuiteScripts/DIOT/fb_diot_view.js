@@ -2,7 +2,7 @@
  * @NApiVersion 2.1
  * @NScriptType Suitelet
  */
-define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_diot_constants_lib', 'N/record', 'N/redirect'],
+define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './fb_diot_constants_lib', 'N/record', 'N/redirect'],
     /**
  * @param{log} log
  * @param{serverWidget} serverWidget

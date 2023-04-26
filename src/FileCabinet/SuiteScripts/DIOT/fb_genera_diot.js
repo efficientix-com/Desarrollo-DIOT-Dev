@@ -2,9 +2,10 @@
  * @NApiVersion 2.1
  * @NScriptType MapReduceScript
  */
-define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N/config', 'N/email', './tko_diot_constants_lib', './moment_diot.js'],
+define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N/config', 'N/email', './fb_diot_constants_lib', './moment_diot.js'],
 
     (runtime, search, url, record, file, redirect, config, email, values, moment) => {
+
         /**
          * Defines the function that is executed at the beginning of the map/reduce process and generates the input data.
          * @param {Object} inputContext

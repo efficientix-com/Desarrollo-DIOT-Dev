@@ -119,8 +119,8 @@ define([],function(){
     const SCRIPTS_INFO = {};
 
     SCRIPTS_INFO.MAP_REDUCE = {};
-    SCRIPTS_INFO.MAP_REDUCE.SCRIPT_ID = 'customscript_tko_generate_diot_mr';
-    SCRIPTS_INFO.MAP_REDUCE.DEPLOYMENT_ID = 'customdeploy_tko_diot_generate_1';
+    SCRIPTS_INFO.MAP_REDUCE.SCRIPT_ID = 'customscript_fb_generate_diot_mr';
+    SCRIPTS_INFO.MAP_REDUCE.DEPLOYMENT_ID = 'customdeploy_fb_diot_generate_1';
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS = {};
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.SUBSIDIARY = 'custscript_tko_diot_subsidiary';
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD = 'custscript_tko_diot_periodo';
@@ -137,7 +137,7 @@ define([],function(){
     SCRIPTS_INFO.SUITELET.PARAMETERS.PERIOD = 'periodo';
 
     SCRIPTS_INFO.CLIENT = {};
-    SCRIPTS_INFO.CLIENT.FILE_NAME = 'tko_diot_cs.js';
+    SCRIPTS_INFO.CLIENT.FILE_NAME = 'fb_diot_cs.js';
 
     const RUNTIME = {};
 

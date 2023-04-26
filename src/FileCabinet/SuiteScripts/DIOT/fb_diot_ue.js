@@ -2,7 +2,7 @@
  * @NApiVersion 2.1
  * @NScriptType UserEventScript
  */
-define(['N/record', 'N/runtime', 'N/task', 'N/search', './tko_diot_constants_lib'],
+define(['N/record', 'N/runtime', 'N/task', 'N/search', './fb_diot_constants_lib'],
     /**
  * @param{record} record
  * @param{runtime} runtime

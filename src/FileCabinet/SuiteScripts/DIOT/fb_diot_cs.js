@@ -3,7 +3,7 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/url', 'N/currentRecord', 'N/ui/message', 'N/search', 'N/file', './tko_diot_constants_lib'],
+define(['N/url', 'N/currentRecord', 'N/ui/message', 'N/search', 'N/file', './fb_diot_constants_lib'],
 
 function(url, currentRecord, message, search, file, values) {
 
