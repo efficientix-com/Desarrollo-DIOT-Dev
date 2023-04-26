@@ -149,16 +149,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         key: "taxRate",
                         value: JSON.stringify(taxRateArray)
                     });
-                }
-
-               /*  var diot = record.submitFields({
-                    type: 'customrecord_tko_diot',
-                    id: 1,
-                    values: {
-                        'custrecord_tko_estado_diot': 45
-                    }
-                }); */
-                    
+                }   
 
             }catch(error){
                 var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID });
@@ -421,73 +412,105 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         
                         //se estructuran los datos
                         arrayTxt = estructuraDatos(idProv, facturasProv, informesGastos, polizasDiario, suitetax);
-                        var txt = arrayTxt.toString();
-                        var txtFinal = txt.replace(/,+/g,'');
-                        
-                        /** Se busca que no exista el nombre del archivo en la carpeta */
-                        var archivos = [];
-                        var folderSearchObj = search.create({
-                            type: "folder",
-                            filters:
-                            [
-                               ["internalid","anyof",subFolderId], 
-                               "AND", 
-                               ["file.name","startswith",nombreTxt]
-                            ],
-                            columns:
-                            [
-                               search.createColumn({
-                                  name: "name",
-                                  join: "file",
-                                  sort: search.Sort.DESC
-                               })
-                            ]
-                         });
-                        var numArchivos = folderSearchObj.runPaged().count;
-                        folderSearchObj.run().each(function(result){
-                            var archivo = result.getValue({ name: 'name', join: 'file' });
-                            archivos.push(archivo);
-                            return true;
-                        });
-                        if(numArchivos == 0){//no existe
-                        
-                        }else{
-                            var numCaracteres = nombreTxt.length;
-                            log.debug('Archivos',archivos);
-                            log.debug('Archivos', archivos[0]);
-                            var lastFile = archivos[0];
-                            var n = lastFile.substring(numCaracteres); //obtiene el ultimo numero de archivo
-                            if(n != ''){
-                                var num = n.replace(/_+/g,'');
-                                num = parseFloat(num) + 1;
-                                nombreTxt = nombreTxt + '_' + num;
-                            }else{
-                                nombreTxt = nombreTxt + '_' + 1;
+                        if(arrayTxt.length != 0){ //si el archivo contiene algo
+
+                            //Se checa que el contenido del archivo no este vacío
+                            var vacio = true;
+                            for(var i = 0; i < arrayTxt.length; i++){
+                                if(arrayTxt[i] != ''){
+                                    vacio = false;
+                                }
+                            }
+
+                            if(!vacio){ //si hay información
+                                var txt = arrayTxt.toString();
+                                var txtFinal = txt.replace(/,+/g,'');
+                                
+                                /** Se busca que no exista el nombre del archivo en la carpeta */
+                                var archivos = [];
+                                var folderSearchObj = search.create({
+                                    type: "folder",
+                                    filters:
+                                    [
+                                       ["internalid","anyof",subFolderId], 
+                                       "AND", 
+                                       ["file.name","startswith",nombreTxt]
+                                    ],
+                                    columns:
+                                    [
+                                       search.createColumn({
+                                          name: "name",
+                                          join: "file",
+                                          sort: search.Sort.DESC
+                                       })
+                                    ]
+                                 });
+                                var numArchivos = folderSearchObj.runPaged().count;
+                                folderSearchObj.run().each(function(result){
+                                    var archivo = result.getValue({ name: 'name', join: 'file' });
+                                    archivos.push(archivo);
+                                    return true;
+                                });
+                                if(numArchivos == 0){//no existe el nombre
+                                
+                                }else{
+                                    var numCaracteres = nombreTxt.length;
+                                    log.debug('Archivos',archivos);
+                                    log.debug('Archivos', archivos[0]);
+                                    var lastFile = archivos[0];
+                                    var n = lastFile.substring(numCaracteres); //obtiene el ultimo numero de archivo
+                                    if(n != ''){
+                                        var num = n.replace(/_+/g,'');
+                                        num = parseFloat(num) + 1;
+                                        nombreTxt = nombreTxt + '_' + num;
+                                    }else{ //es el primer archivo
+                                        nombreTxt = nombreTxt + '_' + 1;
+                                    }
+                                }
+                                log.debug('Nombre Final', nombreTxt);
+        
+                                /** Se crea el archivo txt, se indica el folder en el que se va a guardar*/
+                                var fileObj = file.create({
+                                    name    : nombreTxt,
+                                    fileType: file.Type.PLAINTEXT,
+                                    folder: subFolderId,
+                                    contents: txtFinal
+                                });
+                                var fileId = fileObj.save();
+                                log.debug('Info txt', 'Id: ' + fileId);
+                                otherId = record.submitFields({
+                                    type: RECORD_INFO.DIOT_RECORD.ID,
+                                    id: recordID,
+                                    values: {
+                                        [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.COMPLETE,
+                                        [RECORD_INFO.DIOT_RECORD.FIELDS.FOLDER_ID]: subFolderId,
+                                        [RECORD_INFO.DIOT_RECORD.FIELDS.FILE]: fileId
+                                    }
+                                });
+                            }else{ //si no contiene nada, no se crea el archivo
+                                var error = 'El archivo no se creo debido a que las transacciones no contienen importes y/o impuestos pertenecientes a cada columna ';
+                                otherId = record.submitFields({
+                                    type: RECORD_INFO.DIOT_RECORD.ID,
+                                    id: recordID,
+                                    values: {
+                                        [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
+                                        [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: error
+                                    }
+                                });
                             }
                         }
-                        log.debug('Nombre Final', nombreTxt);
-                        //nombreTxt = nombreTxt;
-
-                        /** Se crea el archivo txt, se indica el folder en el que se va a guardar*/
-                        var fileObj = file.create({
-                            name    : nombreTxt,
-                            fileType: file.Type.PLAINTEXT,
-                            folder: subFolderId,
-                            contents: txtFinal
+                    }else{ //no existen transacciones
+                        var error = 'No se encontaron transacciones en ese periodo';
+                        otherId = record.submitFields({
+                            type: RECORD_INFO.DIOT_RECORD.ID,
+                            id: recordID,
+                            values: {
+                                [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
+                                [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: error
+                            }
                         });
-                        var fileId = fileObj.save();
-                        log.debug('Info txt', 'Id: ' + fileId);
                     }
 
-                    otherId = record.submitFields({
-                        type: RECORD_INFO.DIOT_RECORD.ID,
-                        id: recordID,
-                        values: {
-                            [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.COMPLETE,
-                            [RECORD_INFO.DIOT_RECORD.FIELDS.FOLDER_ID]: subFolderId,
-                            [RECORD_INFO.DIOT_RECORD.FIELDS.FILE]: fileId
-                        }
-                    });
                 } else{ //si hay error no se crea el folder ni el archivo, solo se actualiza el campo de estado
                     otherId = record.submitFields({
                         type: RECORD_INFO.DIOT_RECORD.ID,

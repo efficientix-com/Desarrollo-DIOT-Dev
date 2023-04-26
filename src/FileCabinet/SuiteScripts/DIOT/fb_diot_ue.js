@@ -25,11 +25,6 @@ define(['N/record', 'N/runtime', 'N/task', 'N/search', './fb_diot_constants_lib'
         const beforeLoad = (context) => {
             try{
                 var nRecord = context.newRecord;
-                /* var taskId = search.lookupFields({
-                    type: nRecord.type,
-                    id: nRecord.id,
-                    columns: ['custrecord_tko_task_id']
-                }); */
                 var taskId = nRecord.getValue({ fieldId: RECORD_INFO.DIOT_RECORD.FIELDS.TASK_ID });
                 var record_type = nRecord.type;
     
@@ -49,6 +44,8 @@ define(['N/record', 'N/runtime', 'N/task', 'N/search', './fb_diot_constants_lib'
                     form.removeButton({
                         id: INTERFACE.FORM.BUTTONS.EDITAR.ID
                     });
+
+                    //Se va calculando el porcentaje dependiendo la etapa en la que va del map reduce
                     var percent = updatePercent(taskId, nRecord);
     
     

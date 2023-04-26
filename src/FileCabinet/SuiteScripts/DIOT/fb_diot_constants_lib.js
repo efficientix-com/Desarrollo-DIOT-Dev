@@ -28,7 +28,7 @@ define([],function(){
 
     INTERFACE.FORM.BUTTONS = {};
     INTERFACE.FORM.BUTTONS.GENERAR = {};
-    INTERFACE.FORM.BUTTONS.GENERAR.ID = 'btn_generar_diot';
+    INTERFACE.FORM.BUTTONS.GENERAR.ID = 'custpage_btn_generar_diot';
     INTERFACE.FORM.BUTTONS.GENERAR.LABEL = 'Generar';
     INTERFACE.FORM.BUTTONS.GENERAR.FUNCTION = 'generarReporte';
     INTERFACE.FORM.BUTTONS.ACTUALIZAR = {};
@@ -94,18 +94,18 @@ define([],function(){
     RECORD_INFO.FOLDER_RECORD.FIELDS.VALUE = 'DIOT txt';
 
     RECORD_INFO.DIOT_RECORD = {};
-    RECORD_INFO.DIOT_RECORD.ID = 'customrecord_tko_diot';
+    RECORD_INFO.DIOT_RECORD.ID = 'customrecord_fb_diot';
     RECORD_INFO.DIOT_RECORD.FIELDS = {};
-    RECORD_INFO.DIOT_RECORD.FIELDS.ID = 'custrecord_tko_id_interno_diot';
-    RECORD_INFO.DIOT_RECORD.FIELDS.SUBSIDIARY = 'custrecord_tko_subsidiaria_diot';
-    RECORD_INFO.DIOT_RECORD.FIELDS.PERIOD = 'custrecord_tko_periodo_diot';
-    RECORD_INFO.DIOT_RECORD.FIELDS.FOLDER_ID = 'custrecord_tko_id_carpeta_diot';
-    RECORD_INFO.DIOT_RECORD.FIELDS.FILE = 'custrecord_tko_archivotxt_diot';
-    RECORD_INFO.DIOT_RECORD.FIELDS.STATUS = 'custrecord_tko_estado_diot';
-    RECORD_INFO.DIOT_RECORD.FIELDS.PERCENTAGE = 'custrecord_tko_porcentaje_diot';
-    RECORD_INFO.DIOT_RECORD.FIELDS.ERROR = 'custrecord_tko_errores_diot';
-    RECORD_INFO.DIOT_RECORD.FIELDS.TASK_ID = 'custrecord_tko_task_id';
-    RECORD_INFO.DIOT_RECORD.FIELDS.PROGRESS = 'custrecord_tko_porcentaje_avance';
+    RECORD_INFO.DIOT_RECORD.FIELDS.ID = 'custrecord_fb_id_interno_diot';
+    RECORD_INFO.DIOT_RECORD.FIELDS.SUBSIDIARY = 'custrecord_fb_subsidiaria_diot';
+    RECORD_INFO.DIOT_RECORD.FIELDS.PERIOD = 'custrecord_fb_periodo_diot';
+    RECORD_INFO.DIOT_RECORD.FIELDS.FOLDER_ID = 'custrecord_fb_id_carpeta_diot';
+    RECORD_INFO.DIOT_RECORD.FIELDS.FILE = 'custrecord_fb_archivotxt_diot';
+    RECORD_INFO.DIOT_RECORD.FIELDS.STATUS = 'custrecord_fb_estado_diot';
+    RECORD_INFO.DIOT_RECORD.FIELDS.PERCENTAGE = 'custrecord_fb_porcentaje_diot';
+    RECORD_INFO.DIOT_RECORD.FIELDS.ERROR = 'custrecord_fb_errores_diot';
+    RECORD_INFO.DIOT_RECORD.FIELDS.TASK_ID = 'custrecord_fb_task_id';
+    RECORD_INFO.DIOT_RECORD.FIELDS.PROGRESS = 'custrecord_fb_porcentaje_avance';
 
     const STATUS_LIST_DIOT = {};
 
@@ -122,12 +122,12 @@ define([],function(){
     SCRIPTS_INFO.MAP_REDUCE.SCRIPT_ID = 'customscript_fb_generate_diot_mr';
     SCRIPTS_INFO.MAP_REDUCE.DEPLOYMENT_ID = 'customdeploy_fb_diot_generate_1';
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS = {};
-    SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.SUBSIDIARY = 'custscript_tko_diot_subsidiary';
-    SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD = 'custscript_tko_diot_periodo';
-    SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID = 'custscript_tko_diot_record_id';
-    SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.TIPO_GUARDADO = 'custscript_tko_diot_tipo_guardado';
-    SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOMBRE_ARCHIVO = 'custscript_tko_diot_nombre_archivo';
-    SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOTIFICAR = 'custscript_tko_diot_notificar_correo';
+    SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.SUBSIDIARY = 'custscript_fb_diot_subsidiary';
+    SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD = 'custscript_fb_diot_periodo';
+    SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID = 'custscript_fb_diot_record_id';
+    SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.TIPO_GUARDADO = 'custscript_fb_diot_tipo_guardado';
+    SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOMBRE_ARCHIVO = 'custscript_fb_diot_nombre_archivo';
+    SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOTIFICAR = 'custscript_fb_diot_notificar_correo';
 
     SCRIPTS_INFO.SUITELET = {};
     SCRIPTS_INFO.SUITELET.SCRIPT_ID = 'customscript_fb_diot_view_sl';

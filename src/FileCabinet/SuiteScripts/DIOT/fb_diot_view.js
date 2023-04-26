@@ -37,11 +37,6 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './fb_d
                     case 'ejecuta':
                         generaDIOT(parameters.subsidiaria, parameters.periodo);
                         break;
-                    /* case 'actualiza':
-                        log.debug("prueba", "Click en botón actualiza");
-                        llenarDatos(parameters.idArchivo);
-                        log.debug('ID Archivo', parameters.idArchivo);
-                        break; */
                 }
             } catch (onRequestError) {
                 log.error({ title: 'Error en onRequest', details: onRequestError })
@@ -62,12 +57,6 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './fb_d
                 /**
                  * Creacion de los campos para los filtros de la DIOT
                  */
-
-                /* form.addButton({
-                    id: "refresh",
-                    label: "Actualizar",
-                    functionName: "actualizarPantalla"
-                }); */
 
                 form.addButton({
                     id: INTERFACE.FORM.BUTTONS.GENERAR.ID,
@@ -90,9 +79,6 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './fb_d
                     label: INTERFACE.FORM.FIELDS.SUBSIDIARIA.LABEL,
                     container: INTERFACE.FORM.FIELD_GROUP.DATOS.ID
                 });
-
-                /* var user = runtime.getCurrentUser();
-                log.debug('EmpresaSubsi', user.subsidiary); */
 
                 if(oneWorldFeature){ //si es oneWorld hace la búsqueda de las subsidiarias
                     var subsis = searchSubsidiaries();
@@ -271,7 +257,6 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './fb_d
             }
             catch (e) {
                 log.debug({ title: "Error", details: e });
-                //log.error({ title: 'Execution Error', details: "Aun esta corriendo la ejecución"});
             }
         }
 
