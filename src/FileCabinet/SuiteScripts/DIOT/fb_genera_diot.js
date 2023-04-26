@@ -20,7 +20,6 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
          */
 
         var taxRateArray = new Array();
-        var error = false;
         var erroresArray = new Array();
 
         const SCRIPTS_INFO = values.SCRIPTS_INFO;
@@ -200,7 +199,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 var nombrePer = search.lookupFields({
                     type: search.Type.ACCOUNTING_PERIOD,
                     id: periodo,
-                    columns: ['periodname']
+                    columns: [RECORD_INFO.ACCOUNTINGPERIOD_RECORD.FIELDS.NAME]
                 });
                 var nombrePeriodo = nombrePer.periodname;
 
@@ -211,7 +210,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var nombreSub = search.lookupFields({
                         type: search.Type.SUBSIDIARY,
                         id: subsidiaria,
-                        columns: ['namenohierarchy']
+                        columns: [RECORD_INFO.SUBSIDIARY_RECORD.FIELDS.NAME_NOHIERARCHY]
                     });
                     nombreSubsidiaria = nombreSub.namenohierarchy;
                     var otherId = record.submitFields({
@@ -252,16 +251,16 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
 
                 /** Se realiza una búsqueda del desglose de impuestos */
                 var desgloseImpuestos = search.lookupFields({
-                    type: 'customrecord_efx_fe_desglose_tax',
+                    type: RECORD_INFO.DESGLOSE_TAX_RECORD.ID,
                     id: 1,
-                    columns: ['custrecord_efx_fe_desglose_exento', 'custrecord_efx_fe_desglose_iva', 'custrecord_efx_fe_desglose_ret']
+                    columns: [RECORD_INFO.DESGLOSE_TAX_RECORD.FIELDS.EXENTO, RECORD_INFO.DESGLOSE_TAX_RECORD.FIELDS.IVA, RECORD_INFO.DESGLOSE_TAX_RECORD.FIELDS.RETENCION]
                 });
 
-                var exentos = desgloseImpuestos.custrecord_efx_fe_desglose_exento;
+                var exentos = desgloseImpuestos[RECORD_INFO.DESGLOSE_TAX_RECORD.FIELDS.EXENTO];
                 log.debug('Exentos', exentos);
-                var iva = desgloseImpuestos.custrecord_efx_fe_desglose_iva;
+                var iva = desgloseImpuestos[RECORD_INFO.DESGLOSE_TAX_RECORD.FIELDS.IVA];
                 log.debug('Iva', iva);
-                var retenciones = desgloseImpuestos.custrecord_efx_fe_desglose_ret;
+                var retenciones = desgloseImpuestos[RECORD_INFO.DESGLOSE_TAX_RECORD.FIELDS.RETENCION];
                 log.debug('Retenciones', retenciones);
     
                 /** Se realiza la búsqueda de las distintas transacciones */
@@ -278,7 +277,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
 
                 /** Verifica si existe algún error */
                 var erroresTran = '';
-
+                var error = false;
                 if(facturasProv.length != 0){
                     for(var i = 0; i < facturasProv.length; i++){
                         if(facturasProv[i].datos[0].errores != ''){
@@ -429,25 +428,25 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                                 /** Se busca que no exista el nombre del archivo en la carpeta */
                                 var archivos = [];
                                 var folderSearchObj = search.create({
-                                    type: "folder",
+                                    type: RECORD_INFO.FOLDER_RECORD.ID,
                                     filters:
                                     [
-                                       ["internalid","anyof",subFolderId], 
+                                       [RECORD_INFO.FOLDER_RECORD.FIELDS.ID,search.Operator.ANYOF,subFolderId], 
                                        "AND", 
-                                       ["file.name","startswith",nombreTxt]
+                                       [RECORD_INFO.FOLDER_RECORD.FIELDS.FILE_NAME,search.Operator.STARTSWITH,nombreTxt]
                                     ],
                                     columns:
                                     [
                                        search.createColumn({
-                                          name: "name",
-                                          join: "file",
+                                          name: RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,
+                                          join: RECORD_INFO.FOLDER_RECORD.FIELDS.FILE,
                                           sort: search.Sort.DESC
                                        })
                                     ]
                                  });
                                 var numArchivos = folderSearchObj.runPaged().count;
                                 folderSearchObj.run().each(function(result){
-                                    var archivo = result.getValue({ name: 'name', join: 'file' });
+                                    var archivo = result.getValue({ name: RECORD_INFO.FOLDER_RECORD.FIELDS.NAME, join: RECORD_INFO.FOLDER_RECORD.FIELDS.FILE });
                                     archivos.push(archivo);
                                     return true;
                                 });
@@ -2323,21 +2322,23 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             var datos = search.lookupFields({
                 type: search.Type.VENDOR,
                 id: proveedor,
-                columns: ['custentity_mx_rfc', 'custentity_efx_fe_numregidtrib' , 'custentity_tko_nombre_extranjero', 'custentity_tko_pais_residencia', 'custentity_tko_nacionalidad', 'companyname']
+                columns: [RECORD_INFO.VENDOR_RECORD.FIELDS.RFC, RECORD_INFO.VENDOR_RECORD.FIELDS.TAX_ID , RECORD_INFO.VENDOR_RECORD.FIELDS.NOMBRE_EXTRANJERO, RECORD_INFO.VENDOR_RECORD.FIELDS.PAIS_RESIDENCIA, RECORD_INFO.VENDOR_RECORD.FIELDS.NACIONALIDAD, RECORD_INFO.VENDOR_RECORD.FIELDS.NAME]
             });
 
-            var rfc = datos.custentity_mx_rfc;
-            var taxID = datos.custentity_efx_fe_numregidtrib;
-            var nombreExtranjero = datos.custentity_tko_nombre_extranjero;
-            var paisResidencia = datos.custentity_tko_pais_residencia;
-            var nombreProv = datos.companyname;
+            var rfc = datos[RECORD_INFO.VENDOR_RECORD.FIELDS.RFC];
+            var taxID = datos[RECORD_INFO.VENDOR_RECORD.FIELDS.TAX_ID];
+            var nombreExtranjero = datos[RECORD_INFO.VENDOR_RECORD.FIELDS.NOMBRE_EXTRANJERO];
+            var paisResidencia = datos[RECORD_INFO.VENDOR_RECORD.FIELDS.PAIS_RESIDENCIA];
+            var nombreProv = datos[RECORD_INFO.VENDOR_RECORD.FIELDS.NAME];
             if(paisResidencia.length != 0){
                 var paisText = paisResidencia[0].text;
-                paisResidencia = paisText;
+                var pais = paisText.split(' ',1);
+                pais = pais.toString();
+                paisResidencia = pais;
             }else {
                 paisResidencia = "";
             }
-            var nacionalidad = datos.custentity_tko_nacionalidad;
+            var nacionalidad = datos[RECORD_INFO.VENDOR_RECORD.FIELDS.NACIONALIDAD];
 
             if (tipoTercero == 1){ //si es proveedor nacional -> RFC obligatorio
                 if(rfc == ''){

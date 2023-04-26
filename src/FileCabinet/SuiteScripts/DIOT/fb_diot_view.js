@@ -256,6 +256,16 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './fb_d
                 log.audit({ title: 'idTask', details: idTask });
             }
             catch (e) {
+                var percent = 100;
+                var otherId = record.submitFields({
+                    type: RECORD_INFO.DIOT_RECORD.ID,
+                    id: recordId_diot,
+                    values: {
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.PERCENTAGE]: Math.round(percent * 100) / 100 + '%',
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: e.message
+                    }
+                });
                 log.debug({ title: "Error", details: e });
             }
         }
