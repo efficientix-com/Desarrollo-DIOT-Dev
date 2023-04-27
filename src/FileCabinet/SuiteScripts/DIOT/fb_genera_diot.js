@@ -1483,72 +1483,68 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             if(suitetax){   
                 var informes = [];
                 var informesSearch = search.create({
-                    type: "expensereport",
+                    type: RECORD_INFO.EXPENSE_REPORT_RECORD.ID,
                     filters:
                     [
-                       ["type","anyof","ExpRept"], 
+                       [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TYPE,search.Operator.ANYOF,"ExpRept"], 
                        "AND", 
-                       ["voided","is","F"], 
+                       [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"], 
                        "AND", 
-                       ["mainline","is","F"],
+                       [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.MAINLINE,search.Operator.IS,"F"],
                        "AND", 
-                       ["status","anyof","ExpRept:I"], 
+                       [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.STATUS,search.Operator.ANYOF,"ExpRept:I"], 
                        "AND", 
-                       ["postingperiod","abs",periodo], 
+                       [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PERIOD,"abs",periodo], 
                        "AND", 
-                       ["subsidiary","anyof",subsidiaria], 
+                       [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.SUBSIDIARY,search.Operator.ANYOF,subsidiaria], 
                        "AND", 
-                       ["taxline","is","F"],
+                       [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAXLINE,search.Operator.IS,"F"],
                        "AND", 
-                       ["custcol_tko_diot_prov_type","anyof","1","2","3"], 
+                       [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO,search.Operator.ANYOF,"1","2","3"], 
                        "AND", 
-                       ["custbody_tko_tipo_operacion","anyof","1","2","3"]
+                       [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION,search.Operator.ANYOF,"1","2","3"]
                     ],
                     columns:
                     [
-                       "internalid",
-                       "custcol_tkio_proveedor",
-                       "custcol_tko_diot_prov_type",
-                       "custbody_tko_tipo_operacion",
-                       "amount",
-                       "netamount",
-                       "taxamount",
-                       "taxtotal",
-                       "total",
+                       RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.ID,
+                       RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR,
+                       RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO,
+                       RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION,
+                       RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT,
+                       RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT,
                         search.createColumn({
-                          name: "taxcode",
-                          join: "taxDetail"
+                          name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_CODE,
+                          join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL
                         }),
                         search.createColumn({
-                          name: "taxtype",
-                          join: "taxDetail"
+                          name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_TYPE,
+                          join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL
                         }),
                         search.createColumn({
-                           name: "taxrate",
-                           join: "taxDetail",
+                           name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_RATE,
+                           join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL
                         }),
-                        'custcol_tko_diot_importacion'
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.IMPORTACION
                     ],
                 });
 
                 informesSearch.run().each(function(result){
 
-                    var id = result.getValue({ name: 'internalid' });
-                    var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
-                    var tipoTer = result.getValue({ name: 'custcol_tko_diot_prov_type' });
-                    var tercero = result.getText({ name: 'custcol_tko_diot_prov_type' });
+                    var id = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.ID });
+                    var proveedor = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR });
+                    var tipoTer = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO });
+                    var tercero = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO });
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
-                    //var operacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-                    var operacion = result.getText({ name: 'custbody_tko_tipo_operacion' });
+                    var operacion = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION });
                     var tipoOperacion = operacion.split(' ',1);
                     tipoOperacion = tipoOperacion.toString();
-                    var importe = result.getValue({ name: 'netamount' });
-                    var impuestos = result.getValue({ name: 'taxamount' });
-                    var taxCode = result.getText({ name: 'taxcode', join: 'taxDetail' });
-                    var tipoImpuesto = result.getText({ name: 'taxtype', join: 'taxDetail' });
-                    var importacionBienes = result.getValue({ name: 'custcol_tko_diot_importacion' });
-                    var tasa = result.getValue({ name: 'taxrate', join: 'taxDetail' });
+                    var importe = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT });
+                    var impuestos = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT });
+                    var taxCode = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_CODE, join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL });
+                    var tipoImpuesto = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_TYPE, join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL });
+                    var importacionBienes = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.IMPORTACION });
+                    var tasa = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_RATE, join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL });
                     var errores = ''; 
 
                     var tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
@@ -1576,64 +1572,56 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             } else {
                 var informes = [];
                 var informesSearch = search.create({
-                    type: "expensereport",
+                    type: RECORD_INFO.EXPENSE_REPORT_RECORD.ID,
                     filters:
                     [
-                        ["type","anyof","ExpRept"], 
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TYPE,search.Operator.ANYOF,"ExpRept"], 
                         "AND", 
-                        ["voided","is","F"], 
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"], 
                         "AND", 
-                        ["mainline","any",""], 
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.MAINLINE,search.Operator.ANY,""], 
                         // "AND", 
-                        // ["status","anyof","ExpRept:I"], (para prueba, estado = pagado por completo)
+                        // [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.STATUS,search.Operator.ANYOF,"ExpRept:I"], (para prueba, estado = pagado por completo)
                         // "AND", 
-                        // ["account","anyof","186"],   
+                        // ["account",search.Operator.ANYOF,"186"],   
                         "AND", 
-                        ["custcol_tko_diot_prov_type","anyof","2","1","3"],
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO,search.Operator.ANYOF,"2","1","3"],
                         "AND",
-                        ["custbody_tko_tipo_operacion","anyof","1","2","3"], 
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION,search.Operator.ANYOF,"1","2","3"], 
                         "AND", 
-                        ["postingperiod","abs",periodo], 
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PERIOD,"abs",periodo], 
                         "AND", 
-                        ["subsidiary","anyof",subsidiaria], 
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.SUBSIDIARY,search.Operator.ANYOF,subsidiaria], 
                         "AND", 
-                        ["taxline","is","F"]
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAXLINE,search.Operator.IS,"F"]
                     ],
                     columns:
                     [
-                        //falta columna tipo y tasa de impuesto
-                        "internalid",
-                        "type",
-                        "custbody_tko_tipo_operacion",
-                        "custcol_tko_diot_prov_type",
-                        "custcol_tkio_proveedor",
-                        "amount",
-                        "netamountnotax",
-                        "taxamount",
-                        "taxcode",
-                        search.createColumn({
-                           name: "name",
-                           join: "taxItem"
-                        }),
-                        'custcol_tko_diot_importacion'
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.ID,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT_NOTAX,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_CODE,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.IMPORTACION
                     ]
                 });
                 informesSearch.run().each(function(result){
-                    var id = result.getValue({ name: 'internalid' });
-                    var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
-                    var tipoTer = result.getValue({ name: 'custcol_tko_diot_prov_type' });
-                    var tercero = result.getText({ name: 'custcol_tko_diot_prov_type' });
+                    var id = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.ID });
+                    var proveedor = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR });
+                    var tipoTer = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO });
+                    var tercero = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO });
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
                     //var operacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-                    var operacion = result.getText({ name: 'custbody_tko_tipo_operacion' });
+                    var operacion = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION });
                     var tipoOperacion = operacion.split(' ',1);
                     tipoOperacion = tipoOperacion.toString();
-                    var importe = result.getValue({ name: 'netamountnotax' });
-                    var impuestos = result.getValue({ name: 'taxamount' });
-                    var taxCode = result.getText({ name: 'taxcode' });
-                    var taxCodeName = result.getValue({ name: 'name', join: 'taxItem' });
-                    var importacionBienes = result.getValue({ name: 'custcol_tko_diot_importacion' });
+                    var importe = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT_NOTAX });
+                    var impuestos = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT });
+                    var taxCode = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_CODE });
+                    var importacionBienes = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.IMPORTACION });
                     var tasa = 0, errores = '';
 
                     for(var i = 0; i < valores.length; i++){
@@ -1678,70 +1666,66 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             if(suitetax){   
                 var informes = [];
                 var informesSearch = search.create({
-                    type: "expensereport",
+                    type: RECORD_INFO.EXPENSE_REPORT_RECORD.ID,
                     filters:
                     [
-                       ["type","anyof","ExpRept"], 
+                       [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TYPE,search.Operator.ANYOF,"ExpRept"], 
                        "AND", 
-                       ["voided","is","F"], 
+                       [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"], 
                        "AND", 
-                       ["mainline","is","F"],
+                       [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.MAINLINE,search.Operator.IS,"F"],
                        "AND", 
-                       ["status","anyof","ExpRept:I"], 
+                       [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.STATUS,search.Operator.ANYOF,"ExpRept:I"], 
                        "AND", 
-                       ["postingperiod","abs",periodo],
+                       [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PERIOD,"abs",periodo],
                        "AND", 
-                       ["taxline","is","F"],
+                       [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAXLINE,search.Operator.IS,"F"],
                        "AND", 
-                       ["custcol_tko_diot_prov_type","anyof","1","2","3"], 
+                       [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO,search.Operator.ANYOF,"1","2","3"], 
                        "AND", 
-                       ["custbody_tko_tipo_operacion","anyof","1","2","3"]
+                       [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION,search.Operator.ANYOF,"1","2","3"]
                     ],
                     columns:
                     [
-                       "internalid",
-                       "custcol_tkio_proveedor",
-                       "custcol_tko_diot_prov_type",
-                       "custbody_tko_tipo_operacion",
-                       "amount",
-                       "netamount",
-                       "taxamount",
-                       "taxtotal",
-                       "total",
+                       RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.ID,
+                       RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR,
+                       RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO,
+                       RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION,
+                       RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT,
+                       RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT,
                         search.createColumn({
-                          name: "taxcode",
-                          join: "taxDetail"
+                          name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_CODE,
+                          join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL
                         }),
                         search.createColumn({
-                          name: "taxtype",
-                          join: "taxDetail"
+                          name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_TYPE,
+                          join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL
                         }),
                         search.createColumn({
-                           name: "taxrate",
-                           join: "taxDetail",
+                           name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_RATE,
+                           join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL
                         }),
-                        'custcol_tko_diot_importacion'
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.IMPORTACION
                     ],
                 });
 
                 informesSearch.run().each(function(result){
 
-                    var id = result.getValue({ name: 'internalid' });
-                    var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
-                    var tipoTer = result.getValue({ name: 'custcol_tko_diot_prov_type' });
-                    var tercero = result.getText({ name: 'custcol_tko_diot_prov_type' });
+                    var id = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.ID });
+                    var proveedor = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR });
+                    var tipoTer = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO });
+                    var tercero = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO });
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
-                    //var operacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-                    var operacion = result.getText({ name: 'custbody_tko_tipo_operacion' });
+                    var operacion = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION });
                     var tipoOperacion = operacion.split(' ',1);
                     tipoOperacion = tipoOperacion.toString();
-                    var importe = result.getValue({ name: 'netamount' });
-                    var impuestos = result.getValue({ name: 'taxamount' });
-                    var taxCode = result.getText({ name: 'taxcode', join: 'taxDetail' });
-                    var tipoImpuesto = result.getText({ name: 'taxtype', join: 'taxDetail' });
-                    var importacionBienes = result.getValue({ name: 'custcol_tko_diot_importacion' });
-                    var tasa = result.getValue({ name: 'taxrate', join: 'taxDetail' });
+                    var importe = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT });
+                    var impuestos = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT });
+                    var taxCode = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_CODE, join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL });
+                    var tipoImpuesto = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_TYPE, join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL });
+                    var importacionBienes = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.IMPORTACION });
+                    var tasa = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_RATE, join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL });
                     var errores = ''; 
 
                     var tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
@@ -1769,62 +1753,54 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             } else {
                 var informes = [];
                 var informesSearch = search.create({
-                    type: "expensereport",
+                    type: RECORD_INFO.EXPENSE_REPORT_RECORD.ID,
                     filters:
                     [
-                        ["type","anyof","ExpRept"], 
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TYPE,search.Operator.ANYOF,"ExpRept"], 
                         "AND", 
-                        ["voided","is","F"], 
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"], 
                         "AND", 
-                        ["mainline","any",""], 
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.MAINLINE,search.Operator.ANY,""], 
+                        "AND", 
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.STATUS,search.Operator.ANYOF,"ExpRept:I"],
                         // "AND", 
-                        // ["status","anyof","ExpRept:I"], (para prueba, estado = pagado por completo)
-                        // "AND", 
-                        // ["account","anyof","186"],   
+                        // ["account",search.Operator.ANYOF,"186"],   
                         "AND", 
-                        ["custcol_tko_diot_prov_type","anyof","2","1","3"],
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO,search.Operator.ANYOF,"2","1","3"],
                         "AND",
-                        ["custbody_tko_tipo_operacion","anyof","1","2","3"], 
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION,search.Operator.ANYOF,"1","2","3"], 
                         "AND", 
-                        ["postingperiod","abs",periodo],
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PERIOD,"abs",periodo],
                         "AND", 
-                        ["taxline","is","F"]
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAXLINE,search.Operator.IS,"F"]
                     ],
                     columns:
                     [
-                        //falta columna tipo y tasa de impuesto
-                        "internalid",
-                        "type",
-                        "custbody_tko_tipo_operacion",
-                        "custcol_tko_diot_prov_type",
-                        "custcol_tkio_proveedor",
-                        "amount",
-                        "netamountnotax",
-                        "taxamount",
-                        "taxcode",
-                        search.createColumn({
-                           name: "name",
-                           join: "taxItem"
-                        }),
-                        'custcol_tko_diot_importacion'
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.ID,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT_NOTAX,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_CODE,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.IMPORTACION
                     ]
                 });
                 informesSearch.run().each(function(result){
-                    var id = result.getValue({ name: 'internalid' });
-                    var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
-                    var tipoTer = result.getValue({ name: 'custcol_tko_diot_prov_type' });
-                    var tercero = result.getText({ name: 'custcol_tko_diot_prov_type' });
+                    var id = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.ID });
+                    var proveedor = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR });
+                    var tipoTer = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO });
+                    var tercero = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO });
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
                     //var operacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-                    var operacion = result.getText({ name: 'custbody_tko_tipo_operacion' });
+                    var operacion = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION });
                     var tipoOperacion = operacion.split(' ',1);
                     tipoOperacion = tipoOperacion.toString();
-                    var importe = result.getValue({ name: 'netamountnotax' });
-                    var impuestos = result.getValue({ name: 'taxamount' });
-                    var taxCode = result.getText({ name: 'taxcode' });
-                    var taxCodeName = result.getValue({ name: 'name', join: 'taxItem' });
-                    var importacionBienes = result.getValue({ name: 'custcol_tko_diot_importacion' });
+                    var importe = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT_NOTAX });
+                    var impuestos = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT });
+                    var taxCode = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_CODE });
+                    var importacionBienes = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.IMPORTACION });
                     var tasa = 0, errores = '';
 
                     for(var i = 0; i < valores.length; i++){
@@ -1869,59 +1845,52 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             if(suitetax){
                 var polizas = []
                 var polizasSearch = search.create({
-                    type: "journalentry",
+                    type: RECORD_INFO.JOURNAL_ENTRY_RECORD.ID,
                     filters:
                     [
-                        ["type","anyof","Journal"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TYPE,search.Operator.ANYOF,"Journal"], 
                         "AND", 
-                        ["voided","is","F"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"], 
                         "AND", 
-                        ["status","anyof","Journal:B"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.STATUS,search.Operator.ANYOF,"Journal:B"], 
                         "AND", 
-                        ["postingperiod","abs",periodo], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.PERIOD,"abs",periodo], 
                         "AND", 
-                        ["subsidiary","anyof",subsidiaria], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.SUBSIDIARY,search.Operator.ANYOF,subsidiaria], 
                         "AND", 
-                        ["taxline","is","F"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAXLINE,search.Operator.IS,"F"], 
                         "AND", 
-                        ["custbody_tko_tipo_operacion","anyof","1","2","3"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION,search.Operator.ANYOF,"1","2","3"], 
                         "AND", 
-                        ["custcol_tko_diot_prov_type","anyof","1","2","3"]
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO,search.Operator.ANYOF,"1","2","3"]
                     ],
                     columns:
                     [
-                        "internalid",
-                        "custcol_tkio_proveedor",
-                        "custcol_tko_diot_prov_type",
-                        "custbody_tko_tipo_operacion",
-                        "account",
-                        "amount",
-                        "netamount",
-                        "taxtotal",
-                        "total",
-                        "custcol_tko_diot_importacion"
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.ID,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.PROVEEDOR,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.ACCOUNT,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.NET_AMOUNT,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAX_TOTAL,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.IMPORTACION
                     ]
                 });
                 polizasSearch.run().each(function(result){
-                    var id = result.getValue({ name: 'internalid' });
-                    var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
-                    var tipoTer = result.getValue({ name: 'custcol_tko_diot_prov_type' });
-                    var tercero = result.getText({ name: 'custcol_tko_diot_prov_type' });
+                    var id = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.ID });
+                    var proveedor = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.PROVEEDOR });
+                    var tipoTer = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO });
+                    var tercero = result.getText({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO });
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
-                    //var operacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-                    var operacion = result.getText({ name: 'custbody_tko_tipo_operacion' });
+                    var operacion = result.getText({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION });
                     var tipoOperacion = operacion.split(' ',1);
                     tipoOperacion = tipoOperacion.toString();
-                    var importacionBienes = result.getValue({ name: 'custcol_tko_diot_importacion' });
-                    var cuenta = result.getValue({ name: 'account' });
-                    var importe = result.getValue({ name: 'netamount' }); //importe negativo = crédito, importe positivo = débito
-                    var impuestos = result.getValue({ name: 'taxtotal' });
+                    var importacionBienes = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.IMPORTACION });
+                    var cuenta = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.ACCOUNT });
+                    var importe = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.NET_AMOUNT }); //importe negativo = crédito, importe positivo = débito
+                    var impuestos = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAX_TOTAL });
                     var errores = '';
-
-                    /* if(impuestos == ''){
-                        impuestos = 0;
-                    } */
 
                     // Se manda llamar a la función para la búsqueda de código, tipo y tasa de impuesto
                     var codigos = searchTaxCode(suitetax, cuenta, valCodigos, exentos, iva, retenciones);
@@ -1956,65 +1925,58 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             }else {
                 var polizas = []
                 var polizasSearch = search.create({
-                    type: "journalentry",
+                    type: RECORD_INFO.JOURNAL_ENTRY_RECORD.ID,
                     filters:
                     [
-                        ["type","anyof","Journal"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TYPE,search.Operator.ANYOF,"Journal"], 
                         "AND", 
-                        ["voided","is","F"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"], 
                         "AND", 
-                        ["mainline","any",""],
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.MAINLINE,search.Operator.ANY,""],
                         "AND", 
-                        ["status","anyof","Journal:B"], 
-                        // "AND", 
-                        // ["account","anyof","186"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.STATUS,search.Operator.ANYOF,"Journal:B"], 
                         "AND", 
-                        ["custcol_tko_diot_prov_type","anyof","1","2","3"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO,search.Operator.ANYOF,"1","2","3"], 
                         "AND", 
-                        ["custbody_tko_tipo_operacion","anyof","1","2","3"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION,search.Operator.ANYOF,"1","2","3"], 
                         "AND", 
-                        ["postingperiod","abs",periodo], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.PERIOD,"abs",periodo], 
                         "AND", 
-                        ["subsidiary","anyof",subsidiaria], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.SUBSIDIARY,search.Operator.ANYOF,subsidiaria], 
                         "AND", 
-                        ["taxline","is","F"]
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAXLINE,search.Operator.IS,"F"]
                     ],
                     columns:
                     [
-                        "internalid",
-                        "type",
-                        "account",
-                        "custcol_tko_diot_prov_type",
-                        "custbody_tko_tipo_operacion",
-                        "custcol_tkio_proveedor",
-                        "amount",
-                        "netamountnotax",
-                        "taxamount",
-                        "taxcode",
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.ID,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.ACCOUNT,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.PROVEEDOR,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.NET_AMOUNT_NOTAX,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAX_AMOUNT,
                         search.createColumn({
-                           name: "name",
-                           join: "taxItem"
+                           name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.NAME,
+                           join: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAX_ITEM
                         }),
-                        'custcol_tko_diot_importacion'
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.IMPORTACION
                     ]
                 });
                 polizasSearch.run().each(function(result){
-                    var id = result.getValue({ name: 'internalid' });
-                    var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
-                    var cuenta = result.getValue({ name: 'account' });
-                    var tipoTer = result.getValue({ name: 'custcol_tko_diot_prov_type' });
-                    var tercero = result.getText({ name: 'custcol_tko_diot_prov_type' });
+                    var id = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.ID });
+                    var proveedor = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.PROVEEDOR });
+                    var cuenta = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.ACCOUNT });
+                    var tipoTer = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO });
+                    var tercero = result.getText({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO });
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
-                    //var operacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-                    var operacion = result.getText({ name: 'custbody_tko_tipo_operacion' });
+                    var operacion = result.getText({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION });
                     var tipoOperacion = operacion.split(' ',1);
                     tipoOperacion = tipoOperacion.toString();
-                    var importe = result.getValue({ name: 'netamountnotax' });
-                    var impuestos = result.getValue({ name: 'taxamount' });
-                    //var taxCode = result.getValue({ name: 'taxcode' });
-                    var taxCode = result.getValue({ name: 'name', join: 'taxItem' });
-                    var importacionBienes = result.getValue({ name: 'custcol_tko_diot_importacion' });
+                    var importe = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.NET_AMOUNT_NOTAX });
+                    var impuestos = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAX_AMOUNT });
+                    var taxCode = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.NAME, join: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAX_ITEM });
+                    var importacionBienes = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.IMPORTACION });
                     var tasa = '', errores = '', tipoDesglose = '', codigos = '';
 
                     var datos = buscaDatos(proveedor, tipoTer, errores);
@@ -2067,57 +2029,50 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             if(suitetax){
                 var polizas = []
                 var polizasSearch = search.create({
-                    type: "journalentry",
+                    type: RECORD_INFO.JOURNAL_ENTRY_RECORD.ID,
                     filters:
                     [
-                        ["type","anyof","Journal"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TYPE,search.Operator.ANYOF,"Journal"], 
                         "AND", 
-                        ["voided","is","F"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"], 
                         "AND", 
-                        ["status","anyof","Journal:B"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.STATUS,search.Operator.ANYOF,"Journal:B"], 
                         "AND", 
-                        ["postingperiod","abs",periodo],  
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.PERIOD,"abs",periodo],
                         "AND", 
-                        ["taxline","is","F"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAXLINE,search.Operator.IS,"F"], 
                         "AND", 
-                        ["custbody_tko_tipo_operacion","anyof","1","2","3"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION,search.Operator.ANYOF,"1","2","3"], 
                         "AND", 
-                        ["custcol_tko_diot_prov_type","anyof","1","2","3"]
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO,search.Operator.ANYOF,"1","2","3"]
                     ],
                     columns:
                     [
-                        "internalid",
-                        "custcol_tkio_proveedor",
-                        "custcol_tko_diot_prov_type",
-                        "custbody_tko_tipo_operacion",
-                        "account",
-                        "amount",
-                        "netamount",
-                        "taxtotal",
-                        "total",
-                        "custcol_tko_diot_importacion"
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.ID,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.PROVEEDOR,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.ACCOUNT,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.NET_AMOUNT,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAX_TOTAL,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.IMPORTACION
                     ]
                 });
                 polizasSearch.run().each(function(result){
-                    var id = result.getValue({ name: 'internalid' });
-                    var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
-                    var tipoTer = result.getValue({ name: 'custcol_tko_diot_prov_type' });
-                    var tercero = result.getText({ name: 'custcol_tko_diot_prov_type' });
+                    var id = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.ID });
+                    var proveedor = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.PROVEEDOR });
+                    var tipoTer = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO });
+                    var tercero = result.getText({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO });
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
-                    //var operacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-                    var operacion = result.getText({ name: 'custbody_tko_tipo_operacion' });
+                    var operacion = result.getText({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION });
                     var tipoOperacion = operacion.split(' ',1);
                     tipoOperacion = tipoOperacion.toString();
-                    var importacionBienes = result.getValue({ name: 'custcol_tko_diot_importacion' });
-                    var cuenta = result.getValue({ name: 'account' });
-                    var importe = result.getValue({ name: 'netamount' }); //importe negativo = crédito, importe positivo = débito
-                    var impuestos = result.getValue({ name: 'taxtotal' });
+                    var importacionBienes = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.IMPORTACION });
+                    var cuenta = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.ACCOUNT });
+                    var importe = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.NET_AMOUNT }); //importe negativo = crédito, importe positivo = débito
+                    var impuestos = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAX_TOTAL });
                     var errores = '';
-
-                    /* if(impuestos == ''){
-                        impuestos = 0;
-                    } */
 
                     // Se manda llamar a la función para la búsqueda de código, tipo y tasa de impuesto
                     var codigos = searchTaxCode(suitetax, cuenta, valCodigos, exentos, iva, retenciones);
@@ -2152,63 +2107,56 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             }else {
                 var polizas = []
                 var polizasSearch = search.create({
-                    type: "journalentry",
+                    type: RECORD_INFO.JOURNAL_ENTRY_RECORD.ID,
                     filters:
                     [
-                        ["type","anyof","Journal"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TYPE,search.Operator.ANYOF,"Journal"], 
                         "AND", 
-                        ["voided","is","F"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"], 
                         "AND", 
-                        ["mainline","any",""],
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.MAINLINE,search.Operator.ANY,""],
                         "AND", 
-                        ["status","anyof","Journal:B"], 
-                        // "AND", 
-                        // ["account","anyof","186"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.STATUS,search.Operator.ANYOF,"Journal:B"], 
                         "AND", 
-                        ["custcol_tko_diot_prov_type","anyof","1","2","3"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO,search.Operator.ANYOF,"1","2","3"], 
                         "AND", 
-                        ["custbody_tko_tipo_operacion","anyof","1","2","3"], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION,search.Operator.ANYOF,"1","2","3"], 
                         "AND", 
-                        ["postingperiod","abs",periodo], 
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.PERIOD,"abs",periodo],
                         "AND", 
-                        ["taxline","is","F"]
+                        [RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAXLINE,search.Operator.IS,"F"]
                     ],
                     columns:
                     [
-                        "internalid",
-                        "type",
-                        "account",
-                        "custcol_tko_diot_prov_type",
-                        "custbody_tko_tipo_operacion",
-                        "custcol_tkio_proveedor",
-                        "amount",
-                        "netamountnotax",
-                        "taxamount",
-                        "taxcode",
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.ID,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.ACCOUNT,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.PROVEEDOR,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.NET_AMOUNT_NOTAX,
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAX_AMOUNT,
                         search.createColumn({
-                           name: "name",
-                           join: "taxItem"
+                           name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.NAME,
+                           join: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAX_ITEM
                         }),
-                        'custcol_tko_diot_importacion'
+                        RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.IMPORTACION
                     ]
                 });
                 polizasSearch.run().each(function(result){
-                    var id = result.getValue({ name: 'internalid' });
-                    var proveedor = result.getValue({ name: 'custcol_tkio_proveedor' });
-                    var cuenta = result.getValue({ name: 'account' });
-                    var tipoTer = result.getValue({ name: 'custcol_tko_diot_prov_type' });
-                    var tercero = result.getText({ name: 'custcol_tko_diot_prov_type' });
+                    var id = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.ID });
+                    var proveedor = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.PROVEEDOR });
+                    var cuenta = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.ACCOUNT });
+                    var tipoTer = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO });
+                    var tercero = result.getText({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO });
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
-                    //var operacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-                    var operacion = result.getText({ name: 'custbody_tko_tipo_operacion' });
+                    var operacion = result.getText({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION });
                     var tipoOperacion = operacion.split(' ',1);
                     tipoOperacion = tipoOperacion.toString();
-                    var importe = result.getValue({ name: 'netamountnotax' });
-                    var impuestos = result.getValue({ name: 'taxamount' });
-                    //var taxCode = result.getValue({ name: 'taxcode' });
-                    var taxCode = result.getValue({ name: 'name', join: 'taxItem' });
-                    var importacionBienes = result.getValue({ name: 'custcol_tko_diot_importacion' });
+                    var importe = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.NET_AMOUNT_NOTAX });
+                    var impuestos = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAX_AMOUNT });
+                    var taxCode = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.NAME, join: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAX_ITEM });
+                    var importacionBienes = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.IMPORTACION });
                     var tasa = '', errores = '', tipoDesglose = '', codigos = '';
 
                     var datos = buscaDatos(proveedor, tipoTer, errores);
@@ -2379,57 +2327,52 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             if(suitetax){
                 var credito = [], proveedorC = '', idFact = '', idC = '';
                 var creditSearch = search.create({
-                    type: "vendorcredit",
+                    type: RECORD_INFO.VENDOR_CREDIT_RECORD.ID,
                     filters:
                     [
-                       ["type","anyof","VendCred"], 
+                       [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TYPE,search.Operator.ANYOF,"VendCred"], 
                        "AND", 
-                       ["voided","is","F"],
+                       [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"],
                        "AND", 
-                       ["taxline","is","F"], 
+                       [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAXLINE,search.Operator.IS,"F"], 
                        "AND", 
-                       ["vendor.internalid","anyof",proveedor]
-                    //    "AND", 
-                    //    ["appliedtotransaction.internalid","anyof",idFactProv] ya no se va a usar
+                       [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.FILTER.PROVEEDOR,search.Operator.ANYOF,proveedor]
                     ],
                     columns:
                     [
-                       "internalid",
-                       "entity",
-                       "amount",
-                       "netamount",
-                       "taxamount",
-                       "taxtotal",
-                       "total",
+                       RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID,
+                       RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ENTITY,
+                       RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_TOTAL,
+                       RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TOTAL,
                        search.createColumn({
-                          name: "internalid",
-                          join: "appliedToTransaction"
+                          name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID,
+                          join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TRANSACTION
                        }),
                        search.createColumn({
-                          name: "taxcode",
-                          join: "taxDetail"
+                          name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_CODE,
+                          join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_DETAIL
                        }),
                        search.createColumn({
-                          name: "taxtype",
-                          join: "taxDetail"
+                          name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_TYPE,
+                          join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_DETAIL
                        }),
                        search.createColumn({
-                          name: "taxrate",
-                          join: "taxDetail"
+                          name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_RATE,
+                          join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_DETAIL
                        })
                     ]
                 });
 
                 creditSearch.run().each(function(result){
 
-                    var id = result.getValue({ name: 'internalid' });
-                    var proveedor = result.getValue({ name: 'entity' });
-                    var idFactura = result.getValue({ name: 'internalid', join: 'appliedToTransaction' });
-                    var impuesto = result.getValue({ name: 'taxtotal' });
-                    var total = result.getValue({ name: 'total' });
-                    var taxCode = result.getText({ name: 'taxcode', join: 'taxDetail' });
-                    var tipoImpuesto = result.getText({ name: 'taxtype', join: 'taxDetail' });
-                    var tasa = result.getValue({ name: 'taxrate', join: 'taxDetail' });
+                    var id = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID });
+                    var proveedor = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ENTITY });
+                    var idFactura = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID, join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TRANSACTION });
+                    var impuesto = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_TOTAL });
+                    var total = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TOTAL });
+                    var taxCode = result.getText({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_CODE, join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_DETAIL });
+                    var tipoImpuesto = result.getText({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_TYPE, join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_DETAIL });
+                    var tasa = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_RATE, join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_DETAIL });
                     total = -1 * (total);
                     var importe = total - impuesto;
 
@@ -2468,52 +2411,45 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             }else{
                 var credito = [];
                 var creditSearch = search.create({
-                    type: "vendorcredit",
+                    type: RECORD_INFO.VENDOR_CREDIT_RECORD.ID,
                     filters:
                     [
-                       ["type","anyof","VendCred"], 
+                       [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TYPE,search.Operator.ANYOF,"VendCred"], 
                        "AND", 
-                       ["voided","is","F"], 
+                       [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"], 
                        "AND", 
-                       ["mainline","is","F"], 
+                       [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.MAINLINE,search.Operator.IS,"F"], 
                        "AND", 
-                       ["taxline","is","F"], 
+                       [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAXLINE,search.Operator.IS,"F"], 
                        "AND", 
-                       ["vendor.internalid","anyof",proveedor], 
+                       [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.FILTER.PROVEEDOR,search.Operator.ANYOF,proveedor], 
                        "AND", 
-                       ["appliedtotransaction.internalid","anyof",idFactProv]
+                       [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.FILTER.TRANSACTION,search.Operator.ANYOF,idFactProv]
                     ],
                     columns:
                     [
-                       "internalid",
+                       RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID,
+                       RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TIPO_OPERACION,
                        search.createColumn({
-                          name: "entityid",
-                          join: "vendor"
-                       }),
-                       "custbody_tko_tipo_operacion",
-                       search.createColumn({
-                          name: "custentity_tko_diot_prov_type",
-                          join: "vendor"
+                          name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TIPO_TERCERO,
+                          join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.PROVEEDOR
                        }),
                        search.createColumn({
-                          name: "internalid",
-                          join: "appliedToTransaction"
+                          name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID,
+                          join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TRANSACTION
                        }),
-                       "account",
-                       "amount",
-                       "netamountnotax",
-                       "taxamount",
-                       "taxcode"
+                       RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.NET_AMOUNT_NOTAX,
+                       RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_AMOUNT
                     ]
                 });
                 creditSearch.run().each(function(result){
                     
-                    var id = result.getValue({ name: 'internalid' });
-                    var tipoOperacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-                    var tipoTercero = result.getValue({ name: 'custentity_tko_diot_prov_type', join: 'vendor' });
-                    var idFactura = result.getValue({ name: 'internalid', join: 'appliedToTransaction' });
-                    var importe = result.getValue({ name: 'netamountnotax' });
-                    var impuesto = result.getValue({ name: 'taxamount' });
+                    var id = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID });
+                    var tipoOperacion = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TIPO_OPERACION });
+                    var tipoTercero = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TIPO_TERCERO, join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.PROVEEDOR });
+                    var idFactura = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID, join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TRANSACTION });
+                    var importe = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.NET_AMOUNT_NOTAX });
+                    var impuesto = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_AMOUNT });
     
                     credito.push({
                         id: id,
@@ -2543,37 +2479,35 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             if(suitetax){
                 var codigos = [];
                 var codigoSearch = search.create({
-                    type: "salestaxitem",
+                    type: RECORD_INFO.SALES_TAX_ITEM_RECORD.ID,
                     filters:
                     [
-                       ["country","anyof","MX"]
+                       [RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.COUNTRY,search.Operator.ANYOF,"MX"]
                     ],
                     columns:
                     [
-                       "internalid",
-                       "name",
-                       "description",
-                       "taxtype",
+                       RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.ID,
+                       RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.NAME,
                        search.createColumn({
-                          name: "name",
-                          join: "taxType"
+                          name: RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.NAME,
+                          join: RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.TAX_TYPE
                        }),
                        search.createColumn({
-                          name: "receivablesaccount",
-                          join: "taxType"
+                          name: RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.RECEIVABLES_ACCOUNT,
+                          join: RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.TAX_TYPE
                        }),
                        search.createColumn({
-                          name: "payablesaccount",
-                          join: "taxType"
+                          name: RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.PAYABLES_ACCOUNT,
+                          join: RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.TAX_TYPE
                        })
                     ]
                  });
                 codigoSearch.run().each(function(result){
-                    var id = result.getValue({ name: 'internalid' });
-                    var taxCode = result.getValue({ name: 'name' });
-                    var tipoImpuesto = result.getValue({ name: 'name', join:'taxType' });
-                    var cuenta1 = result.getValue({ name: 'receivablesaccount', join:'taxType' });
-                    var cuenta2 = result.getValue({ name: 'payablesaccount', join:'taxType' });
+                    var id = result.getValue({ name: RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.ID });
+                    var taxCode = result.getValue({ name: RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.NAME });
+                    var tipoImpuesto = result.getValue({ name: RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.NAME, join:RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.TAX_TYPE });
+                    var cuenta1 = result.getValue({ name: RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.RECEIVABLES_ACCOUNT, join:RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.TAX_TYPE });
+                    var cuenta2 = result.getValue({ name: RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.PAYABLES_ACCOUNT, join:RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.TAX_TYPE });
                     var tasa;
 
                     /** Se realiza un recorrido en el arreglo de valores y se ve si el id coincide con el código de impuesto para obtener los datos*/
@@ -2668,45 +2602,45 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
         function searchCodigoImpuesto(suitetax){
             if(suitetax){
                 var codigoSearch = search.create({
-                    type: "salestaxitem",
+                    type: RECORD_INFO.SALES_TAX_ITEM_RECORD.ID,
                     filters:
                     [
-                       ["country","anyof","MX"]
+                       [RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.COUNTRY,search.Operator.ANYOF,"MX"]
                     ],
                     columns:
                     [
-                       "internalid",
-                       "name",
-                       search.createColumn({
-                          name: "name",
-                          join: "taxType"
-                       }),
-                       search.createColumn({
-                          name: "receivablesaccount",
-                          join: "taxType"
-                       }),
-                       search.createColumn({
-                          name: "payablesaccount",
-                          join: "taxType"
-                       })
+                        RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.ID,
+                        RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.NAME,
+                        search.createColumn({
+                            name: RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.NAME,
+                            join: RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.TAX_TYPE
+                        }),
+                        search.createColumn({
+                            name: RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.RECEIVABLES_ACCOUNT,
+                            join: RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.TAX_TYPE
+                        }),
+                        search.createColumn({
+                            name: RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.PAYABLES_ACCOUNT,
+                            join: RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.TAX_TYPE
+                        })
                     ]
                 });
                 return codigoSearch;
             }else{
                 var codigoSearch = search.create({
-                    type: "salestaxitem",
+                    type: RECORD_INFO.SALES_TAX_ITEM_RECORD.ID,
                     filters:
                     [
-                       ["country","anyof","MX"]
+                       [RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.COUNTRY,search.Operator.ANYOF,"MX"]
                     ],
                     columns:
                     [
-                       "internalid",
-                       "name",
-                       "rate",
-                       "taxtype",
-                       "purchaseaccount",
-                       "saleaccount"
+                        RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.ID,
+                        RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.NAME,
+                        RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.RATE,
+                        RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.TAX_TYPE,
+                        RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.PURCHASE_ACCOUNT,
+                        RECORD_INFO.SALES_TAX_ITEM_RECORD.FIELDS.SALE_ACCOUNT
                     ]
                 });
                 return codigoSearch;
