@@ -1150,8 +1150,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         [RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"], 
                         "AND", 
                         [RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.MAINLINE,search.Operator.IS,"F"],
-                        // "AND", 
-                        // [RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.STATUS,search.Operator.ANYOF,"VendBill:B"], // (para pruebas, estado = pagado por completo)
+                        "AND", 
+                        [RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.STATUS,search.Operator.ANYOF,"VendBill:B"],
                         // "AND", 
                         // ["account",search.Operator.ANYOF,"186"],  
                         "AND", 
@@ -1378,8 +1378,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         [RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"], 
                         "AND", 
                         [RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.MAINLINE,search.Operator.IS,"F"],
-                        // "AND", 
-                        // [RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.STATUS,search.Operator.ANYOF,"VendBill:B"], // (para pruebas, estado = pagado por completo)
+                        "AND", 
+                        [RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.STATUS,search.Operator.ANYOF,"VendBill:B"],
                         // "AND", 
                         // ["account",search.Operator.ANYOF,"186"],  
                         "AND", 
@@ -1580,8 +1580,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"], 
                         "AND", 
                         [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.MAINLINE,search.Operator.ANY,""], 
-                        // "AND", 
-                        // [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.STATUS,search.Operator.ANYOF,"ExpRept:I"], (para prueba, estado = pagado por completo)
+                        "AND", 
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.STATUS,search.Operator.ANYOF,"ExpRept:I"],
                         // "AND", 
                         // ["account",search.Operator.ANYOF,"186"],   
                         "AND", 
