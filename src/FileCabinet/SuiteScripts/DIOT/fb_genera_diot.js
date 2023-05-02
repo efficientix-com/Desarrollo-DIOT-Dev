@@ -721,15 +721,17 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     }
                 }
 
-                iva1516 = evaluar(iva1516);
-                regionNorte = evaluar(regionNorte);
-                importacion1516 = evaluar(importacion1516);
-                importacion1011 = evaluar(importacion1011);
-                importacionExento = evaluar(importacionExento);
-                iva0 = evaluar(iva0);
-                exento = evaluar(exento);
-                retencion = evaluar(retencion);
-                devoluciones = evaluar(devoluciones);
+                
+
+                iva1516 = evaluar(Math.round(iva1516));
+                regionNorte = evaluar(Math.round(regionNorte));
+                importacion1516 = evaluar(Math.round(importacion1516));
+                importacion1011 = evaluar(Math.round(importacion1011));
+                importacionExento = evaluar(Math.round(importacionExento));
+                iva0 = evaluar(Math.round(iva0));
+                exento = evaluar(Math.round(exento));
+                retencion = evaluar(Math.round(retencion));
+                devoluciones = evaluar(Math.round(devoluciones));
 
                 var arrayCampos = new Array();
                 arrayCampos.push(iva1516,regionNorte,importacion1516,importacion1011,importacionExento,iva0,exento,retencion,devoluciones);
