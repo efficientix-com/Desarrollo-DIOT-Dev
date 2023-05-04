@@ -2,7 +2,7 @@
  * @NApiVersion 2.1
  * @NScriptType Suitelet
  */
-define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_diot_constants_lib', 'N/record', 'N/redirect'],
+define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './fb_diot_constants_lib', 'N/record', 'N/redirect'],
     /**
  * @param{log} log
  * @param{serverWidget} serverWidget
@@ -14,6 +14,8 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
         const STATUS_LIST_DIOT = values.STATUS_LIST_DIOT;
         const SCRIPTS_INFO = values.SCRIPTS_INFO;
         const RUNTIME = values.RUNTIME;
+
+        //Cambio de nombre en el archivo
 
         /**
          * Defines the Suitelet script trigger point.
@@ -35,11 +37,6 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
                     case 'ejecuta':
                         generaDIOT(parameters.subsidiaria, parameters.periodo);
                         break;
-                    /* case 'actualiza':
-                        log.debug("prueba", "Click en botón actualiza");
-                        llenarDatos(parameters.idArchivo);
-                        log.debug('ID Archivo', parameters.idArchivo);
-                        break; */
                 }
             } catch (onRequestError) {
                 log.error({ title: 'Error en onRequest', details: onRequestError })
@@ -60,12 +57,6 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
                 /**
                  * Creacion de los campos para los filtros de la DIOT
                  */
-
-                /* form.addButton({
-                    id: "refresh",
-                    label: "Actualizar",
-                    functionName: "actualizarPantalla"
-                }); */
 
                 form.addButton({
                     id: INTERFACE.FORM.BUTTONS.GENERAR.ID,
@@ -88,9 +79,6 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
                     label: INTERFACE.FORM.FIELDS.SUBSIDIARIA.LABEL,
                     container: INTERFACE.FORM.FIELD_GROUP.DATOS.ID
                 });
-
-                /* var user = runtime.getCurrentUser();
-                log.debug('EmpresaSubsi', user.subsidiary); */
 
                 if(oneWorldFeature){ //si es oneWorld hace la búsqueda de las subsidiarias
                     var subsis = searchSubsidiaries();
@@ -257,11 +245,28 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './tko_
                     }
                 });
                 var idTask = mrTask.submit();
+                var otherId = record.submitFields({
+                    type: RECORD_INFO.DIOT_RECORD.ID,
+                    id: recordId_diot,
+                    values: {
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.TASK_ID]: idTask
+                    }
+                });
+                
                 log.audit({ title: 'idTask', details: idTask });
             }
             catch (e) {
+                var percent = 100;
+                var otherId = record.submitFields({
+                    type: RECORD_INFO.DIOT_RECORD.ID,
+                    id: recordId_diot,
+                    values: {
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.PERCENTAGE]: Math.round(percent * 100) / 100 + '%',
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: e.message
+                    }
+                });
                 log.debug({ title: "Error", details: e });
-                //log.error({ title: 'Execution Error', details: "Aun esta corriendo la ejecución"});
             }
         }
 
