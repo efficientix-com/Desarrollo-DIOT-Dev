@@ -268,8 +268,11 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 var facturasProv, informesGastos, polizasDiario;
                 if(oneWorldFeature){
                     facturasProv = searchVendorBill(subsidiaria, periodo, suitetax, valores, exentos, iva, retenciones);
+                    log.audit({title: 'Facturas Res', details: facturasProv});
                     informesGastos = searchExpenseReports(subsidiaria, periodo, suitetax, valores, exentos, iva, retenciones);
+                    log.audit({title: 'Informes Res', details: informesGastos});
                     polizasDiario = searchDailyPolicy(subsidiaria, periodo, suitetax, valores, exentos, iva, retenciones);
+                    log.audit({title: 'Polizas Res', details: polizasDiario});
                 }else{
                     facturasProv = searchVendorBillOW(periodo, suitetax, valores, exentos, iva, retenciones);
                     informesGastos = searchExpenseReportsOW(periodo, suitetax, valores, exentos, iva, retenciones);
@@ -1235,6 +1238,9 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.COMERCIO_EXTERIOR
                     ]
                 });
+
+                var searchResultCount = facturaSearch.runPaged().count;
+                log.debug('Facturas', searchResultCount);
     
                 facturaSearch.run().each(function(result){
                     var id = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.ID });
@@ -1655,6 +1661,10 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.IMPORTACION
                     ]
                 });
+
+                var searchResultCount = informesSearch.runPaged().count;
+                log.debug('Informes', searchResultCount);
+
                 informesSearch.run().each(function(result){
                     var id = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.ID });
                     var proveedor = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR });
@@ -2009,6 +2019,10 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.IMPORTACION
                     ]
                 });
+
+                var searchResultCount = polizasSearch.runPaged().count;
+                log.debug('Polizas', searchResultCount);
+
                 polizasSearch.run().each(function(result){
                     var id = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.ID });
                     var proveedor = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.PROVEEDOR });
