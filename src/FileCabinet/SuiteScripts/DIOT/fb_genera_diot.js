@@ -27,6 +27,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
         const STATUS_LIST_DIOT = values.STATUS_LIST_DIOT;
         const RUNTIME = values.RUNTIME;
         const COMPANY_INFORMATION = values.COMPANY_INFORMATION;
+        const OPERATION_TYPE = values.OPERATION_TYPE;
 
         const getInputData = (inputContext) => {
             try{
@@ -1132,8 +1133,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var tercero = result.getText({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TIPO_TERCERO, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VENDOR });
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
-                    var operacion = result.getText({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TIPO_OPERACION });
-                    var tipoOperacion = operacion.split(' ',1);
+                    var operacion = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TIPO_OPERACION });
+                    var tipoOperacion = getOperacion(operacion);
                     tipoOperacion = tipoOperacion.toString();
                     var importe = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.NET_AMOUNT });
                     var impuestos = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TAX_AMOUNT });
@@ -1242,8 +1243,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var tercero = result.getText({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TIPO_TERCERO, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VENDOR });
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
-                    var operacion = result.getText({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TIPO_OPERACION });
-                    var tipoOperacion = operacion.split(' ',1);
+                    var operacion = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TIPO_OPERACION });
+                    var tipoOperacion = getOperacion(operacion);
                     tipoOperacion = tipoOperacion.toString();
                     var importe = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.NET_AMOUNT_NOTAX });
                     var impuestos = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TAX_AMOUNT });
@@ -1360,8 +1361,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var tercero = result.getText({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TIPO_TERCERO, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VENDOR });
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
-                    var operacion = result.getText({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TIPO_OPERACION });
-                    var tipoOperacion = operacion.split(' ',1);
+                    var operacion = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TIPO_OPERACION });
+                    var tipoOperacion = getOperacion(operacion);
                     tipoOperacion = tipoOperacion.toString();
                     var importe = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.NET_AMOUNT });
                     var impuestos = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TAX_AMOUNT });
@@ -1468,8 +1469,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var tercero = result.getText({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TIPO_TERCERO, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VENDOR });
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
-                    var operacion = result.getText({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TIPO_OPERACION });
-                    var tipoOperacion = operacion.split(' ',1);
+                    var operacion = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TIPO_OPERACION });
+                    var tipoOperacion = getOperacion(operacion);
                     tipoOperacion = tipoOperacion.toString();
                     var importe = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.NET_AMOUNT_NOTAX });
                     var impuestos = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TAX_AMOUNT });
@@ -1583,8 +1584,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var tercero = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO });
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
-                    var operacion = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION });
-                    var tipoOperacion = operacion.split(' ',1);
+                    var operacion = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION });
+                    var tipoOperacion = getOperacion(operacion);
                     tipoOperacion = tipoOperacion.toString();
                     var importe = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT });
                     var impuestos = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT });
@@ -1662,8 +1663,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
                     //var operacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-                    var operacion = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION });
-                    var tipoOperacion = operacion.split(' ',1);
+                    var operacion = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION });
+                    var tipoOperacion = getOperacion(operacion);
                     tipoOperacion = tipoOperacion.toString();
                     var importe = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT_NOTAX });
                     var impuestos = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT });
@@ -1764,8 +1765,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var tercero = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO });
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
-                    var operacion = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION });
-                    var tipoOperacion = operacion.split(' ',1);
+                    var operacion = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION });
+                    var tipoOperacion = getOperacion(operacion);
                     tipoOperacion = tipoOperacion.toString();
                     var importe = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT });
                     var impuestos = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT });
@@ -1840,9 +1841,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var tercero = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO });
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
-                    //var operacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-                    var operacion = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION });
-                    var tipoOperacion = operacion.split(' ',1);
+                    var operacion = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION });
+                    var tipoOperacion = getOperacion(operacion);
                     tipoOperacion = tipoOperacion.toString();
                     var importe = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT_NOTAX });
                     var impuestos = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT });
@@ -1930,8 +1930,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var tercero = result.getText({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO });
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
-                    var operacion = result.getText({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION });
-                    var tipoOperacion = operacion.split(' ',1);
+                    var operacion = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION });
+                    var tipoOperacion = getOperacion(operacion);
                     tipoOperacion = tipoOperacion.toString();
                     var importacionBienes = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.IMPORTACION });
                     var cuenta = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.ACCOUNT });
@@ -2017,8 +2017,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var tercero = result.getText({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO });
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
-                    var operacion = result.getText({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION });
-                    var tipoOperacion = operacion.split(' ',1);
+                    var operacion = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION });
+                    var tipoOperacion = getOperacion(operacion);
                     tipoOperacion = tipoOperacion.toString();
                     var importe = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.NET_AMOUNT_NOTAX });
                     var impuestos = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAX_AMOUNT });
@@ -2112,8 +2112,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var tercero = result.getText({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO });
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
-                    var operacion = result.getText({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION });
-                    var tipoOperacion = operacion.split(' ',1);
+                    var operacion = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION });
+                    var tipoOperacion = getOperacion(operacion);
                     tipoOperacion = tipoOperacion.toString();
                     var importacionBienes = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.IMPORTACION });
                     var cuenta = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.ACCOUNT });
@@ -2197,8 +2197,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var tercero = result.getText({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO });
                     var tipoTercero = tercero.split(' ',1);
                     tipoTercero = tipoTercero.toString();
-                    var operacion = result.getText({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION });
-                    var tipoOperacion = operacion.split(' ',1);
+                    var operacion = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION });
+                    var tipoOperacion = getOperacion(operacion);
                     tipoOperacion = tipoOperacion.toString();
                     var importe = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.NET_AMOUNT_NOTAX });
                     var impuestos = result.getValue({ name: RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAX_AMOUNT });
@@ -2234,18 +2234,24 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         codigos: codigos,
                         datos: datos
                     });
-
-                    //Se obtiene el desglose de impuesto de acuerdo al código de impuesto
-                    /* var tipoDesglose;
-                    for (var i = 0; i < codigos.length; i++){
-                        tipoDesglose = buscaDesgloseImpuesto(codigos[i].taxCode, exentos, iva, retenciones);
-                    } */
                     
                     return true;
                 });
 
                 return polizas;
             }
+        }
+
+        function getOperacion(operacion){
+            var tipoOperacion;
+            if(operacion == OPERATION_TYPE.SERVICIOS){
+                tipoOperacion = OPERATION_TYPE.SERVICIOS_VALOR;
+            }else if(operacion == OPERATION_TYPE.INMUEBLES){
+                tipoOperacion = OPERATION_TYPE.INMUEBLES_VALOR;
+            }else if(operacion == OPERATION_TYPE.OTROS){
+                tipoOperacion = OPERATION_TYPE.OTROS_VALOR;
+            }
+            return tipoOperacion;
         }
 
         /**
@@ -2476,7 +2482,6 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     columns:
                     [
                        RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID,
-                       RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TIPO_OPERACION,
                        search.createColumn({
                           name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TIPO_TERCERO,
                           join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.PROVEEDOR
@@ -2492,7 +2497,6 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 creditSearch.run().each(function(result){
                     
                     var id = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID });
-                    var tipoOperacion = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TIPO_OPERACION });
                     var tipoTercero = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TIPO_TERCERO, join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.PROVEEDOR });
                     var idFactura = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID, join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TRANSACTION });
                     var importe = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.NET_AMOUNT_NOTAX });
@@ -2501,7 +2505,6 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     credito.push({
                         id: id,
                         proveedor: proveedor,
-                        tipoOperacion:tipoOperacion,
                         tipoTercero: tipoTercero,
                         idFactura: idFactura,
                         importe: importe,
