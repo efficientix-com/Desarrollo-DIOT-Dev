@@ -1189,64 +1189,68 @@
             
             return credito;
         }else{
-            var credito = [];
-            var creditSearch = search.create({
-                type: RECORD_INFO.VENDOR_CREDIT_RECORD.ID,
-                filters:
-                [
-                    [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TYPE,search.Operator.ANYOF,"VendCred"], 
-                    "AND", 
-                    [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"], 
-                    "AND", 
-                    [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.MAINLINE,search.Operator.IS,"F"], 
-                    "AND", 
-                    [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAXLINE,search.Operator.IS,"F"], 
-                    "AND", 
-                    [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.FILTER.PROVEEDOR,search.Operator.ANYOF,proveedores], 
-                    "AND", 
-                    [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.FILTER.TRANSACTION,search.Operator.ANYOF,idFacturas]
-                ],
-                columns:
-                [
-                    RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID,
-                    search.createColumn({
-                       name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID,
-                       join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.PROVEEDOR
-                    }),
-                    search.createColumn({
-                        name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID,
-                        join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TRANSACTION
-                    }),
-                    RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.NET_AMOUNT_NOTAX,
-                    RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_AMOUNT
-                ]
-            });
-            creditSearch.run().each(function(result){
-                
-                var id = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID });
-                var proveedor = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID, join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.PROVEEDOR });
-                var idFactura = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID, join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TRANSACTION });
-                var importe = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.NET_AMOUNT_NOTAX });
-                var impuesto = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_AMOUNT });
-
-                credito.push({
-                    idFactura: idFactura,
-                    proveedor: proveedor,
-                    impuesto: impuesto
+            try{
+                var credito = [];
+                var creditSearch = search.create({
+                    type: RECORD_INFO.VENDOR_CREDIT_RECORD.ID,
+                    filters:
+                    [
+                        [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TYPE,search.Operator.ANYOF,"VendCred"], 
+                        "AND", 
+                        [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"], 
+                        "AND", 
+                        [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.MAINLINE,search.Operator.IS,"F"], 
+                        "AND", 
+                        [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAXLINE,search.Operator.IS,"F"], 
+                        "AND", 
+                        [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.FILTER.PROVEEDOR,search.Operator.ANYOF,proveedores], 
+                        "AND", 
+                        [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.FILTER.TRANSACTION,search.Operator.ANYOF,idFacturas]
+                    ],
+                    columns:
+                    [
+                        RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID,
+                        search.createColumn({
+                           name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID,
+                           join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.PROVEEDOR
+                        }),
+                        search.createColumn({
+                            name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID,
+                            join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TRANSACTION
+                        }),
+                        RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.NET_AMOUNT_NOTAX,
+                        RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_AMOUNT
+                    ]
                 });
-
-                return true;
-
-                //se recorren los arreglos de proveedores e idFactura para saber a cual pertenece
-                /* for (var i = 0; i < proveedores.length; i++){
-                    if((proveedor == proveedores[i]) && (idFactura == idFacturas[i])){
-                    }
-
-                } */
-
-            });
-            
-            return credito; 
+                creditSearch.run().each(function(result){
+                    
+                    var id = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID });
+                    var proveedor = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID, join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.PROVEEDOR });
+                    var idFactura = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID, join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TRANSACTION });
+                    var importe = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.NET_AMOUNT_NOTAX });
+                    var impuesto = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_AMOUNT });
+    
+                    credito.push({
+                        idFactura: idFactura,
+                        proveedor: proveedor,
+                        impuesto: impuesto
+                    });
+    
+                    return true;
+    
+                    //se recorren los arreglos de proveedores e idFactura para saber a cual pertenece
+                    /* for (var i = 0; i < proveedores.length; i++){
+                        if((proveedor == proveedores[i]) && (idFactura == idFacturas[i])){
+                        }
+    
+                    } */
+    
+                });
+                
+                return credito; 
+            }catch(error){
+                log.error({ title: 'Error en crédito de facturas', details: error });
+            }
         }
     }
      
