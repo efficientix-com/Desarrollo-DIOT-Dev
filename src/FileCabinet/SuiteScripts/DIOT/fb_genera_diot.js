@@ -263,7 +263,7 @@
             log.debug('Retenciones', retenciones);
 
             /** Se realiza la búsqueda de las distintas transacciones */
-            var facturasProv, informesGastos, polizasDiario;
+            var facturasProv = [], informesGastos = [], polizasDiario =[];
             if(oneWorldFeature){
                 var resFact = searchVendorBill(subsidiaria, periodo, suitetax, valores, exentos, iva, retenciones);
                 log.audit({title: 'Res Fact', details: resFact});
@@ -300,9 +300,9 @@
 
                     log.audit({title: 'Facturas con Credito', details: facturasProv});
                 }
-            /*  informesGastos = searchExpenseReports(subsidiaria, periodo, suitetax, valores, exentos, iva, retenciones);
+                informesGastos = searchExpenseReports(subsidiaria, periodo, suitetax, valores, exentos, iva, retenciones);
                 log.audit({title: 'Informes Res', details: informesGastos});
-                polizasDiario = searchDailyPolicy(subsidiaria, periodo, suitetax, valores, exentos, iva, retenciones);
+                /* polizasDiario = searchDailyPolicy(subsidiaria, periodo, suitetax, valores, exentos, iva, retenciones);
                 log.audit({title: 'Polizas Res', details: polizasDiario}); */
             }else{
                 facturasProv = searchVendorBillOW(periodo, suitetax, valores, exentos, iva, retenciones);
@@ -321,7 +321,7 @@
                     }
                 }
             }
-            /* if(informesGastos.length != 0){
+            if(informesGastos.length != 0){
                 for(var i = 0; i < informesGastos.length; i++){
                     if(informesGastos[i].errores != ''){
                         error = true;
@@ -329,7 +329,7 @@
                     }
                 }
             }
-            if(polizasDiario.length != 0){
+            /* if(polizasDiario.length != 0){
                 for(var i = 0; i < polizasDiario.length; i++){
                     if(polizasDiario[i].errores != ''){
                         error = true;
@@ -590,11 +590,11 @@
                      if(prov_operacion == prov){
                          tercero = facturasProv[factura].tipoTercero;
                          operacion = facturasProv[factura].tipoOperacion;
-                         rfc = facturasProv[factura].datos[0].rfc;
-                         taxid = facturasProv[factura].datos[0].taxID;
-                         nombreExtranjero = facturasProv[factura].datos[0].nombreExtranjero;
-                         pais = facturasProv[factura].datos[0].paisResidencia;
-                         nacionalidad = facturasProv[factura].datos[0].nacionalidad;
+                         rfc = facturasProv[factura].rfc;
+                         taxid = facturasProv[factura].taxID;
+                         nombreExtranjero = facturasProv[factura].nombreExtranjero;
+                         pais = facturasProv[factura].paisResidencia;
+                         nacionalidad = facturasProv[factura].nacionalidad;
                          var importe;
                          if(facturasProv[factura].importe != ""){
                              importe = parseFloat(facturasProv[factura].importe);
@@ -639,11 +639,13 @@
                          }
 
                          if(credito != ''){
-                             for(var cred = 0; cred < credito.length; cred++){
+                            devoluciones = devoluciones + credito;
+
+                             /* for(var cred = 0; cred < credito.length; cred++){
                                  var credImpuestos = parseFloat(credito[cred].impuesto);
                                  credImpuestos = Math.abs(credImpuestos);
                                  devoluciones = devoluciones + credImpuestos;
-                             }
+                             } */
                          }
                      }
                  }
@@ -654,11 +656,11 @@
                      if(prov_operacion == prov){
                          tercero = informesGastos[informe].tipoTercero;
                          operacion = informesGastos[informe].tipoOperacion;
-                         rfc = informesGastos[informe].datos[0].rfc;
-                         taxid = informesGastos[informe].datos[0].taxID;
-                         nombreExtranjero = informesGastos[informe].datos[0].nombreExtranjero;
-                         pais = informesGastos[informe].datos[0].paisResidencia;
-                         nacionalidad = informesGastos[informe].datos[0].nacionalidad;
+                         rfc = informesGastos[informe].rfc;
+                         taxid = informesGastos[informe].taxID;
+                         nombreExtranjero = informesGastos[informe].nombreExtranjero;
+                         pais = informesGastos[informe].paisResidencia;
+                         nacionalidad = informesGastos[informe].nacionalidad;
                          var importe;
                          if(informesGastos[informe].importe != ""){
                              importe = parseFloat(informesGastos[informe].importe);
@@ -836,45 +838,49 @@
 
      /** Funcion que busca los distintos proveedores y tipo de operación en cada una de las transacciones */
      function buscaProveedores(facturasProv, informesGastos, polizasDiario){
-         var idProv = new Array();
-         if(facturasProv.length != 0){
-             for(var i = 0; i < facturasProv.length; i++){
-                 if(idProv.length == 0){
-                     idProv.push(facturasProv[i].proveedor+facturasProv[i].tipoOperacion);
-                 }else{
-                     var existe = existeProveedor(idProv, facturasProv[i].proveedor+facturasProv[i].tipoOperacion);
-                     if(!existe){
-                         idProv.push(facturasProv[i].proveedor+facturasProv[i].tipoOperacion);
-                     }
-                 }
-             }
-         }
-         if(informesGastos.length != 0){
-             for(var i = 0; i < informesGastos.length; i++){
-                 if(idProv.length == 0){
-                     idProv.push(informesGastos[i].proveedor+informesGastos[i].tipoOperacion);
-                 }else{
-                     var existe = existeProveedor(idProv, informesGastos[i].proveedor+informesGastos[i].tipoOperacion);
-                     if(!existe){
-                         idProv.push(informesGastos[i].proveedor+informesGastos[i].tipoOperacion);
-                     }
-                 }
-             }
-             
-         }
-         if(polizasDiario.length != 0){
-             for(var i = 0; i < polizasDiario.length; i++){
-                 if(idProv.length == 0){
-                     idProv.push(polizasDiario[i].proveedor+polizasDiario[i].tipoOperacion);
-                 }else{
-                     var existe = existeProveedor(idProv, polizasDiario[i].proveedor+polizasDiario[i].tipoOperacion);
-                     if(!existe){
-                         idProv.push(polizasDiario[i].proveedor+polizasDiario[i].tipoOperacion);
-                     }
-                 }
-             }
-         }
-         return idProv;
+        try{
+            var idProv = new Array();
+            if(facturasProv.length != 0){
+                for(var i = 0; i < facturasProv.length; i++){
+                    if(idProv.length == 0){
+                        idProv.push(facturasProv[i].proveedor+facturasProv[i].tipoOperacion);
+                    }else{
+                        var existe = existeProveedor(idProv, facturasProv[i].proveedor+facturasProv[i].tipoOperacion);
+                        if(!existe){
+                            idProv.push(facturasProv[i].proveedor+facturasProv[i].tipoOperacion);
+                        }
+                    }
+                }
+            }
+            if(informesGastos.length != 0){
+                for(var i = 0; i < informesGastos.length; i++){
+                    if(idProv.length == 0){
+                        idProv.push(informesGastos[i].proveedor+informesGastos[i].tipoOperacion);
+                    }else{
+                        var existe = existeProveedor(idProv, informesGastos[i].proveedor+informesGastos[i].tipoOperacion);
+                        if(!existe){
+                            idProv.push(informesGastos[i].proveedor+informesGastos[i].tipoOperacion);
+                        }
+                    }
+                }
+                
+            }
+            if(polizasDiario.length != 0){
+                for(var i = 0; i < polizasDiario.length; i++){
+                    if(idProv.length == 0){
+                        idProv.push(polizasDiario[i].proveedor+polizasDiario[i].tipoOperacion);
+                    }else{
+                        var existe = existeProveedor(idProv, polizasDiario[i].proveedor+polizasDiario[i].tipoOperacion);
+                        if(!existe){
+                            idProv.push(polizasDiario[i].proveedor+polizasDiario[i].tipoOperacion);
+                        }
+                    }
+                }
+            }
+            return idProv;
+        }catch(error){
+            log.error({ title: 'Error en la búsqueda de proveedores', details: error });
+        }
      }
 
      /** Función que evalua que una variable no sea 0 */
@@ -1197,11 +1203,11 @@
                     [
                         [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TYPE,search.Operator.ANYOF,"VendCred"], 
                         "AND", 
-                        [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"], 
+                        [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"],
                         "AND", 
-                        [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.MAINLINE,search.Operator.IS,"F"], 
+                        [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAXLINE,search.Operator.IS,"F"],
                         "AND", 
-                        [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAXLINE,search.Operator.IS,"F"], 
+                        [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.MAINLINE,search.Operator.IS,"T"], 
                         "AND", 
                         [RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.FILTER.PROVEEDOR,search.Operator.ANYOF,proveedores], 
                         "AND", 
@@ -1218,8 +1224,7 @@
                             name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID,
                             join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TRANSACTION
                         }),
-                        RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.NET_AMOUNT_NOTAX,
-                        RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_AMOUNT
+                        RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_TOTAL
                     ]
                 });
                 creditSearch.run().each(function(result){
@@ -1227,23 +1232,15 @@
                     var id = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID });
                     var proveedor = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID, join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.PROVEEDOR });
                     var idFactura = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.ID, join: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TRANSACTION });
-                    var importe = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.NET_AMOUNT_NOTAX });
-                    var impuesto = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_AMOUNT });
-    
+                    var impuesto = result.getValue({ name: RECORD_INFO.VENDOR_CREDIT_RECORD.FIELDS.TAX_TOTAL });
+                    
                     credito.push({
                         idFactura: idFactura,
                         proveedor: proveedor,
                         impuesto: impuesto
                     });
-    
+
                     return true;
-    
-                    //se recorren los arreglos de proveedores e idFactura para saber a cual pertenece
-                    /* for (var i = 0; i < proveedores.length; i++){
-                        if((proveedor == proveedores[i]) && (idFactura == idFacturas[i])){
-                        }
-    
-                    } */
     
                 });
                 
@@ -1557,11 +1554,6 @@
                     }else{
                         arrayFactId.push(id);
                     }
-                    /* if((proveedor != idPastVendor) && (id != idPastBill)){
-                    }
-
-                    idPastBill = id;
-                    idPastVendor = proveedor; */
     
                     facturas.push({
                         id: id,
@@ -1826,179 +1818,256 @@
       */
      function searchExpenseReports(subsidiaria, periodo, suitetax, valores, exentos, iva, retenciones){
 
-         if(suitetax){   
-             var informes = [];
-             var informesSearch = search.create({
-                 type: RECORD_INFO.EXPENSE_REPORT_RECORD.ID,
-                 filters:
-                 [
-                    [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TYPE,search.Operator.ANYOF,"ExpRept"], 
-                    "AND", 
-                    [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"], 
-                    "AND", 
-                    [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.MAINLINE,search.Operator.IS,"F"],
-                    "AND", 
-                    [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.STATUS,search.Operator.ANYOF,"ExpRept:I"], 
-                    "AND", 
-                    [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PERIOD,"abs",periodo], 
-                    "AND", 
-                    [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.SUBSIDIARY,search.Operator.ANYOF,subsidiaria], 
-                    "AND", 
-                    [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAXLINE,search.Operator.IS,"F"],
-                    "AND", 
-                    [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO,search.Operator.ANYOF,"1","2","3"], 
-                    "AND", 
-                    [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION,search.Operator.ANYOF,"1","2","3"]
-                 ],
-                 columns:
-                 [
-                    RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.ID,
-                    RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR,
-                    RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO,
-                    RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION,
-                    RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT,
-                    RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT,
-                     search.createColumn({
-                       name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_CODE,
-                       join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL
-                     }),
-                     search.createColumn({
-                       name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_TYPE,
-                       join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL
-                     }),
-                     search.createColumn({
-                        name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_RATE,
-                        join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL
-                     }),
-                     RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.IMPORTACION
-                 ],
-             });
+        if(suitetax){   
+            var informes = [];
+            var informesSearch = search.create({
+                type: RECORD_INFO.EXPENSE_REPORT_RECORD.ID,
+                filters:
+                [
+                [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TYPE,search.Operator.ANYOF,"ExpRept"], 
+                "AND", 
+                [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"], 
+                "AND", 
+                [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.MAINLINE,search.Operator.IS,"F"],
+                "AND", 
+                [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.STATUS,search.Operator.ANYOF,"ExpRept:I"], 
+                "AND", 
+                [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PERIOD,"abs",periodo], 
+                "AND", 
+                [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.SUBSIDIARY,search.Operator.ANYOF,subsidiaria], 
+                "AND", 
+                [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAXLINE,search.Operator.IS,"F"],
+                "AND", 
+                [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO,search.Operator.ANYOF,"1","2","3"], 
+                "AND", 
+                [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION,search.Operator.ANYOF,"1","2","3"]
+                ],
+                columns:
+                [
+                RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.ID,
+                RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR,
+                RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO,
+                RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION,
+                RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT,
+                RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT,
+                    search.createColumn({
+                    name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_CODE,
+                    join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL
+                    }),
+                    search.createColumn({
+                    name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_TYPE,
+                    join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL
+                    }),
+                    search.createColumn({
+                    name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_RATE,
+                    join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL
+                    }),
+                    RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.IMPORTACION
+                ],
+            });
 
-             informesSearch.run().each(function(result){
+            informesSearch.run().each(function(result){
 
-                 var id = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.ID });
-                 var proveedor = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR });
-                 var tipoTer = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO });
-                 var tercero = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO });
-                 var tipoTercero = tercero.split(' ',1);
-                 tipoTercero = tipoTercero.toString();
-                 var operacion = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION });
-                 var tipoOperacion = getOperacion(operacion);
-                 tipoOperacion = tipoOperacion.toString();
-                 var importe = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT });
-                 var impuestos = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT });
-                 var taxCode = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_CODE, join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL });
-                 var tipoImpuesto = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_TYPE, join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL });
-                 var importacionBienes = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.IMPORTACION });
-                 var tasa = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_RATE, join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL });
-                 var errores = ''; 
+                var id = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.ID });
+                var proveedor = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR });
+                var tipoTer = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO });
+                var tercero = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO });
+                var tipoTercero = tercero.split(' ',1);
+                tipoTercero = tipoTercero.toString();
+                var operacion = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION });
+                var tipoOperacion = getOperacion(operacion);
+                tipoOperacion = tipoOperacion.toString();
+                var importe = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT });
+                var impuestos = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT });
+                var taxCode = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_CODE, join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL });
+                var tipoImpuesto = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_TYPE, join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL });
+                var importacionBienes = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.IMPORTACION });
+                var tasa = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_RATE, join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL });
+                var errores = ''; 
 
-                 var tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
- 
-                 informes.push({
-                     id: id,
-                     proveedor: proveedor,
-                     tipoTercero: tipoTercero,
-                     tipoOperacion: tipoOperacion,
-                     importe: importe,
-                     impuestos: impuestos,
-                     taxCode: taxCode,
-                     tasa: tasa,
-                     tipoImpuesto: tipoImpuesto,
-                     tipoDesglose: tipoDesglose,
-                     importacionBienes: importacionBienes
-                 });
+                var tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
 
-                 return true;
-             });
- 
-             return informes;     
-         } else {
-             var informes = [];
-             var informesSearch = search.create({
-                 type: RECORD_INFO.EXPENSE_REPORT_RECORD.ID,
-                 filters:
-                 [
-                     [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TYPE,search.Operator.ANYOF,"ExpRept"], 
-                     "AND", 
-                     [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"], 
-                     "AND", 
-                     [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.MAINLINE,search.Operator.ANY,""], 
-                     "AND", 
-                     [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.STATUS,search.Operator.ANYOF,"ExpRept:I"],
-                     // "AND", 
-                     // ["account",search.Operator.ANYOF,"186"],   
-                     "AND", 
-                     [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO,search.Operator.ANYOF,"2","1","3"],
-                     "AND",
-                     [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION,search.Operator.ANYOF,"1","2","3"], 
-                     "AND", 
-                     [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PERIOD,"abs",periodo], 
-                     "AND", 
-                     [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.SUBSIDIARY,search.Operator.ANYOF,subsidiaria], 
-                     "AND", 
-                     [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAXLINE,search.Operator.IS,"F"]
-                 ],
-                 columns:
-                 [
-                     RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.ID,
-                     RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION,
-                     RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO,
-                     RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR,
-                     RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT_NOTAX,
-                     RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT,
-                     RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_CODE,
-                     RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.IMPORTACION
-                 ]
-             });
+                informes.push({
+                    id: id,
+                    proveedor: proveedor,
+                    tipoTercero: tipoTercero,
+                    tipoOperacion: tipoOperacion,
+                    importe: importe,
+                    impuestos: impuestos,
+                    taxCode: taxCode,
+                    tasa: tasa,
+                    tipoImpuesto: tipoImpuesto,
+                    tipoDesglose: tipoDesglose,
+                    importacionBienes: importacionBienes
+                });
 
-             var searchResultCount = informesSearch.runPaged().count;
-             log.debug('Informes', searchResultCount);
+                return true;
+            });
 
-             informesSearch.run().each(function(result){
-                 var id = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.ID });
-                 var proveedor = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR });
-                 var tipoTer = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO });
-                 var tercero = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO });
-                 var tipoTercero = tercero.split(' ',1);
-                 tipoTercero = tipoTercero.toString();
-                 //var operacion = result.getValue({ name: 'custbody_tko_tipo_operacion' });
-                 var operacion = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION });
-                 var tipoOperacion = getOperacion(operacion);
-                 tipoOperacion = tipoOperacion.toString();
-                 var importe = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT_NOTAX });
-                 var impuestos = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT });
-                 var taxCode = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_CODE });
-                 var importacionBienes = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.IMPORTACION });
-                 var tasa = 0, errores = '';
+            return informes;     
+        } else {
+            try {
+                
+                var informes = [];
+                var informesSearch = search.create({
+                    type: RECORD_INFO.EXPENSE_REPORT_RECORD.ID,
+                    filters:
+                    [
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TYPE,search.Operator.ANYOF,"ExpRept"], 
+                        "AND", 
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.VOIDED,search.Operator.IS,"F"], 
+                        "AND", 
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.MAINLINE,search.Operator.ANY,""], 
+                        "AND", 
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.STATUS,search.Operator.ANYOF,"ExpRept:I"],
+                        // "AND", 
+                        // ["account",search.Operator.ANYOF,"186"],   
+                        "AND", 
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO,search.Operator.ANYOF,"2","1","3"],
+                        "AND",
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION,search.Operator.ANYOF,"1","2","3"], 
+                        "AND", 
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PERIOD,"abs",periodo], 
+                        "AND", 
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.SUBSIDIARY,search.Operator.ANYOF,subsidiaria], 
+                        "AND", 
+                        [RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAXLINE,search.Operator.IS,"F"]
+                    ],
+                    columns:
+                    [
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.ID,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT_NOTAX,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_CODE,
+                        RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.IMPORTACION,
+                        search.createColumn({
+                           name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.RFC,
+                           join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR
+                        }),
+                        search.createColumn({
+                           name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_ID,
+                           join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR
+                        }),
+                        search.createColumn({
+                           name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NOMBRE_EXTRANJERO,
+                           join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR
+                        }),
+                        search.createColumn({
+                           name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PAIS_RESIDENCIA,
+                           join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR
+                        }),
+                        search.createColumn({
+                           name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NACIONALIDAD,
+                           join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR
+                        })
+                    ]
+                });
+    
+                var searchResultCount = informesSearch.runPaged().count;
+                log.debug('Informes', searchResultCount);
+    
+                informesSearch.run().each(function(result){
+                    var id = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.ID });
+                    var proveedor = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR });
+                    var tipoTer = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO });
+                    var tercero = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO });
+                    var tipoTercero = tercero.split(' ',1);
+                    tipoTercero = tipoTercero.toString();
+                    var operacion = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION });
+                    var tipoOperacion = getOperacion(operacion);
+                    tipoOperacion = tipoOperacion.toString();
+                    var importe = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NET_AMOUNT_NOTAX });
+                    var impuestos = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_AMOUNT });
+                    var taxCode = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_CODE });
+                    var rfc = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.RFC, join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR});
+                    var taxID = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_ID, join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR});
+                    var nombreExtranjero = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NOMBRE_EXTRANJERO, join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR});
+                    var paisText = result.getText({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PAIS_RESIDENCIA, join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR});
+                    var nacionalidad = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.NACIONALIDAD, join: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR});
+                    var importacionBienes = result.getValue({ name: RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.IMPORTACION });
+                    var tasa = 0, errores = '';
 
-                 for(var i = 0; i < valores.length; i++){
-                     if(valores[i].codeName == taxCode){
-                         tasa = valores[i].taxRate;
-                     }
-                 }
+                    if(paisText.length != 0){
+                        var pais = paisText.split(' ',1);
+                        pais = pais.toString();
+                        paisResidencia = pais;
+                    }else {
+                        paisResidencia = "";
+                    }
 
-                 var tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
- 
-                 informes.push({
-                     id: id,
-                     proveedor: proveedor,
-                     tipoTercero: tipoTercero,
-                     tipoOperacion: tipoOperacion,
-                     importe: importe,
-                     impuestos: impuestos,
-                     taxCode: taxCode,
-                     tasa: tasa,
-                     tipoDesglose: tipoDesglose,
-                     importacionBienes: importacionBienes
-                 });
- 
-                 return true;
-             });
- 
-             return informes;
-         }
-     }
+                    if (tipoTer == 1){ //si es proveedor nacional -> RFC obligatorio
+                        if(rfc == ''){
+                            errores = errores + "El proveedor " + nombreProv + " no tiene asignado el RFC/";
+                        }
+                        /** Los siguientes campos son vacíos porque solo aplican para proveedores extranjeros */
+                        taxID = "";
+                        nombreExtranjero = "";
+                        paisResidencia = "";
+                        nacionalidad = "";
+                    } else if (tipoTer == 2){ // si es proveedor extranjero -> RFC opcional, TaxID obligatorio, nombreExtranjero opcional
+                        if(taxID == ''){
+                            errores = errores + "El proveedor " + nombreProv + " no tiene asignado el número de ID Fiscal/";
+                        }
+                        /** Si tiene asignado un valor el campo nombre extranjero, se tiene que tener el pais y la nacionalidad */
+                        if (nombreExtranjero != ""  && paisResidencia == ""){
+                            errores = errores + "El proveedor " + nombreProv + " no tiene asignado el pais de residencia/";
+                        }
+                        if(nombreExtranjero != "" && nacionalidad == ""){
+                            errores = errores + "El proveedor " + nombreProv + " no tiene asignada la nacionalidad/";
+                        }
+                        /** Si no tiene un valor en nombre extranjero los otros campos no importan */
+                        if(nombreExtranjero == ""){ 
+                            paisResidencia = "";
+                            nacionalidad = "";
+                        }
+                    } else { //si es proveedor global -> RFC NO obligatorio
+                        /** Los siguientes campos son vacíos porque solo aplican para proveedores extranjeros */
+                        rfc = "";
+                        taxID = "";
+                        nombreExtranjero = "";
+                        paisResidencia = "";
+                        nacionalidad = "";
+                    }
+    
+                    for(var i = 0; i < valores.length; i++){
+                        if(valores[i].codeName == taxCode){
+                            tasa = valores[i].taxRate;
+                        }
+                    }
+    
+                    var tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
+    
+                    informes.push({
+                        id: id,
+                        proveedor: proveedor,
+                        tipoTercero: tipoTercero,
+                        tipoOperacion: tipoOperacion,
+                        importe: importe,
+                        impuestos: impuestos,
+                        taxCode: taxCode,
+                        tasa: tasa,
+                        tipoDesglose: tipoDesglose,
+                        importacionBienes: importacionBienes,
+                        rfc: rfc,
+                        taxID: taxID,
+                        nombreExtranjero: nombreExtranjero,
+                        paisResidencia: paisResidencia,
+                        nacionalidad: nacionalidad,
+                        errores: errores
+                    });
+    
+                    return true;
+                });
+    
+                return informes;
+            } catch (error) {
+                log.error({ title: 'Error en la búsqueda de informes', details: error });
+            }
+        }
+    }
 
       /**
       * Funcion para buscar los informes de gastos
