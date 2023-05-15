@@ -1,77 +1,76 @@
- /**
+/**
  * @NApiVersion 2.1
  * @NScriptType MapReduceScript
  */
- define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N/config', 'N/email', './fb_diot_constants_lib', './moment_diot.js'],
+define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N/config', 'N/email', './fb_diot_constants_lib', './moment_diot.js'],
 
  (runtime, search, url, record, file, redirect, config, email, values, moment) => {
 
-     /**
-      * Defines the function that is executed at the beginning of the map/reduce process and generates the input data.
-      * @param {Object} inputContext
-      * @param {boolean} inputContext.isRestarted - Indicates whether the current invocation of this function is the first
-      *     invocation (if true, the current invocation is not the first invocation and this function has been restarted)
-      * @param {Object} inputContext.ObjectRef - Object that references the input data
-      * @typedef {Object} ObjectRef
-      * @property {string|number} ObjectRef.id - Internal ID of the record instance that contains the input data
-      * @property {string} ObjectRef.type - Type of the record instance that contains the input data
-      * @returns {Array|Object|Search|ObjectRef|File|Query} The input data to use in the map/reduce process
-      * @since 2015.2
-      */
+    /**
+     * Defines the function that is executed at the beginning of the map/reduce process and generates the input data.
+     * @param {Object} inputContext
+     * @param {boolean} inputContext.isRestarted - Indicates whether the current invocation of this function is the first
+     *     invocation (if true, the current invocation is not the first invocation and this function has been restarted)
+     * @param {Object} inputContext.ObjectRef - Object that references the input data
+     * @typedef {Object} ObjectRef
+     * @property {string|number} ObjectRef.id - Internal ID of the record instance that contains the input data
+     * @property {string} ObjectRef.type - Type of the record instance that contains the input data
+     * @returns {Array|Object|Search|ObjectRef|File|Query} The input data to use in the map/reduce process
+     * @since 2015.2
+     */
 
-     var taxRateArray = new Array();
-     var erroresArray = new Array();
+    var taxRateArray = new Array();
+    var erroresArray = new Array();
 
-     const SCRIPTS_INFO = values.SCRIPTS_INFO;
-     const RECORD_INFO = values.RECORD_INFO;
-     const STATUS_LIST_DIOT = values.STATUS_LIST_DIOT;
-     const RUNTIME = values.RUNTIME;
-     const COMPANY_INFORMATION = values.COMPANY_INFORMATION;
-     const OPERATION_TYPE = values.OPERATION_TYPE;
+    const SCRIPTS_INFO = values.SCRIPTS_INFO;
+    const RECORD_INFO = values.RECORD_INFO;
+    const STATUS_LIST_DIOT = values.STATUS_LIST_DIOT;
+    const RUNTIME = values.RUNTIME;
+    const OPERATION_TYPE = values.OPERATION_TYPE;
 
-     const getInputData = (inputContext) => {
-         try{
+    const getInputData = (inputContext) => {
+        try{
 
-             /** Se obtienen los parametros dados por el usuario */
-             var objScript = runtime.getCurrentScript();
-             var subsidiaria = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.SUBSIDIARY });
-             var periodo = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD });
-             var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID }); 
-             //log.debug('Datos', subsidiaria + " " + periodo);
+            /** Se obtienen los parametros dados por el usuario */
+            var objScript = runtime.getCurrentScript();
+            var subsidiaria = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.SUBSIDIARY });
+            var periodo = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD });
+            var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID }); 
+            //log.debug('Datos', subsidiaria + " " + periodo);
 
-             log.audit({title: 'MR', details: "Se esta ejecutando el MR: getInputData"});
+            log.audit({title: 'MR', details: "Se esta ejecutando el MR: getInputData"});
 
-             var otherId = record.submitFields({
-                 type: RECORD_INFO.DIOT_RECORD.ID,
-                 id: recordID,
-                 values: {
-                     [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.OBTAINING_DATA
-                 }
-             });
+            var otherId = record.submitFields({
+                type: RECORD_INFO.DIOT_RECORD.ID,
+                id: recordID,
+                values: {
+                    [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.OBTAINING_DATA
+                }
+            });
 
-             /** Se obtiene el motor que se esta usando (legacy or suitetax) */
-             var suitetax = runtime.isFeatureInEffect({ feature: RUNTIME.FEATURES.SUITETAX });
-             log.audit({title: 'suitetax', details: suitetax});
-             
-             /* Se realiza la búsqueda de todos los códigos de impuesto */
-             var codigosImpuesto = searchCodigoImpuesto(suitetax);
+            /** Se obtiene el motor que se esta usando (legacy or suitetax) */
+            var suitetax = runtime.isFeatureInEffect({ feature: RUNTIME.FEATURES.SUITETAX });
+            log.audit({title: 'suitetax', details: suitetax});
+            
+            /* Se realiza la búsqueda de todos los códigos de impuesto */
+            var codigosImpuesto = searchCodigoImpuesto(suitetax);
 
-             return codigosImpuesto;
+            return codigosImpuesto;
 
-         } catch (error) {
-             var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID });
-             otherId = record.submitFields({
-                 type: RECORD_INFO.DIOT_RECORD.ID,
-                 id: recordID,
-                 values: {
-                     [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
-                     [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: error.message
-                 }
-             });
-             log.error({ title: 'Error en la busqueda de Códigos de Impuesto', details: error });
-         }
+        } catch (error) {
+            var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID });
+            otherId = record.submitFields({
+                type: RECORD_INFO.DIOT_RECORD.ID,
+                id: recordID,
+                values: {
+                    [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
+                    [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: error.message
+                }
+            });
+            log.error({ title: 'Error en la busqueda de Códigos de Impuesto', details: error });
+        }
 
-     }
+    }
      
      /**
       * Defines the function that is executed when the map entry point is triggered. This entry point is triggered automatically
@@ -97,7 +96,7 @@
             var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID });
             var suitetax = runtime.isFeatureInEffect({ feature: RUNTIME.FEATURES.SUITETAX });
             log.debug('Estado', "Se esta ejecutando el Map");
-            var otherId = record.submitFields({
+            otherId = record.submitFields({
                 type: RECORD_INFO.DIOT_RECORD.ID,
                 id: recordID,
                 values: {
@@ -206,9 +205,7 @@
             });
             var nombrePeriodo = nombrePer.periodname;
 
-            /** si no es one world obtiene el nombre de la empresa */
-            var compname = '';
-            
+            //si es oneWorld se obtiene el nombre de la subsidiaria
             if(oneWorldFeature){
                 var nombreSub = search.lookupFields({
                     type: search.Type.SUBSIDIARY,
@@ -216,34 +213,15 @@
                     columns: [RECORD_INFO.SUBSIDIARY_RECORD.FIELDS.NAME_NOHIERARCHY]
                 });
                 nombreSubsidiaria = nombreSub.namenohierarchy;
-                var otherId = record.submitFields({
-                    type: RECORD_INFO.DIOT_RECORD.ID,
-                    id: recordID,
-                    values: {
-                        [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.BUILDING,
-                    }
-                });
-            }else{
-                //buscar nombre empresa principal
-                var companyInfo = config.load({
-                    type: config.Type.COMPANY_INFORMATION
-                });
-                
-                compname = companyInfo.getValue({
-                    fieldId: COMPANY_INFORMATION.FIELDS.ID
-                });
-
-                var otherId = record.submitFields({
-                    type: RECORD_INFO.DIOT_RECORD.ID,
-                    id: recordID,
-                    values: {
-                        [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.BUILDING,
-                    }
-                });
             }
-
-            log.debug('Company', compname);
-
+            
+            otherId = record.submitFields({
+                type: RECORD_INFO.DIOT_RECORD.ID,
+                id: recordID,
+                values: {
+                    [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.BUILDING,
+                }
+            });
 
             /** Se obtiene el motor que se esta usando (legacy or suitetax) */
             var suitetax = runtime.isFeatureInEffect({ feature: RUNTIME.FEATURES.SUITETAX });
@@ -309,9 +287,44 @@
                 polizasDiario = searchDailyPolicy(subsidiaria, periodo, suitetax, valores, exentos, iva, retenciones);
                 log.audit({title: 'Polizas Res', details: polizasDiario});
             }else{
-                facturasProv = searchVendorBillOW(periodo, suitetax, valores, exentos, iva, retenciones);
+                var resFact = searchVendorBillOW(periodo, suitetax, valores, exentos, iva, retenciones);
+                facturasProv = resFact[0].facturas;
+                var proveedores = resFact[0].arrayProv;
+                var idFacturas = resFact[0].arrayFactId;
+                log.audit({title: 'Facturas Res', details: facturasProv});
+                log.audit({title: 'Proveedores Res', details: proveedores});
+                log.audit({title: 'Id Fact Res', details: idFacturas});
+                var credito = [];
+                if(facturasProv.length != 0){ //si existen facturas se buscan creditos de factura
+                    credito = searchFacturasCredito(proveedores, idFacturas, suitetax);
+                    log.audit({title: 'Credito', details: credito });
+                    //agregamos el credito a cada factura
+                    var pastIdFact = '', pastProv = '';
+                    for(var x = 0; x < facturasProv.length; x++){
+                        var imp = 0;
+                        //se verifica que no se repitan las facturas y el proveedor para no agregar el credito dos veces
+                        if((pastIdFact != facturasProv[x].id) && (pastProv != facturasProv[x].proveedor)){
+                            for(var y = 0; y < credito.length; y++){
+                                if((credito[y].idFactura == facturasProv[x].id) && (credito[y].proveedor == facturasProv[x].proveedor)){
+                                    var impuesto = parseFloat(credito[y].impuesto);
+                                    impuesto = Math.abs(impuesto);
+                                    imp = imp + impuesto;
+                                }
+                            }
+                            facturasProv[x].credito = imp;
+                            pastIdFact = facturasProv[x].id;
+                            pastProv = facturasProv[x].proveedor;
+                        }else{
+                            facturasProv[x].credito = '';
+                        }
+                    }
+
+                    log.audit({title: 'Facturas con Credito', details: facturasProv});
+                }
                 informesGastos = searchExpenseReportsOW(periodo, suitetax, valores, exentos, iva, retenciones);
+                log.audit({title: 'Informes Res', details: informesGastos});
                 polizasDiario = searchDailyPolicyOW(periodo, suitetax, valores, exentos, iva, retenciones);
+                log.audit({title: 'Polizas Res', details: polizasDiario});
             }
 
             /** Verifica si existe algún error */
@@ -843,8 +856,8 @@
         }
     }
 
-     /** Funcion que busca los distintos proveedores y tipo de operación en cada una de las transacciones */
-     function buscaProveedores(facturasProv, informesGastos, polizasDiario){
+    /** Funcion que busca los distintos proveedores y tipo de operación en cada una de las transacciones */
+    function buscaProveedores(facturasProv, informesGastos, polizasDiario){
         try{
             var idProv = new Array();
             if(facturasProv.length != 0){
@@ -888,7 +901,7 @@
         }catch(error){
             log.error({ title: 'Error en la búsqueda de proveedores', details: error });
         }
-     }
+    }
 
      /** Función que evalua que una variable no sea 0 */
      function evaluar(variable){
@@ -901,16 +914,16 @@
          return nvoValor;
      }
 
-     /** Función que busca que no exista el proveedor en una lista de proveedores */
-     function existeProveedor(proveedores, proveedor){
-         var existe = false;
-         for(var x = 0; x < proveedores.length; x++){
-             if(proveedor== proveedores[x]){
-                 existe = true;
-             }
-         }
-         return existe;
-     }
+    /** Función que busca que no exista el proveedor en una lista de proveedores */
+    function existeProveedor(proveedores, proveedor){
+        var existe = false;
+        for(var x = 0; x < proveedores.length; x++){
+            if(proveedor== proveedores[x]){
+                existe = true;
+            }
+        }
+        return existe;
+    }
 
      /** Funcion que busca que no exista el error para no repetirlos */
      function buscarError(error, arrayErrores){
@@ -923,195 +936,229 @@
          return errorFlag;
      }
 
-     /** Funcion para obtener el dato de acuerdo a la palabra clave */
-     function getData (dato, subsidiaria, periodo, fecha){
-         var data;
-         switch (dato) {
-             case 'SUBSIDIARIA':
-                 data = subsidiaria;
-                 break;
-             case 'PERIODO':
-                 data = periodo;
-                 break;
-             case 'DD':
-                 data = fecha.getDate();
-                 break;
-             case 'MM':
-                 data = fecha.getMonth() + 1;
-                 break;
-             case 'YYYY':
-                 data = fecha.getFullYear();
-                 break;
-             case 'HH':
-                 data = moment().zone("-06:00").format('HH');
-                 break;
-             case 'MIN':
-                 data = fecha.getMinutes();
-                 break;
-             case 'SS':
-                 data = fecha.getSeconds();
-                 break;
-             default:
-                 break;
-         }
-         return data;
-     }
+    /** Funcion para obtener el dato de acuerdo a la palabra clave */
+    function getData (dato, subsidiaria, periodo, fecha){
+        try {
+            var data;
+            switch (dato) {
+                case 'SUBSIDIARIA':
+                    data = subsidiaria;
+                    break;
+                case 'PERIODO':
+                    data = periodo;
+                    break;
+                case 'DD':
+                    data = fecha.getDate();
+                    break;
+                case 'MM':
+                    data = fecha.getMonth() + 1;
+                    break;
+                case 'YYYY':
+                    data = fecha.getFullYear();
+                    break;
+                case 'HH':
+                    data = moment().zone("-06:00").format('HH');
+                    break;
+                case 'MIN':
+                    data = fecha.getMinutes();
+                    break;
+                case 'SS':
+                    data = fecha.getSeconds();
+                    break;
+                default:
+                    break;
+            }
+            return data;
+        } catch (error) {
+            var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID });
+            otherId = record.submitFields({
+                type: RECORD_INFO.DIOT_RECORD.ID,
+                id: recordID,
+                values: {
+                    [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
+                    [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: error.message
+                }
+            });
+            log.error({ title: 'Error al obtener el nombre del archivo', details: error });
+        }
+    }
 
-     /** Funcion para crear una carpeta dentro de la carpeta raíz*/
-     function createFolder(nombreSubsidiaria, nombrePeriodo, tipoGuardado, idPadre){
-         var nombreFolder = '';
-         var folderId;
-         var folder;
+    /** Funcion para crear una carpeta dentro de la carpeta raíz*/
+    function createFolder(nombreSubsidiaria, nombrePeriodo, tipoGuardado, idPadre){
+        try {
+            var nombreFolder = '';
+            var folderId;
+            var folder;
+    
+            if(tipoGuardado == 1) { //guardado por subsidiarias
+                nombreFolder = nombreSubsidiaria;
+                folder = searchFolderInPath(nombreFolder, idPadre);
+                if(folder.runPaged().count != 0){ //existe
+                    folder.run().each(function(result){
+                        folderId = result.getValue({ name: RECORD_INFO.FOLDER_RECORD.FIELDS.ID });
+                        return true;
+                    });
+                }else{ //si no existe, se crea una carpeta con el nombre de la subsidiaria
+                    var objRecord = record.create({
+                        type: record.Type.FOLDER,
+                        isDynamic: true
+                    });
+                    objRecord.setValue({
+                        fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,
+                        value: nombreFolder
+                    });
+                    objRecord.setValue({
+                        fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.PARENT,
+                        value: idPadre
+                    });
+                    folderId = objRecord.save({
+                        enableSourcing: true,
+                        ignoreMandatoryFields: true
+                    });
+                }
+            }else if(tipoGuardado == 2) { //guardado por periodo
+                nombreFolder = nombrePeriodo;
+                folder = searchFolderInPath(nombreFolder, idPadre);
+                if(folder.runPaged().count != 0){ //existe
+                    folder.run().each(function(result){
+                        folderId = result.getValue({ name: RECORD_INFO.FOLDER_RECORD.FIELDS.ID });
+                        return true;
+                    });
+                }else{ //si no existe, se crea una carpeta con el nombre del periodo
+                    var objRecord = record.create({
+                        type: record.Type.FOLDER,
+                        isDynamic: true
+                    });
+                    objRecord.setValue({
+                        fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,
+                        value: nombreFolder
+                    });
+                    objRecord.setValue({
+                        fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.PARENT,
+                        value: idPadre
+                    });
+                    folderId = objRecord.save({
+                        enableSourcing: true,
+                        ignoreMandatoryFields: true
+                    });
+                }
+            }else { //guardado por subsidiaria y periodo
+                nombreFolder = nombreSubsidiaria;
+                var nombreSubfolder = nombrePeriodo;
+                var folderSubId;
+                folder = searchFolderInPath(nombreFolder, idPadre);
+                if(folder.runPaged().count != 0){ //existe folder subsidiaria
+                folder.run().each(function(result){
+                    folderSubId = result.getValue({ name: RECORD_INFO.FOLDER_RECORD.FIELDS.ID });
+                    return true;
+                });
+                }else{ //se crea folder subsidiaria
+                    var objRecord = record.create({
+                        type: record.Type.FOLDER,
+                        isDynamic: true
+                    });
+                    objRecord.setValue({
+                        fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,
+                        value: nombreFolder
+                    });
+                    objRecord.setValue({
+                        fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.PARENT,
+                        value: idPadre
+                    });
+                    folderSubId = objRecord.save({
+                        enableSourcing: true,
+                        ignoreMandatoryFields: true
+                    });
+                }
+                log.debug('Folder', folderSubId);
+                //se busca el folder periodo dentro del folder subsidiaria
+                var subfolder = searchFolderInPath(nombreSubfolder, folderSubId);
+                if(subfolder.runPaged().count != 0){ //existe folder periodo
+                    subfolder.run().each(function(result){
+                        folderId = result.getValue({ name: RECORD_INFO.FOLDER_RECORD.FIELDS.ID });
+                        return true;
+                    });
+                }else{ //se crea folder periodo
+                    var objRecord = record.create({
+                        type: record.Type.FOLDER,
+                        isDynamic: true
+                    });
+                    objRecord.setValue({
+                        fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,
+                        value: nombreSubfolder
+                    });
+                    objRecord.setValue({
+                        fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.PARENT,
+                        value: folderSubId
+                    });
+                    folderId = objRecord.save({
+                        enableSourcing: true,
+                        ignoreMandatoryFields: true
+                    });
+                }
+            }
+            return folderId;
+        } catch (error) {
+            var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID });
+            otherId = record.submitFields({
+                type: RECORD_INFO.DIOT_RECORD.ID,
+                id: recordID,
+                values: {
+                    [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
+                    [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: error.message
+                }
+            });
+            log.error({ title: 'Error al crear las carpetas de guardado', details: error });
+        }
+    }
 
-         if(tipoGuardado == 1) { //guardado por subsidiarias
-             nombreFolder = nombreSubsidiaria;
-             folder = searchFolderInPath(nombreFolder, idPadre);
-             if(folder.runPaged().count != 0){ //existe
-                 folder.run().each(function(result){
-                     folderId = result.getValue({ name: RECORD_INFO.FOLDER_RECORD.FIELDS.ID });
-                     return true;
-                 });
-             }else{ 
-                 var objRecord = record.create({
-                     type: record.Type.FOLDER,
-                     isDynamic: true
-                 });
-                 objRecord.setValue({
-                     fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,
-                     value: nombreFolder
-                 });
-                 objRecord.setValue({
-                     fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.PARENT,
-                     value: idPadre
-                 });
-                 folderId = objRecord.save({
-                     enableSourcing: true,
-                     ignoreMandatoryFields: true
-                 });
-             }
-         }else if(tipoGuardado == 2) { //guardado por periodo
-             nombreFolder = nombrePeriodo;
-             folder = searchFolderInPath(nombreFolder, idPadre);
-             if(folder.runPaged().count != 0){ //existe
-                 folder.run().each(function(result){
-                     folderId = result.getValue({ name: RECORD_INFO.FOLDER_RECORD.FIELDS.ID });
-                     return true;
-                 });
-             }else{
-                 var objRecord = record.create({
-                     type: record.Type.FOLDER,
-                     isDynamic: true
-                 });
-                 objRecord.setValue({
-                     fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,
-                     value: nombreFolder
-                 });
-                 objRecord.setValue({
-                     fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.PARENT,
-                     value: idPadre
-                 });
-                 folderId = objRecord.save({
-                     enableSourcing: true,
-                     ignoreMandatoryFields: true
-                 });
-             }
-         }else { //guardado por subsidiaria y periodo
-             nombreFolder = nombreSubsidiaria;
-             nombreSubfolder = nombrePeriodo;
-             var folderSubId;
-             folder = searchFolderInPath(nombreFolder, idPadre);
-             if(folder.runPaged().count != 0){ //existe folder subsidiaria
-             folder.run().each(function(result){
-                 folderSubId = result.getValue({ name: RECORD_INFO.FOLDER_RECORD.FIELDS.ID });
-                 return true;
-             });
-             }else{ //se crea folder subsidiaria
-                 var objRecord = record.create({
-                     type: record.Type.FOLDER,
-                     isDynamic: true
-                 });
-                 objRecord.setValue({
-                     fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,
-                     value: nombreFolder
-                 });
-                 objRecord.setValue({
-                     fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.PARENT,
-                     value: idPadre
-                 });
-                 folderSubId = objRecord.save({
-                     enableSourcing: true,
-                     ignoreMandatoryFields: true
-                 });
-             }
-             log.debug('Folder', folderSubId);
-             //se busca el folder periodo dentro del folder subsidiaria
-             subfolder = searchFolderInPath(nombreSubfolder, folderSubId);
-             if(subfolder.runPaged().count != 0){ //existe
-                 subfolder.run().each(function(result){
-                     folderId = result.getValue({ name: RECORD_INFO.FOLDER_RECORD.FIELDS.ID });
-                     return true;
-                 });
-             }else{
-                 var objRecord = record.create({
-                     type: record.Type.FOLDER,
-                     isDynamic: true
-                 });
-                 objRecord.setValue({
-                     fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,
-                     value: nombreSubfolder
-                 });
-                 objRecord.setValue({
-                     fieldId: RECORD_INFO.FOLDER_RECORD.FIELDS.PARENT,
-                     value: folderSubId
-                 });
-                 folderId = objRecord.save({
-                     enableSourcing: true,
-                     ignoreMandatoryFields: true
-                 });
-             }
-         }
-         return folderId;
-     }
-
-     /**
-      * Funcion para ver si una carpeta ya existe
-      */
-     function searchFolder(nombreFolder){
-         var folderSearchObj = search.create({
-             type: RECORD_INFO.FOLDER_RECORD.ID,
-             filters:
-             [
+    /**
+     * Funcion para ver si una carpeta ya existe
+     */
+    function searchFolder(nombreFolder){
+        try {
+            var folderSearchObj = search.create({
+                type: RECORD_INFO.FOLDER_RECORD.ID,
+                filters:
+                [
                 [RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,search.Operator.IS,nombreFolder]
-             ],
-             columns:
-             [
-                 RECORD_INFO.FOLDER_RECORD.FIELDS.ID,
-                 RECORD_INFO.FOLDER_RECORD.FIELDS.NAME
-             ]
-         });
-         return folderSearchObj;
-     }
+                ],
+                columns:
+                [
+                    RECORD_INFO.FOLDER_RECORD.FIELDS.ID,
+                    RECORD_INFO.FOLDER_RECORD.FIELDS.NAME
+                ]
+            });
+            return folderSearchObj;
+        } catch (error) {
+            log.error({ title: 'Error al buscar el folder raíz', details: error });
+        }
+    }
 
-     /**
-      * Funcion para ver si la carpeta subsidiaria o periodo ya existe dentro de la carpeta raíz
-      */
-     function searchFolderInPath(nombreFolder, carpetaRaiz){
-         var folderSearchObj = search.create({
-             type: RECORD_INFO.FOLDER_RECORD.ID,
-             filters:
-             [
+    /**
+     * Funcion para ver si la carpeta subsidiaria o periodo ya existe dentro de la carpeta raíz
+     */
+    function searchFolderInPath(nombreFolder, carpetaRaiz){
+        try {
+            var folderSearchObj = search.create({
+                type: RECORD_INFO.FOLDER_RECORD.ID,
+                filters:
+                [
                 [RECORD_INFO.FOLDER_RECORD.FIELDS.NAME,search.Operator.IS,nombreFolder],
                 "AND",
                 [RECORD_INFO.FOLDER_RECORD.FIELDS.PARENT, search.Operator.IS, carpetaRaiz]
-             ],
-             columns:
-             [
-                 RECORD_INFO.FOLDER_RECORD.FIELDS.ID,
-                 RECORD_INFO.FOLDER_RECORD.FIELDS.NAME
-             ]
-         });
-         return folderSearchObj;
-     }
+                ],
+                columns:
+                [
+                    RECORD_INFO.FOLDER_RECORD.FIELDS.ID,
+                    RECORD_INFO.FOLDER_RECORD.FIELDS.NAME
+                ]
+            });
+            return folderSearchObj;
+        } catch (error) {
+            log.error({ title: 'Error en la búsqueda de carpetas en el folder raíz', details: error });
+        }
+    }
 
      /**
       * Funcion que hace una búsqueda de devoluciones o bonificaciones de algún proveedor
@@ -1255,6 +1302,15 @@
                 
                 return credito; 
             }catch(error){
+                var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID });
+                otherId = record.submitFields({
+                    type: RECORD_INFO.DIOT_RECORD.ID,
+                    id: recordID,
+                    values: {
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: error.message
+                    }
+                });
                 log.error({ title: 'Error en crédito de facturas', details: error });
             }
         }
@@ -1696,6 +1752,15 @@
                 return resFact;
                 
             }catch(error){
+                var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID });
+                otherId = record.submitFields({
+                    type: RECORD_INFO.DIOT_RECORD.ID,
+                    id: recordID,
+                    values: {
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: error.message
+                    }
+                });
                 log.error({ title: 'Error en la búsqueda de facturas', details: error });
             }
         }
@@ -2248,6 +2313,15 @@
     
                 return informes;
             } catch (error) {
+                var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID });
+                otherId = record.submitFields({
+                    type: RECORD_INFO.DIOT_RECORD.ID,
+                    id: recordID,
+                    values: {
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: error.message
+                    }
+                });
                 log.error({ title: 'Error en la búsqueda de informes', details: error });
             }
         }
@@ -2765,6 +2839,15 @@
     
                 return polizas;
             }catch(error){
+                var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID });
+                otherId = record.submitFields({
+                    type: RECORD_INFO.DIOT_RECORD.ID,
+                    id: recordID,
+                    values: {
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
+                        [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: error.message
+                    }
+                });
                 log.error({ title: 'Error en la búsqueda de polizas', details: error });
             }
         }
@@ -2939,17 +3022,21 @@
          }
      }
 
-     function getOperacion(operacion){
-         var tipoOperacion;
-         if(operacion == OPERATION_TYPE.SERVICIOS){
-             tipoOperacion = OPERATION_TYPE.SERVICIOS_VALOR;
-         }else if(operacion == OPERATION_TYPE.INMUEBLES){
-             tipoOperacion = OPERATION_TYPE.INMUEBLES_VALOR;
-         }else if(operacion == OPERATION_TYPE.OTROS){
-             tipoOperacion = OPERATION_TYPE.OTROS_VALOR;
-         }
-         return tipoOperacion;
-     }
+    function getOperacion(operacion){
+        try {
+            var tipoOperacion;
+            if(operacion == OPERATION_TYPE.SERVICIOS){
+                tipoOperacion = OPERATION_TYPE.SERVICIOS_VALOR;
+            }else if(operacion == OPERATION_TYPE.INMUEBLES){
+                tipoOperacion = OPERATION_TYPE.INMUEBLES_VALOR;
+            }else if(operacion == OPERATION_TYPE.OTROS){
+                tipoOperacion = OPERATION_TYPE.OTROS_VALOR;
+            }
+            return tipoOperacion;
+        } catch (error) {
+            log.error({ title: 'Error al obtener el tipo de operación', details: error });
+        }
+    }
 
      /**
       * Función que busca el desglose de impuesto de acuerdo al código de impuesto
@@ -2959,35 +3046,39 @@
       * @param {*} retenciones Desglose de impuestos con retenciones
       * @returns El nombre del impuesto al que corresponde
       */
-     function buscaDesgloseImpuesto(codigo, exentos, iva, retenciones){
-         var desglose = '';
-         if(exentos.length != 0){
-             for(var i = 0; i < exentos.length; i++){
-                 if(codigo == exentos[i].text){
-                     desglose = 'Exento';
-                     break;
-                 }
-             }
-         }
-         if(iva.length != 0){
-             for(var i = 0; i < iva.length; i++){
-                 if(codigo == iva[i].text){
-                     desglose = 'Iva';
-                     break;
-                 }
-             }
-         }
-         if(retenciones.length != 0){
-             for(var i = 0; i < retenciones.length; i++){
-                 if(codigo == retenciones[i].text){
-                     desglose = 'Retenciones';
-                     break;
-                 }
-             }
-         }
-
-         return desglose;
-     }
+    function buscaDesgloseImpuesto(codigo, exentos, iva, retenciones){
+        try {
+            var desglose = '';
+            if(exentos.length != 0){
+                for(var i = 0; i < exentos.length; i++){
+                    if(codigo == exentos[i].text){
+                        desglose = 'Exento';
+                        break;
+                    }
+                }
+            }
+            if(iva.length != 0){
+                for(var i = 0; i < iva.length; i++){
+                    if(codigo == iva[i].text){
+                        desglose = 'Iva';
+                        break;
+                    }
+                }
+            }
+            if(retenciones.length != 0){
+                for(var i = 0; i < retenciones.length; i++){
+                    if(codigo == retenciones[i].text){
+                        desglose = 'Retenciones';
+                        break;
+                    }
+                }
+            }
+    
+            return desglose;
+        } catch (error) {
+            log.error({ title: 'Error al buscar el desglose de impuesto', details: error });
+        }
+    }
 
      /**
       * Funcion que hace una búsqueda de devoluciones o bonificaciones de algún proveedor
@@ -3146,6 +3237,8 @@
       * @param {*} valCodigos Registro de los códigos con tipo de impuesto y tasa
       * @returns Codigo y tipo de impuesto
       */
+
+     /** NOTA: ELIMINAR DESPUÉS DE HACER LAS CORRECIONES EN SUITETAX */
      function searchTaxCode(suitetax, cuenta, valCodigos, exentos, iva, retenciones){
          if(suitetax){
              var codigos = [];
@@ -3327,66 +3420,66 @@
     }
 
 
-     /**
-      * Defines the function that is executed when the summarize entry point is triggered. This entry point is triggered
-      * automatically when the associated reduce stage is complete. This function is applied to the entire result set.
-      * @param {Object} summaryContext - Statistics about the execution of a map/reduce script
-      * @param {number} summaryContext.concurrency - Maximum concurrency number when executing parallel tasks for the map/reduce
-      *     script
-      * @param {Date} summaryContext.dateCreated - The date and time when the map/reduce script began running
-      * @param {boolean} summaryContext.isRestarted - Indicates whether the current invocation of this function is the first
-      *     invocation (if true, the current invocation is not the first invocation and this function has been restarted)
-      * @param {Iterator} summaryContext.output - Serialized keys and values that were saved as output during the reduce stage
-      * @param {number} summaryContext.seconds - Total seconds elapsed when running the map/reduce script
-      * @param {number} summaryContext.usage - Total number of governance usage units consumed when running the map/reduce
-      *     script
-      * @param {number} summaryContext.yields - Total number of yields when running the map/reduce script
-      * @param {Object} summaryContext.inputSummary - Statistics about the input stage
-      * @param {Object} summaryContext.mapSummary - Statistics about the map stage
-      * @param {Object} summaryContext.reduceSummary - Statistics about the reduce stage
-      * @since 2015.2
-      */
-     const summarize = (summaryContext) => {
-         try {
-             /* log.debug('Summary Time', summaryContext.seconds);
-             log.debug('Summary Usage', summaryContext.usage);
-             log.debug('Summary Yields', summaryContext.yields);
- 
-             log.debug('Input Summary', summaryContext.inputSummary);
-             log.debug('Map Summary', summaryContext.mapSummary);
-             log.debug('Reduce Summary', summaryContext.reduceSummary); */
- 
-             /** Cuando ya termine, enviar correo notificando al usuario */
-             var objScript = runtime.getCurrentScript();
-             var notificar = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOTIFICAR });
-             log.debug('Notificar', notificar);
-             // se obtiene el correo del usuario que ejecuto
-             var userObj = runtime.getCurrentUser();
-             log.debug('Current user email: ' , userObj.email);
- 
-             if(notificar){
-                 email.send({
-                     author: userObj.id,
-                     recipients: userObj.email,
-                     subject: 'DIOT',
-                     body: 'El proceso de la DIOT ha terminado',
-                 });
-             }
-         } catch (error) {
-             var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID });
-             otherId = record.submitFields({
-                 type: RECORD_INFO.DIOT_RECORD.ID,
-                 id: recordID,
-                 values: {
-                     [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
-                     [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: error.message
-                 }
-             });
-             log.error({ title: 'Error en el envío de correo', details: error })
-         }
-     }
+    /**
+     * Defines the function that is executed when the summarize entry point is triggered. This entry point is triggered
+     * automatically when the associated reduce stage is complete. This function is applied to the entire result set.
+     * @param {Object} summaryContext - Statistics about the execution of a map/reduce script
+     * @param {number} summaryContext.concurrency - Maximum concurrency number when executing parallel tasks for the map/reduce
+     *     script
+     * @param {Date} summaryContext.dateCreated - The date and time when the map/reduce script began running
+     * @param {boolean} summaryContext.isRestarted - Indicates whether the current invocation of this function is the first
+     *     invocation (if true, the current invocation is not the first invocation and this function has been restarted)
+     * @param {Iterator} summaryContext.output - Serialized keys and values that were saved as output during the reduce stage
+     * @param {number} summaryContext.seconds - Total seconds elapsed when running the map/reduce script
+     * @param {number} summaryContext.usage - Total number of governance usage units consumed when running the map/reduce
+     *     script
+     * @param {number} summaryContext.yields - Total number of yields when running the map/reduce script
+     * @param {Object} summaryContext.inputSummary - Statistics about the input stage
+     * @param {Object} summaryContext.mapSummary - Statistics about the map stage
+     * @param {Object} summaryContext.reduceSummary - Statistics about the reduce stage
+     * @since 2015.2
+     */
+    const summarize = (summaryContext) => {
+        try {
+            /* log.debug('Summary Time', summaryContext.seconds);
+            log.debug('Summary Usage', summaryContext.usage);
+            log.debug('Summary Yields', summaryContext.yields);
+
+            log.debug('Input Summary', summaryContext.inputSummary);
+            log.debug('Map Summary', summaryContext.mapSummary);
+            log.debug('Reduce Summary', summaryContext.reduceSummary); */
+
+            /** Cuando ya termine, enviar correo notificando al usuario */
+            var objScript = runtime.getCurrentScript();
+            var notificar = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOTIFICAR });
+            log.debug('Notificar', notificar);
+            // se obtiene el correo del usuario que ejecuto
+            var userObj = runtime.getCurrentUser();
+            log.debug('Current user email: ' , userObj.email);
+
+            if(notificar){
+                email.send({
+                    author: userObj.id,
+                    recipients: userObj.email,
+                    subject: 'DIOT',
+                    body: 'El proceso de la DIOT ha terminado',
+                });
+            }
+        } catch (error) {
+            var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID });
+            otherId = record.submitFields({
+                type: RECORD_INFO.DIOT_RECORD.ID,
+                id: recordID,
+                values: {
+                    [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
+                    [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: error.message
+                }
+            });
+            log.error({ title: 'Error en el envío de correo', details: error })
+        }
+    }
 
 
-     return {getInputData, map, reduce, summarize};
+    return {getInputData, map, reduce, summarize};
 
- });
+});

@@ -2,18 +2,19 @@
  * @NApiVersion 2.1
  * @NScriptType Suitelet
  */
-define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './fb_diot_constants_lib', 'N/record', 'N/redirect'],
+define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './fb_diot_constants_lib', 'N/record', 'N/redirect', 'N/config'],
     /**
  * @param{log} log
  * @param{serverWidget} serverWidget
  */
-    (log, serverWidget, search, task, runtime, values, record, redirect) => {
+    (log, serverWidget, search, task, runtime, values, record, redirect, config) => {
 
         const INTERFACE = values.INTERFACE;
         const RECORD_INFO = values.RECORD_INFO;
         const STATUS_LIST_DIOT = values.STATUS_LIST_DIOT;
         const SCRIPTS_INFO = values.SCRIPTS_INFO;
         const RUNTIME = values.RUNTIME;
+        const COMPANY_INFORMATION = values.COMPANY_INFORMATION;
 
         //Cambio de nombre en el archivo
 
@@ -193,16 +194,34 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './fb_d
         function generaDIOT(subsidiaria, periodo) {
             try {
 
+                var oneWorldFeature = runtime.isFeatureInEffect({ feature: RUNTIME.FEATURES.SUBSIDIARIES });
+
+                //Se obtiene el nombre de la empresa
+                var companyInfo = config.load({
+                    type: config.Type.COMPANY_INFORMATION
+                });
+                
+                compname = companyInfo.getValue({
+                    fieldId: COMPANY_INFORMATION.FIELDS.ID
+                });
+
                 //Crear el registro
                 var customRecord_diot = record.create({
                     type: RECORD_INFO.DIOT_RECORD.ID,
                     isDynamic: true
                 });
 
-                customRecord_diot.setValue({
-                    fieldId: RECORD_INFO.DIOT_RECORD.FIELDS.SUBSIDIARY,
-                    value: subsidiaria
-                });
+                if(oneWorldFeature){ //se pone el nombre de la subsidiaria
+                    customRecord_diot.setValue({
+                        fieldId: RECORD_INFO.DIOT_RECORD.FIELDS.SUBSIDIARY,
+                        value: subsidiaria
+                    });
+                }else{ //si no, se pone el nombre de la empresa
+                    customRecord_diot.setValue({
+                        fieldId: RECORD_INFO.DIOT_RECORD.FIELDS.SUBSIDIARY,
+                        value: compname
+                    });
+                }
 
                 customRecord_diot.setValue({
                     fieldId: RECORD_INFO.DIOT_RECORD.FIELDS.PERIOD,
@@ -218,6 +237,9 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './fb_d
                     enableSourcing: true,
                     ignoreMandatoryFields: true
                 });
+
+                log.audit({title: 'Company', details: compname });
+                log.audit({title: 'ID Record', details: recordId_diot});
 
                 var otherId = record.submitFields({
                     type: RECORD_INFO.DIOT_RECORD.ID,
@@ -256,13 +278,11 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './fb_d
                 log.audit({ title: 'idTask', details: idTask });
             }
             catch (e) {
-                // var percent = 100;
                 var otherId = record.submitFields({
                     type: RECORD_INFO.DIOT_RECORD.ID,
                     id: recordId_diot,
                     values: {
                         [RECORD_INFO.DIOT_RECORD.FIELDS.STATUS]: STATUS_LIST_DIOT.ERROR,
-                        // [RECORD_INFO.DIOT_RECORD.FIELDS.PERCENTAGE]: Math.round(percent * 100) / 100 + '%',
                         [RECORD_INFO.DIOT_RECORD.FIELDS.ERROR]: e.message
                     }
                 });
