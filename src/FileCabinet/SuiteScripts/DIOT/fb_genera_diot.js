@@ -754,47 +754,62 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                             var tasa;
                             if(suitetax){
                                 if(polizasDiario[poliza].codigos != ''){
-                                    tasa = parseFloat(polizasDiario[poliza].codigos[0].tasa);
-                                    tasa = Math.abs(tasa);
-                                    if(polizasDiario[poliza].codigos[0].tipoDesglose == 'Iva'){
-                                        if(tasa == 8){ //zona fronteriza
-                                            regionNorte = regionNorte + impuestos;
-                                        }else if(tasa == 15 || tasa == 16){
-                                            if(polizasDiario[poliza].importacionBienes == true){
-                                                importacion1516 = importacion1516 + impuestos;
-                                            }else{
-                                                iva1516 = iva1516 + importe;
-                                            }
-                                        }else if(tasa == 10 || tasa == 11){
-                                            if(polizasDiario[poliza].importacionBienes == true){
-                                                importacion1011 = importacion1011 + impuestos;
+                                    //traer los codigos que sean iva o retencion
+                                    for(var codigo = 0; codigo < polizasDiario[poliza].codigos.length; codigo++){
+                                        tasa = parseFloat(polizasDiario[poliza].codigos[codigo].tasa);
+                                        tasa = Math.abs(tasa);
+                                        if(polizasDiario[poliza].codigos[codigo].tipoDesglose != 'Exento'){
+                                            if(polizasDiario[poliza].codigos[codigo].tipoDesglose == 'Iva'){
+                                                if(tasa == 8){ //zona fronteriza
+                                                    regionNorte = regionNorte + impuestos;
+                                                    break;
+                                                }else if(tasa == 15 || tasa == 16){
+                                                    if(polizasDiario[poliza].importacionBienes == true){
+                                                        importacion1516 = importacion1516 + impuestos;
+                                                        break;
+                                                    }else{
+                                                        iva1516 = iva1516 + importe;
+                                                        break;
+                                                    }
+                                                }else if(tasa == 10 || tasa == 11){
+                                                    if(polizasDiario[poliza].importacionBienes == true){
+                                                        importacion1011 = importacion1011 + impuestos;
+                                                        break;
+                                                    }
+                                                }
+                                            }else if(polizasDiario[poliza].codigos[codigo].tipoDesglose == 'Retenciones'){
+                                                retencion = retencion + impuestos;
+                                                break;
                                             }
                                         }
-                                    }else if(polizasDiario[poliza].codigos[0].tipoDesglose == 'Retenciones'){
-                                        retencion = retencion + impuestos;
                                     }
                                 }
                             }else{
                                 if(polizasDiario[poliza].tipoDesglose == ''){
                                     if(polizasDiario[poliza].codigos != ''){
-                                        tasa = parseFloat(polizasDiario[poliza].codigos[0].tasa);
-                                        tasa = Math.abs(tasa);
-                                        if(polizasDiario[poliza].codigos[0].tipoDesglose == 'Iva'){
-                                            if(tasa == 8){ //zona fronteriza
-                                                regionNorte = regionNorte + impuestos;
-                                            }else if(tasa == 15 || tasa == 16){
-                                                if(polizasDiario[poliza].importacionBienes == true){
-                                                    importacion1516 = importacion1516 + impuestos;
-                                                }else{
-                                                    iva1516 = iva1516 + importe;
-                                                }
-                                            }else if(tasa == 10 || tasa == 11){
-                                                if(polizasDiario[poliza].importacionBienes == true){
-                                                    importacion1011 = importacion1011 + impuestos;
+                                        //traer los codigos que sean iva o retencion
+                                        for(var codigo = 0; codigo < polizasDiario[poliza].codigos.length; codigo++){
+                                            tasa = parseFloat(polizasDiario[poliza].codigos[codigo].tasa);
+                                            tasa = Math.abs(tasa);
+                                            if(polizasDiario[poliza].codigos[codigo].tipoDesglose != 'Exento'){
+                                                if(polizasDiario[poliza].codigos[codigo].tipoDesglose == 'Iva'){
+                                                    if(tasa == 8){ //zona fronteriza
+                                                        regionNorte = regionNorte + impuestos;
+                                                    }else if(tasa == 15 || tasa == 16){
+                                                        if(polizasDiario[poliza].importacionBienes == true){
+                                                            importacion1516 = importacion1516 + impuestos;
+                                                        }else{
+                                                            iva1516 = iva1516 + importe;
+                                                        }
+                                                    }else if(tasa == 10 || tasa == 11){
+                                                        if(polizasDiario[poliza].importacionBienes == true){
+                                                            importacion1011 = importacion1011 + impuestos;
+                                                        }
+                                                    }
+                                                }else if(polizasDiario[poliza].codigos[codigo].tipoDesglose == 'Retenciones'){
+                                                    retencion = retencion + impuestos;
                                                 }
                                             }
-                                        }else if(polizasDiario[poliza].codigos[0].tipoDesglose == 'Retenciones'){
-                                            retencion = retencion + impuestos;
                                         }
                                     }
                                 }else{
