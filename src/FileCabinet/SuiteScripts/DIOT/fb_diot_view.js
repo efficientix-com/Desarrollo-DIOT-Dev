@@ -256,6 +256,10 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './fb_d
                     id: recordId_diot
                 });
 
+                //IDs de las búsquedas guardadas
+                var facturaSearch = 'customsearch_fb_diot_vendorbill';
+
+                //creación del map reduce y envío de parametros
                 var mrTask = task.create({
                     taskType: task.TaskType.MAP_REDUCE,
                     scriptId: SCRIPTS_INFO.MAP_REDUCE.SCRIPT_ID,
@@ -263,7 +267,8 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './fb_d
                     params: {
                         [SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.SUBSIDIARY]: subsidiaria,
                         [SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD]: periodo,
-                        [SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID]: recordId_diot
+                        [SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID]: recordId_diot,
+                        [SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.BUSQUEDA_FACTURAS]: facturaSearch
                     }
                 });
                 var idTask = mrTask.submit();

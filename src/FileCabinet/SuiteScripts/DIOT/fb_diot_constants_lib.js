@@ -270,6 +270,7 @@ define([],function(){
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.TIPO_GUARDADO = 'custscript_fb_diot_tipo_guardado';
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOMBRE_ARCHIVO = 'custscript_fb_diot_nombre_archivo';
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOTIFICAR = 'custscript_fb_diot_notificar_correo';
+    SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.BUSQUEDA_FACTURAS = 'custscript_fb_busqueda_facturas';
 
     SCRIPTS_INFO.SUITELET = {};
     SCRIPTS_INFO.SUITELET.SCRIPT_ID = 'customscript_fb_diot_view_sl';

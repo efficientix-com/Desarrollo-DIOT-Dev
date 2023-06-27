@@ -199,6 +199,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID });
             var oneWorldFeature = runtime.isFeatureInEffect({ feature: RUNTIME.FEATURES.SUBSIDIARIES });
             log.audit({ title:'OneWorld', details: oneWorldFeature });
+            var search_factura = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.BUSQUEDA_FACTURAS });
+            log.audit({title: 'ID búsqueda factura', details: search_factura });
 
             var nombreSubsidiaria = '', nombrePeriodo = '';
             
@@ -1581,7 +1583,6 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     columns:
                     [
                         RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.ID,
-                        "type",
                         search.createColumn({
                         name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.ID,
                         join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VENDOR,
@@ -2854,8 +2855,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     //si no tiene un codigo de impuesto, se busca en base a la cuenta
                     if(taxCode == ''){
                         for(var i = 0; i < valCodigos.length; i++){
-                            log.audit({title: 'Cuenta a comparar', details: cuenta });
-                            log.audit({title: 'Cuentas de códigos', details: valCodigos[i].cuenta1 + '/' + valCodigos[i].cuenta2 });
+                            /* log.audit({title: 'Cuenta a comparar', details: cuenta });
+                            log.audit({title: 'Cuentas de códigos', details: valCodigos[i].cuenta1 + '/' + valCodigos[i].cuenta2 }); */
                             if(valCodigos[i].cuenta1 == cuenta || valCodigos[i].cuenta2 == cuenta){
                                 var taxCodeCod = valCodigos[i].codeName;
                                 var tasaCod = valCodigos[i].taxRate;
