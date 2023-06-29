@@ -142,7 +142,7 @@ define([],function(){
     RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_RATE = 'taxrate';
     RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TAX_DETAIL = 'taxDetail';
     RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_TERCERO = 'custcol_fb_diot_prov_type';
-    RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION = 'custbody_fb_tipo_operacion';
+    RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.TIPO_OPERACION = 'custcol_fb_diot_operation_type';
     RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.PROVEEDOR = 'custcol_fb_proveedor';
     RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.IMPORTACION = 'custcol_fb_diot_importacion';
     RECORD_INFO.EXPENSE_REPORT_RECORD.FIELDS.RFC = 'custentity_mx_rfc';
@@ -171,7 +171,7 @@ define([],function(){
     RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAX_TOTAL = 'taxtotal';
     RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TAX_AMOUNT = 'taxamount';
     RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_TERCERO = 'custcol_fb_diot_prov_type';
-    RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION = 'custbody_fb_tipo_operacion';
+    RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.TIPO_OPERACION = 'custcol_fb_diot_operation_type';
     RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.PROVEEDOR = 'custcol_fb_proveedor';
     RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.IMPORTACION = 'custcol_fb_diot_importacion';
     RECORD_INFO.JOURNAL_ENTRY_RECORD.FIELDS.RFC = 'custentity_mx_rfc';
@@ -271,6 +271,8 @@ define([],function(){
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOMBRE_ARCHIVO = 'custscript_fb_diot_nombre_archivo';
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.NOTIFICAR = 'custscript_fb_diot_notificar_correo';
     SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.BUSQUEDA_FACTURAS = 'custscript_fb_busqueda_facturas';
+    SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.BUSQUEDA_INFORMES = 'custscript_fb_busqueda_informes';
+    SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.BUSQUEDA_POLIZAS = 'custscript_fb_busqueda_polizas';
 
     SCRIPTS_INFO.SUITELET = {};
     SCRIPTS_INFO.SUITELET.SCRIPT_ID = 'customscript_fb_diot_view_sl';
