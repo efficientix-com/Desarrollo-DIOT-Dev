@@ -203,8 +203,11 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             }
             var periodo = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD });
             var search_factura = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.BUSQUEDA_FACTURAS });
-            var search_informe = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.BUSQUEDA_INFORMES });
-            var search_poliza = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.BUSQUEDA_POLIZAS });
+            log.audit({title: 'search_factura', details: search_factura});
+            var search_informe = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.BUSQUEDA_INFORMES }) || '';
+            log.audit({title: 'search_informe', details: search_informe});
+            var search_poliza = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.BUSQUEDA_POLIZAS }) || '';
+            log.audit({title: 'search_poliza', details: search_poliza});
 
             var nombreSubsidiaria = '', nombrePeriodo = '';
             
@@ -336,44 +339,50 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 log.audit({title: 'Polizas Res', details: polizasDiario});
             } */
             if(oneWorldFeature){
-                var resFact = searchVendorBillPrueba(subsidiaria, periodo, search_factura, suitetax, valores, exentos, iva, retenciones, recordID);
-                facturasProv = resFact[0].facturas;
-                var proveedores = resFact[0].arrayProv;
-                var idFacturas = resFact[0].arrayFactId;
-                log.audit({title: 'Facturas Resultados', details: facturasProv});
-                log.audit({title: 'Proveedores Resultados', details: proveedores});
-                log.audit({title: 'Id Fact Resultados', details: idFacturas});
-                var credito = [];
-                if(facturasProv.length != 0){ //si existen facturas se buscan creditos de factura
-                    credito = searchFacturasCredito(proveedores, idFacturas, suitetax);
-                    log.audit({title: 'Credito', details: credito });
-                    //agregamos el credito a cada factura
-                    var pastIdFact = '', pastProv = '';
-                    for(var x = 0; x < facturasProv.length; x++){
-                        var imp = 0;
-                        //se verifica que no se repitan las facturas y el proveedor para no agregar el credito dos veces
-                        if((pastIdFact != facturasProv[x].id) && (pastProv != facturasProv[x].proveedor)){
-                            for(var y = 0; y < credito.length; y++){
-                                if((credito[y].idFactura == facturasProv[x].id) && (credito[y].proveedor == facturasProv[x].proveedor)){
-                                    var impuesto = parseFloat(credito[y].impuesto);
-                                    impuesto = Math.abs(impuesto);
-                                    imp = imp + impuesto;
+                if(search_factura != ''){
+                    var resFact = searchVendorBillPrueba(subsidiaria, periodo, search_factura, suitetax, valores, exentos, iva, retenciones, recordID);
+                    facturasProv = resFact[0].facturas;
+                    var proveedores = resFact[0].arrayProv;
+                    var idFacturas = resFact[0].arrayFactId;
+                    log.audit({title: 'Facturas Resultados', details: facturasProv});
+                    log.audit({title: 'Proveedores Resultados', details: proveedores});
+                    log.audit({title: 'Id Fact Resultados', details: idFacturas});
+                    var credito = [];
+                    if(facturasProv.length != 0){ //si existen facturas se buscan creditos de factura
+                        credito = searchFacturasCredito(proveedores, idFacturas, suitetax);
+                        log.audit({title: 'Credito', details: credito });
+                        //agregamos el credito a cada factura
+                        var pastIdFact = '', pastProv = '';
+                        for(var x = 0; x < facturasProv.length; x++){
+                            var imp = 0;
+                            //se verifica que no se repitan las facturas y el proveedor para no agregar el credito dos veces
+                            if((pastIdFact != facturasProv[x].id) && (pastProv != facturasProv[x].proveedor)){
+                                for(var y = 0; y < credito.length; y++){
+                                    if((credito[y].idFactura == facturasProv[x].id) && (credito[y].proveedor == facturasProv[x].proveedor)){
+                                        var impuesto = parseFloat(credito[y].impuesto);
+                                        impuesto = Math.abs(impuesto);
+                                        imp = imp + impuesto;
+                                    }
                                 }
+                                facturasProv[x].credito = imp;
+                                pastIdFact = facturasProv[x].id;
+                                pastProv = facturasProv[x].proveedor;
+                            }else{
+                                facturasProv[x].credito = '';
                             }
-                            facturasProv[x].credito = imp;
-                            pastIdFact = facturasProv[x].id;
-                            pastProv = facturasProv[x].proveedor;
-                        }else{
-                            facturasProv[x].credito = '';
                         }
+    
+                        log.audit({title: 'Facturas con Credito', details: facturasProv});
                     }
-
-                    log.audit({title: 'Facturas con Credito', details: facturasProv});
                 }
-                informesGastos = searchExpenseReportsPrueba(subsidiaria, periodo, search_informe, suitetax, valores, exentos, iva, retenciones, recordID);
-                log.audit({title: 'Informes Resultados', details: informesGastos});
-                polizasDiario = searchDailyPolicyPrueba(subsidiaria, periodo, search_poliza, suitetax, valores, exentos, iva, retenciones, recordID);
-                log.audit({title: 'Polizas Resultados', details: polizasDiario});
+                if(search_informe != ''){
+                    informesGastos = searchExpenseReportsPrueba(subsidiaria, periodo, search_informe, suitetax, valores, exentos, iva, retenciones, recordID);
+                    log.audit({title: 'Informes Resultados', details: informesGastos});
+                }
+                if(search_poliza != ''){
+                    polizasDiario = searchDailyPolicyPrueba(subsidiaria, periodo, search_poliza, suitetax, valores, exentos, iva, retenciones, recordID);
+                    log.audit({title: 'Polizas Resultados', details: polizasDiario});
+                }
             }
 
             /** Verifica si existe algún error */
