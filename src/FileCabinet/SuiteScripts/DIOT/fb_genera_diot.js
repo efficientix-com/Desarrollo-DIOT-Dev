@@ -500,7 +500,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
     
                             /** Se crea el archivo txt, se indica el folder en el que se va a guardar*/
                             var fileObj = file.create({
-                                name    : nombreTxt,
+                                name    : nombreTxt + '.txt',
                                 fileType: file.Type.PLAINTEXT,
                                 folder: subFolderId,
                                 contents: txtFinal
