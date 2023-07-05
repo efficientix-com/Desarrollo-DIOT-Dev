@@ -117,7 +117,7 @@ define([],function(){
     RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.NOMBRE_EXTRANJERO = 'custentity_fb_nombre_extranjero';
     RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.PAIS_RESIDENCIA = 'custentity_fb_pais_residencia';
     RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.NACIONALIDAD = 'custentity_fb_nacionalidad';
-    RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.COMERCIO_EXTERIOR = 'custbody_efx_fe_comercio_exterior';
+    RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.IMPORTACION = 'custbody_fb_diot_importacion';
     RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.FILTER = {};
     RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.FILTER.TIPO_TERCERO = 'vendor.custentity_fb_diot_prov_type';
     RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.SUITETAX = {};

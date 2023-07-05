@@ -609,10 +609,10 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                             var tasa = parseFloat(facturasProv[factura].tasa);
                             tasa = Math.abs(tasa);
                             if(facturasProv[factura].tipoDesglose == 'Exento'){
-                                if(facturasProv[factura].exportacionBienes == true){
-                                    exento = exento + importe;
-                                }else{
+                                if(facturasProv[factura].importacionBienes == true){
                                     importacionExento = importacionExento + importe;
+                                }else{
+                                    exento = exento + importe;
                                 }
                             }else if(facturasProv[factura].tipoDesglose == 'Iva'){
                                 if (tasa == 0) {
@@ -620,13 +620,13 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                                 }else if(tasa == 8){ //zona fronteriza
                                     regionNorte = regionNorte + impuestos;
                                 }else if(tasa == 15 || tasa == 16){
-                                    if(facturasProv[factura].exportacionBienes == true){
-                                        iva1516 = iva1516 + importe;
-                                    }else{
+                                    if(facturasProv[factura].importacionBienes == true){
                                         importacion1516 = importacion1516 + impuestos;
+                                    }else{
+                                        iva1516 = iva1516 + importe;
                                     }
                                 }else if(tasa == 10 || tasa == 11){
-                                    if(facturasProv[factura].exportacionBienes == false){
+                                    if(facturasProv[factura].importacionBienes == true){
                                         importacion1011 = importacion1011 + impuestos;
                                     }
                                 }
@@ -1351,7 +1351,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TAX_RATE,
                         join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TAX_DETAIL,
                         }),
-                        RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.COMERCIO_EXTERIOR,
+                        RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.IMPORTACION,
                         search.createColumn({
                         name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.RFC,
                         join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VENDOR
@@ -1399,7 +1399,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var nombreExtranjero = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.NOMBRE_EXTRANJERO, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VENDOR});
                     var paisText = result.getText({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.PAIS_RESIDENCIA, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VENDOR});
                     var nacionalidad = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.NACIONALIDAD, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VENDOR});
-                    var exportacionBienes = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.COMERCIO_EXTERIOR });
+                    var exportacionBienes = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.IMPORTACION });
                     var errores = '', paisResidencia;
 
                     /* Si esta lleno el campo de paisText vamos a obtener el prefijo. 
@@ -1575,7 +1575,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.NAME,
                         join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TAX_ITEM
                         }),
-                        RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.COMERCIO_EXTERIOR,
+                        RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.IMPORTACION,
                         search.createColumn({
                         name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.RFC,
                         join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VENDOR
@@ -1624,7 +1624,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var nombreExtranjero = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.NOMBRE_EXTRANJERO, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VENDOR});
                     var paisText = result.getText({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.PAIS_RESIDENCIA, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VENDOR});
                     var nacionalidad = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.NACIONALIDAD, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VENDOR});
-                    var exportacionBienes = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.COMERCIO_EXTERIOR });
+                    var exportacionBienes = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.IMPORTACION });
                     var tasa = 0, errores = '', paisResidencia;
                     
                     if(paisText.length != 0){
@@ -1804,7 +1804,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var nombreExtranjero = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.NOMBRE_EXTRANJERO, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VENDOR});
                     var paisText = result.getText({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.PAIS_RESIDENCIA, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VENDOR});
                     var nacionalidad = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.NACIONALIDAD, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VENDOR});
-                    var exportacionBienes = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.COMERCIO_EXTERIOR });
+                    var importacionBienes = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.IMPORTACION });
                     var errores = '', paisResidencia;
 
                     /* Si esta lleno el campo de paisText vamos a obtener el prefijo. 
@@ -1895,7 +1895,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         tasa: tasa,
                         tipoImpuesto: tipoImpuesto,
                         tipoDesglose: tipoDesglose,
-                        exportacionBienes: exportacionBienes,
+                        importacionBienes: importacionBienes,
                         credito: credito,
                         rfc: rfc,
                         taxID: taxID,
@@ -1939,7 +1939,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     var nombreExtranjero = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.NOMBRE_EXTRANJERO, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VENDOR});
                     var paisText = result.getText({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.PAIS_RESIDENCIA, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VENDOR});
                     var nacionalidad = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.NACIONALIDAD, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.VENDOR});
-                    var exportacionBienes = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.COMERCIO_EXTERIOR });
+                    var importacionBienes = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.IMPORTACION });
                     var tasa = 0, errores = '', paisResidencia;
                     
                     if(paisText.length != 0){
@@ -2034,7 +2034,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         taxCode: taxCode,
                         tasa: tasa,
                         tipoDesglose: tipoDesglose,
-                        exportacionBienes: exportacionBienes,
+                        importacionBienes: importacionBienes,
                         credito: credito,
                         rfc: rfc,
                         taxID: taxID,
@@ -2123,7 +2123,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TAX_RATE,
                         join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TAX_DETAIL,
                      }),
-                     RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.COMERCIO_EXTERIOR
+                     RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.IMPORTACION
                  ]
              });
  
@@ -2142,7 +2142,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                  var taxCode = result.getText({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TAX_CODE, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TAX_DETAIL });
                  var tipoImpuesto = result.getText({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TAX_TYPE, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TAX_DETAIL });
                  var tasa = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TAX_RATE, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TAX_DETAIL });
-                 var exportacionBienes = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.COMERCIO_EXTERIOR });
+                 var exportacionBienes = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.IMPORTACION });
                  var errores = '';
 
                  var tipoDesglose = buscaDesgloseImpuesto(taxCode, exentos, iva, retenciones);
@@ -2227,7 +2227,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.NAME,
                         join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TAX_ITEM
                      }),
-                     RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.COMERCIO_EXTERIOR
+                     RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.IMPORTACION
                  ]
              });
  
@@ -2244,7 +2244,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                  var importe = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.NET_AMOUNT_NOTAX });
                  var impuestos = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TAX_AMOUNT });
                  var taxCode = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.NAME, join: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.TAX_ITEM });
-                 var exportacionBienes = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.COMERCIO_EXTERIOR });
+                 var exportacionBienes = result.getValue({ name: RECORD_INFO.VENDOR_BILL_RECORD.FIELDS.IMPORTACION });
                  var tasa = 0, errores = '';
  
                  for(var i = 0; i < valores.length; i++){
