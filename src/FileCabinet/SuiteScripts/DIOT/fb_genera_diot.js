@@ -414,6 +414,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
 
                 // Estructura de datos
                 var idProv = new Array();
+                //manda a buscar los proveedores repetidos y los guarda en un arreglo
                 idProv = buscaProveedores(facturasProv, informesGastos, polizasDiario);
                 log.debug('Array Prov', idProv);
 
@@ -577,6 +578,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
     function estructuraDatos(idProv, facturasProv, informesGastos, polizasDiario, suitetax){
         try{
             var arrayTxt = new Array();
+            //recorre el arreglo de proveedores diferentes
             for (var id_prov = 0; id_prov < idProv.length; id_prov++) {
                 var prov = idProv[id_prov];
                 var tercero, operacion, rfc, taxid, nombreExtranjero, pais, nacionalidad, iva1516 = 0, regionNorte = 0, importacion1516 = 0, importacion1011 = 0, importacionExento = 0, iva0 = 0, exento = 0, retencion = 0, devoluciones = 0;
