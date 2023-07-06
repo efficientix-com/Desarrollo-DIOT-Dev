@@ -483,11 +483,12 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                             });
                             if(numArchivos == 0){//no existe el nombre
                             
-                            }else{
+                            }else{//si existe
                                 var numCaracteres = nombreTxt.length;
-                                //log.debug('Archivos',archivos);
                                 log.debug('Archivos', archivos[0]);
-                                var lastFile = archivos[0];
+                                var lastF = archivos[0];
+                                var lastFile = lastF.split('.',1);
+                                lastFile = lastFile.toString();
                                 var n = lastFile.substring(numCaracteres); //obtiene el ultimo numero de archivo
                                 if(n != ''){
                                     var num = n.replace(/_+/g,'');
