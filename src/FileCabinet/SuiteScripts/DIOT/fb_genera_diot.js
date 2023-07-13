@@ -585,7 +585,15 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 var tercero, operacion, rfc, taxid, nombreExtranjero, pais, nacionalidad, iva1516 = 0, regionNorte = 0, importacion1516 = 0, importacion1011 = 0, importacionExento = 0, iva0 = 0, exento = 0, retencion = 0, devoluciones = 0;
                 if(facturasProv.length != 0){
                     for (var factura = 0; factura < facturasProv.length; factura++) {
-                        var prov_operacion = facturasProv[factura].proveedor + facturasProv[factura].tipoOperacion;
+                        //se realiza la concatenacion de acuerdo al tipo de tercero para hacer la agrupación por proveedor
+                        var prov_operacion = "";
+                        if(facturasProv[factura].tipoTercero == "04"){//nacional
+                            prov_operacion = facturasProv[factura].rfc + facturasProv[factura].tipoOperacion;
+                        }else if(facturasProv[factura].tipoTercero == "05"){//extranjero
+                            prov_operacion = facturasProv[factura].taxID + facturasProv[factura].tipoOperacion;
+                        }else{//global
+                            prov_operacion = facturasProv[factura].proveedor + facturasProv[factura].tipoOperacion;
+                        }
                         if(prov_operacion == prov){
                             tercero = facturasProv[factura].tipoTercero;
                             operacion = facturasProv[factura].tipoOperacion;
@@ -651,7 +659,15 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 }
                 if(informesGastos.length != 0){
                     for (var informe = 0; informe < informesGastos.length; informe++) {
-                        var prov_operacion = informesGastos[informe].proveedor + informesGastos[informe].tipoOperacion;
+                        //se realiza la concatenacion de acuerdo al tipo de tercero para hacer la agrupación por proveedor
+                        var prov_operacion = "";
+                        if(informesGastos[informe].tipoTercero == "04"){//nacional
+                            prov_operacion = informesGastos[informe].rfc + informesGastos[informe].tipoOperacion;
+                        }else if(informesGastos[informe].tipoTercero == "05"){//extranjero
+                            prov_operacion = informesGastos[informe].taxID + informesGastos[informe].tipoOperacion;
+                        }else{//global
+                            prov_operacion = informesGastos[informe].proveedor + informesGastos[informe].tipoOperacion;
+                        }
                         if(prov_operacion == prov){
                             tercero = informesGastos[informe].tipoTercero;
                             operacion = informesGastos[informe].tipoOperacion;
@@ -706,7 +722,15 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 }
                 if(polizasDiario.length != 0){
                     for (var poliza = 0; poliza < polizasDiario.length; poliza++) {
-                        var prov_operacion = polizasDiario[poliza].proveedor + polizasDiario[poliza].tipoOperacion;
+                        //se realiza la concatenacion de acuerdo al tipo de tercero para hacer la agrupación por proveedor
+                        var prov_operacion = "";
+                        if(polizasDiario[poliza].tipoTercero == "04"){//nacional
+                            prov_operacion = polizasDiario[poliza].rfc + polizasDiario[poliza].tipoOperacion;
+                        }else if(polizasDiario[poliza].tipoTercero == "05"){//extranjero
+                            prov_operacion = polizasDiario[poliza].taxID + polizasDiario[poliza].tipoOperacion;
+                        }else{//global
+                            prov_operacion = polizasDiario[poliza].proveedor + polizasDiario[poliza].tipoOperacion;
+                        }
                         if(prov_operacion == prov){
                             tercero = polizasDiario[poliza].tipoTercero;
                             operacion = polizasDiario[poliza].tipoOperacion;
@@ -858,37 +882,98 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             var idProv = new Array();
             if(facturasProv.length != 0){
                 for(var i = 0; i < facturasProv.length; i++){
-                    if(idProv.length == 0){
-                        idProv.push(facturasProv[i].proveedor+facturasProv[i].tipoOperacion);
-                    }else{
-                        var existe = existeProveedor(idProv, facturasProv[i].proveedor+facturasProv[i].tipoOperacion);
-                        if(!existe){
+                    if(facturasProv[i].tipoTercero == "04"){ //proveedor nacional
+                        if(idProv.length == 0){
+                            idProv.push(facturasProv[i].rfc+facturasProv[i].tipoOperacion);
+                        }else{
+                            var existe = existeProveedor(idProv, facturasProv[i].rfc+facturasProv[i].tipoOperacion);
+                            if(!existe){
+                                idProv.push(facturasProv[i].rfc+facturasProv[i].tipoOperacion);
+                            }
+                        }
+                    }else if(facturasProv[i].tipoTercero == "05"){ //proveedor extranjero
+                        if(idProv.length == 0){
+                            idProv.push(facturasProv[i].taxID+facturasProv[i].tipoOperacion);
+                        }else{
+                            var existe = existeProveedor(idProv, facturasProv[i].taxID+facturasProv[i].tipoOperacion);
+                            if(!existe){
+                                idProv.push(facturasProv[i].taxID+facturasProv[i].tipoOperacion);
+                            }
+                        }
+                    }else{ //proveedor global
+                        if(idProv.length == 0){
                             idProv.push(facturasProv[i].proveedor+facturasProv[i].tipoOperacion);
+                        }else{
+                            var existe = existeProveedor(idProv, facturasProv[i].proveedor+facturasProv[i].tipoOperacion);
+                            if(!existe){
+                                idProv.push(facturasProv[i].proveedor+facturasProv[i].tipoOperacion);
+                            }
                         }
                     }
                 }
             }
+            //se recorren los proveedores de los informes
             if(informesGastos.length != 0){
                 for(var i = 0; i < informesGastos.length; i++){
-                    if(idProv.length == 0){
-                        idProv.push(informesGastos[i].proveedor+informesGastos[i].tipoOperacion);
-                    }else{
-                        var existe = existeProveedor(idProv, informesGastos[i].proveedor+informesGastos[i].tipoOperacion);
-                        if(!existe){
+                    if(informesGastos[i].tipoTercero == "04"){ //proveedor nacional
+                        if(idProv.length == 0){
+                            idProv.push(informesGastos[i].rfc+informesGastos[i].tipoOperacion);
+                        }else{
+                            var existe = existeProveedor(idProv, informesGastos[i].rfc+informesGastos[i].tipoOperacion);
+                            if(!existe){
+                                idProv.push(informesGastos[i].rfc+informesGastos[i].tipoOperacion);
+                            }
+                        }
+                    }else if(informesGastos[i].tipoTercero == "05"){ //proveedor extranjero
+                        if(idProv.length == 0){
+                            idProv.push(informesGastos[i].taxID+informesGastos[i].tipoOperacion);
+                        }else{
+                            var existe = existeProveedor(idProv, informesGastos[i].taxID+informesGastos[i].tipoOperacion);
+                            if(!existe){
+                                idProv.push(informesGastos[i].taxID+informesGastos[i].tipoOperacion);
+                            }
+                        }
+                    }else{ //proveedor global
+                        if(idProv.length == 0){
                             idProv.push(informesGastos[i].proveedor+informesGastos[i].tipoOperacion);
+                        }else{
+                            var existe = existeProveedor(idProv, informesGastos[i].proveedor+informesGastos[i].tipoOperacion);
+                            if(!existe){
+                                idProv.push(informesGastos[i].proveedor+informesGastos[i].tipoOperacion);
+                            }
                         }
                     }
                 }
-                
             }
+            //se recorren los proveedores de las polizas
             if(polizasDiario.length != 0){
                 for(var i = 0; i < polizasDiario.length; i++){
-                    if(idProv.length == 0){
-                        idProv.push(polizasDiario[i].proveedor+polizasDiario[i].tipoOperacion);
-                    }else{
-                        var existe = existeProveedor(idProv, polizasDiario[i].proveedor+polizasDiario[i].tipoOperacion);
-                        if(!existe){
+                    if(polizasDiario[i].tipoTercero == "04"){ //proveedor nacional
+                        if(idProv.length == 0){
+                            idProv.push(polizasDiario[i].rfc+polizasDiario[i].tipoOperacion);
+                        }else{
+                            var existe = existeProveedor(idProv, polizasDiario[i].rfc+polizasDiario[i].tipoOperacion);
+                            if(!existe){
+                                idProv.push(polizasDiario[i].rfc+polizasDiario[i].tipoOperacion);
+                            }
+                        }
+                    }else if(polizasDiario[i].tipoTercero == "05"){ //proveedor extranjero
+                        if(idProv.length == 0){
+                            idProv.push(polizasDiario[i].taxID+polizasDiario[i].tipoOperacion);
+                        }else{
+                            var existe = existeProveedor(idProv, polizasDiario[i].taxID+polizasDiario[i].tipoOperacion);
+                            if(!existe){
+                                idProv.push(polizasDiario[i].taxID+polizasDiario[i].tipoOperacion);
+                            }
+                        }
+                    }else{ //proveedor global
+                        if(idProv.length == 0){
                             idProv.push(polizasDiario[i].proveedor+polizasDiario[i].tipoOperacion);
+                        }else{
+                            var existe = existeProveedor(idProv, polizasDiario[i].proveedor+polizasDiario[i].tipoOperacion);
+                            if(!existe){
+                                idProv.push(polizasDiario[i].proveedor+polizasDiario[i].tipoOperacion);
+                            }
                         }
                     }
                 }
