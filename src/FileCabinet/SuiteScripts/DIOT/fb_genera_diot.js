@@ -202,14 +202,14 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 subsidiaria = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.SUBSIDIARY });
             }
             var periodo = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD });
-            var search_pagos = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.BUSQUEDA_PAGOS }) || '';
-            log.audit({ title: 'search_pagos', details: search_pagos });
+           /*  var search_pagos = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.BUSQUEDA_PAGOS }) || '';
+            log.audit({ title: 'search_pagos', details: search_pagos }); */
             var search_informe = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.BUSQUEDA_INFORMES }) || '';
             log.audit({title: 'search_informe', details: search_informe});
             var search_poliza = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.BUSQUEDA_POLIZAS }) || '';
             log.audit({title: 'search_poliza', details: search_poliza});
-            var search_credito = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.BUSQUEDA_CREDITO }) || '';
-            log.audit({title: 'search_credito', details: search_credito});
+            /* var search_credito = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.BUSQUEDA_CREDITO }) || '';
+            log.audit({title: 'search_credito', details: search_credito}); */
 
             var nombreSubsidiaria = '', nombrePeriodo = '';
             
@@ -259,7 +259,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             log.audit({ title: 'Retenciones', details: retenciones });
 
             /** Se realiza la búsqueda de las distintas transacciones */
-            var facturasProv = [], informesGastos = [], polizasDiario =[];
+            var facturasProv = [], informesGastos = [], polizasDiario =[], creditoProveedor = [];
             if(oneWorldFeature){
                 /* if(search_factura != ''){
                     var resFact = searchVendorBillPrueba(subsidiaria, periodo, search_factura, suitetax, valores, exentos, iva, retenciones, recordID);
@@ -297,13 +297,14 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                         log.audit({title: 'Facturas con Credito', details: facturasProv});
                     }
                 } */
-                if(search_pagos != ''){
+                /* if(search_pagos != ''){
 
-                }
-                if(search_credito != ''){
+                } */
+                //if(search_credito != ''){
+                    search_credito = '';
                     creditoProveedor = searchVendorCredit(subsidiaria, periodo, search_credito, suitetax, valores, exentos, iva, retenciones, recordID);
                     log.audit({title: 'Credito de proveedor', details: creditoProveedor});
-                }
+                //}
                 if(search_informe != ''){
                     informesGastos = searchExpenseReportsPrueba(subsidiaria, periodo, search_informe, suitetax, valores, exentos, iva, retenciones, recordID);
                     log.audit({title: 'Informes Resultados', details: informesGastos});
@@ -2405,32 +2406,114 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
         try {
             var credito = [];
 
-            //cargar busqueda
-            var busquedaCredito = query.load({
-                id: search_credito
-            });
-            log.audit({title: 'busquedaCredito', details: busquedaCredito});
-            var periodCondition = busquedaCredito.createCondition({
-                fieldId: 'postingperiod',
-                operator: query.Operator.ANY_OF,
-                values: periodo
-            });
-           /*  var subsidiaryCondition = busquedaCredito.createCondition({
-                fieldId: 'subsidiary',
-                operator: query.Operator.ANY_OF,
-                values: subsidiaria
-            }); */
-            busquedaCredito.condition = busquedaCredito.and(busquedaCredito.condition , busquedaCredito.and(periodCondition));
-            //busquedaCredito.condition = busquedaCredito.and(periodCondition);
-            log.audit({title: 'busquedaCredito nuevos filtros', details: busquedaCredito});
-
-            var resultCredito = busquedaCredito.run().asMappedResults();
-            log.audit({title: 'resultCredito', details: resultCredito});
-
-
-
             if(suitetax){
-                return credito;
+                var columns = ['ID','proveedor','tipo_tercero','importacion_bienes','tasa','impuestos','importe','tax_code','tipo_operacion',
+                    'tax_id','pais_residencia','nombre_extranjero','nacionalidad','rfc'];
+                var resultSet = query.runSuiteQL({
+                    query: `SELECT    
+                    "TRANSACTION"."ID" AS "ID" , 
+                    "TRANSACTION".entity AS proveedor , 
+                    Vendor.companyname AS nombre_proveedor , 
+                    Vendor.custentity_fb_diot_prov_type AS tipo_tercero , 
+                    "TRANSACTION".custbody_fb_diot_importacion AS importacion_bienes , 
+                    transactionTaxDetail.taxrate AS tasa , 
+                    transactionTaxDetail.basetaxamount AS impuestos , 
+                    transactionTaxDetail.taxbasis AS importe , 
+                    transactionTaxDetail.taxcode AS tax_code , 
+                    "TRANSACTION".custbody_fb_tipo_operacion AS tipo_operacion , 
+                    Vendor.custentity_efx_fe_numregidtrib AS tax_id , 
+                    Vendor.custentity_fb_pais_residencia AS pais_residencia , 
+                    Vendor.custentity_fb_nombre_extranjero AS nombre_extranjero , 
+                    Vendor.custentity_fb_nacionalidad AS nacionalidad , 
+                    Vendor.custentity_mx_rfc AS rfc 
+                    FROM 
+                        "TRANSACTION", 
+                        Vendor, 
+                        transactionTaxDetail, 
+                        transactionLine
+                    WHERE 
+                        (
+                            (
+                                ("TRANSACTION".entity = Vendor."ID"(+) AND "TRANSACTION"."ID" = transactionTaxDetail."TRANSACTION"(+)) 
+                                AND 
+                                "TRANSACTION"."ID" = transactionLine."TRANSACTION"
+                            )
+                        )
+                        AND 
+                        (
+                            (Vendor.custentity_fb_diot_prov_type IN ('1', '2', '3') 
+                        AND 
+                        "TRANSACTION".voided = 'F' 
+                        AND 
+                        "TRANSACTION".postingperiod IN ?
+                        AND 
+                        transactionLine.subsidiary IN ?
+                        AND 
+                        "TRANSACTION"."TYPE" IN ('VendCred') 
+                        AND 
+                        transactionLine.mainline = 'T')
+                    )`,
+                    params: [periodo, subsidiaria]
+                });
+                var resultQry = resultSet.asMappedResults();
+                log.audit({title: 'Resultado Query', details: resultQry });
+
+                for(var i = 0; i < resultQry.length; i++){
+                    //asignar el tipo de desglose dependiendo el código de impuesto
+                    var tipoDesglose = buscaDesgloseImpuestoPorID(resultQry[i].tax_code, exentos, iva, retenciones);
+                    resultQry[i].tipoDesglose = tipoDesglose;
+
+                    //revisar si hay errores
+                    var errores = '';
+                    /* Si esta lleno el campo de paisText vamos a obtener el prefijo. 
+                        Ej: AR - Argentina
+                            Obtenemos el AR */
+                    // if(paisText.length != 0){
+                    //     var pais = paisText.split(' ',1);
+                    //     pais = pais.toString();
+                    //     paisResidencia = pais;
+                    // }else {
+                    //     paisResidencia = "";
+                    // }
+
+                    // if (resultQry[i].tipo_tercero == 1){ //si es proveedor nacional -> RFC obligatorio
+                    //     if(resultQry[i].rfc == ''){
+                    //         errores = errores + "El proveedor " + nombreProv + " no tiene asignado el RFC/";
+                    //     }
+                    //     /** Los siguientes campos son vacíos porque solo aplican para proveedores extranjeros */
+                    //     resultQry[i].tax_id = "";
+                    //     resultQry[i].nombre_extranjero = "";
+                    //     resultQry[i].pais_residencia = "";
+                    //     resultQry[i].nacionalidad = "";
+                    // } else if (resultQry[i].tipo_tercero == 2){ // si es proveedor extranjero -> RFC opcional, TaxID obligatorio, nombreExtranjero opcional
+                    //     if(resultQry[i].tax_id == ''){
+                    //         errores = errores + "El proveedor " + nombreProv + " no tiene asignado el número de ID Fiscal/";
+                    //     }
+                    //     /** Si tiene asignado un valor el campo nombre extranjero, se tiene que tener el pais y la nacionalidad */
+                    //     if (resultQry[i].nombre_extranjero != ""  && resultQry[i].pais_residencia == ""){
+                    //         errores = errores + "El proveedor " + nombreProv + " no tiene asignado el pais de residencia/";
+                    //     }
+                    //     if(resultQry[i].nombre_extranjero != "" && resultQry[i].nacionalidad == ""){
+                    //         errores = errores + "El proveedor " + nombreProv + " no tiene asignada la nacionalidad/";
+                    //     }
+                    //     /** Si no tiene un valor en nombre extranjero los otros campos no importan */
+                    //     if(resultQry[i].nombre_extranjero == ""){ 
+                    //         resultQry[i].pais_residencia = "";
+                    //         resultQry[i].nacionalidad = "";
+                    //     }
+                    // } else { //si es proveedor global -> RFC NO obligatorio
+                    //     /** Los siguientes campos son vacíos porque solo aplican para proveedores extranjeros */
+                    //     resultQry[i].rfc = "";
+                    //     resultQry[i].tax_id = "";
+                    //     resultQry[i].nombre_extranjero = "";
+                    //     resultQry[i].pais_residencia = "";
+                    //     resultQry[i].nacionalidad = "";
+                    // }
+                    resultQry[i].errores = errores;
+                }
+                log.audit({ title: 'Credito Facturas Resultados', details: resultQry });
+
+                return resultQry;
             }else{
                 return credito;
             }
@@ -2447,8 +2530,6 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             log.error({ title: 'Error en la búsqueda de creditos de proveedor', details: error });
         }
     }
-
-    
 
     function getOperacion(operacion){
         try {
@@ -2468,7 +2549,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
 
      /**
       * Función que busca el desglose de impuesto de acuerdo al código de impuesto
-      * @param {*} codigo Codigo de impuesto a buscar en el desglose
+      * @param {*} codigo Nombre del codigo de impuesto a buscar en el desglose
       * @param {*} exentos Desglose de impuestos exentos
       * @param {*} iva Desglose de impuestos con iva
       * @param {*} retenciones Desglose de impuestos con retenciones
@@ -2496,6 +2577,40 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             if(retenciones.length != 0){
                 for(var i = 0; i < retenciones.length; i++){
                     if(codigo == retenciones[i].text){
+                        desglose = 'Retenciones';
+                        break;
+                    }
+                }
+            }
+    
+            return desglose;
+        } catch (error) {
+            log.error({ title: 'Error al buscar el desglose de impuesto', details: error });
+        }
+    }
+
+    function buscaDesgloseImpuestoPorID(codigo, exentos, iva, retenciones){
+        try {
+            var desglose = '';
+            if(exentos.length != 0){
+                for(var i = 0; i < exentos.length; i++){
+                    if(codigo == exentos[i].value){
+                        desglose = 'Exento';
+                        break;
+                    }
+                }
+            }
+            if(iva.length != 0){
+                for(var i = 0; i < iva.length; i++){
+                    if(codigo == iva[i].value){
+                        desglose = 'Iva';
+                        break;
+                    }
+                }
+            }
+            if(retenciones.length != 0){
+                for(var i = 0; i < retenciones.length; i++){
+                    if(codigo == retenciones[i].value){
                         desglose = 'Retenciones';
                         break;
                     }
