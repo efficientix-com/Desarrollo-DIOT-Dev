@@ -33,8 +33,6 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
 
             /** Se obtienen los parametros dados por el usuario */
             var objScript = runtime.getCurrentScript();
-            var subsidiaria = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.SUBSIDIARY });
-            var periodo = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD });
             var recordID = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.RECORD_DIOT_ID }); 
             //log.debug('Datos', subsidiaria + " " + periodo);
 
