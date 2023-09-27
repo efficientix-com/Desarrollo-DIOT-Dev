@@ -52,74 +52,77 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './fb_d
 
             //Verificar si la empresa es one world
             var oneWorldFeature = runtime.isFeatureInEffect({ feature: RUNTIME.FEATURES.SUBSIDIARIES });
-            log.debug('OneWorld', oneWorldFeature);
-
-            try {
-                /**
-                 * Creacion de los campos para los filtros de la DIOT
-                 */
-
-                form.addButton({
-                    id: INTERFACE.FORM.BUTTONS.GENERAR.ID,
-                    label: INTERFACE.FORM.BUTTONS.GENERAR.LABEL,
-                    functionName: INTERFACE.FORM.BUTTONS.GENERAR.FUNCTION + '(' + oneWorldFeature + ')'
-                });
-                log.debug( "parameters", parameters );
-
-                var fieldgroup_datos = form.addFieldGroup({
-                    id : INTERFACE.FORM.FIELD_GROUP.DATOS.ID,
-                    label : INTERFACE.FORM.FIELD_GROUP.DATOS.LABEL
-                });
-
-                /**
-                 * Lista de subsidiarias
-                 */
-                var subsidiaryList = form.addField({
-                    id: INTERFACE.FORM.FIELDS.SUBSIDIARIA.ID,
-                    type: serverWidget.FieldType.SELECT,
-                    label: INTERFACE.FORM.FIELDS.SUBSIDIARIA.LABEL,
-                    container: INTERFACE.FORM.FIELD_GROUP.DATOS.ID
-                });
-
-                if(oneWorldFeature){ //si es oneWorld hace la búsqueda de las subsidiarias
-                    var subsis = searchSubsidiaries();
-                    subsidiaryList.addSelectOption({ value: '', text: '' });
-                    for (var sub = 0; sub < subsis.length; sub++) {
+            var suitetax = runtime.isFeatureInEffect({ feature: RUNTIME.FEATURES.SUITETAX });
+            log.debug('Caracteristicas', {oneWorldFeature: oneWorldFeature, suitetax: suitetax});
+            if (oneWorldFeature == true) {
+                try {
+                    /**
+                     * Creacion de los campos para los filtros de la DIOT
+                     */
     
-                        subsidiaryList.addSelectOption({
-                            value: subsis[sub].id,
-                            text: subsis[sub].name
+                    form.addButton({
+                        id: INTERFACE.FORM.BUTTONS.GENERAR.ID,
+                        label: INTERFACE.FORM.BUTTONS.GENERAR.LABEL,
+                        functionName: INTERFACE.FORM.BUTTONS.GENERAR.FUNCTION + '(' + oneWorldFeature + ')'
+                    });
+                    log.debug( "parameters", parameters );
+    
+                    var fieldgroup_datos = form.addFieldGroup({
+                        id : INTERFACE.FORM.FIELD_GROUP.DATOS.ID,
+                        label : INTERFACE.FORM.FIELD_GROUP.DATOS.LABEL
+                    });
+    
+                    /**
+                     * Lista de subsidiarias
+                     */
+                    var subsidiaryList = form.addField({
+                        id: INTERFACE.FORM.FIELDS.SUBSIDIARIA.ID,
+                        type: serverWidget.FieldType.SELECT,
+                        label: INTERFACE.FORM.FIELDS.SUBSIDIARIA.LABEL,
+                        container: INTERFACE.FORM.FIELD_GROUP.DATOS.ID
+                    });
+    
+                    if(oneWorldFeature){ //si es oneWorld hace la búsqueda de las subsidiarias
+                        log.debug({ title:'oneWorldFeature', details:'line 86' });
+                        var subsis = searchSubsidiaries();
+                        subsidiaryList.addSelectOption({ value: '', text: '' });
+                        for (var sub = 0; sub < subsis.length; sub++) {
+        
+                            subsidiaryList.addSelectOption({
+                                value: subsis[sub].id,
+                                text: subsis[sub].name
+                            });
+                        }
+                    }else{ //si no es oneWorld se bloquea el campo
+                        subsidiaryList.updateDisplayType({
+                            displayType: serverWidget.FieldDisplayType.DISABLED
                         });
                     }
-                }else{ //si no es oneWorld se bloquea el campo
-                    subsidiaryList.updateDisplayType({
-                        displayType: serverWidget.FieldDisplayType.DISABLED
+    
+    
+                    /**
+                     * Lista de periodos
+                     */
+                    var periodList = form.addField({
+                        id: INTERFACE.FORM.FIELDS.PERIODO.ID,
+                        type: serverWidget.FieldType.SELECT,
+                        label: INTERFACE.FORM.FIELDS.PERIODO.LABEL,
+                        container: INTERFACE.FORM.FIELD_GROUP.DATOS.ID
                     });
+                    log.debug({ title:'period', details:'line 112' });
+                    var periods = searchAccountingPeriod();
+                    periodList.addSelectOption({ value: '', text: '' });
+                    for (var per = 0; per < periods.length; per++) {
+    
+                        periodList.addSelectOption({
+                            value: periods[per].id,
+                            text: periods[per].name
+                        });
+                    }
+    
+                } catch (UIError) {
+                    log.error({ title: 'Error en createUI', details: UIError })
                 }
-
-
-                /**
-                 * Lista de periodos
-                 */
-                var periodList = form.addField({
-                    id: INTERFACE.FORM.FIELDS.PERIODO.ID,
-                    type: serverWidget.FieldType.SELECT,
-                    label: INTERFACE.FORM.FIELDS.PERIODO.LABEL,
-                    container: INTERFACE.FORM.FIELD_GROUP.DATOS.ID
-                });
-
-                var periods = searchAccountingPeriod();
-                periodList.addSelectOption({ value: '', text: '' });
-                for (var per = 0; per < periods.length; per++) {
-
-                    periodList.addSelectOption({
-                        value: periods[per].id,
-                        text: periods[per].name
-                    });
-                }
-
-            } catch (UIError) {
-                log.error({ title: 'Error en createUI', details: UIError })
             }
             return form;
         }
@@ -193,8 +196,8 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './fb_d
 
         function generaDIOT(subsidiaria, periodo) {
             try {
-
                 var oneWorldFeature = runtime.isFeatureInEffect({ feature: RUNTIME.FEATURES.SUBSIDIARIES });
+                log.debug({ title:'generaDiot_200', details:{oneWorldFeature: oneWorldFeature, subsidiaria: subsidiaria, periodo: periodo} });
 
                 //Se obtiene el nombre de la empresa
                 var companyInfo = config.load({
@@ -227,7 +230,7 @@ define(['N/log', 'N/ui/serverWidget', 'N/search', 'N/task', 'N/runtime', './fb_d
                     fieldId: RECORD_INFO.DIOT_RECORD.FIELDS.PERIOD,
                     value: periodo
                 });
-
+                log.debug({ title:'Estado', details:STATUS_LIST_DIOT.PENDING });
                 customRecord_diot.setValue({
                     fieldId: RECORD_INFO.DIOT_RECORD.FIELDS.STATUS,
                     value: STATUS_LIST_DIOT.PENDING

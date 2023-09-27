@@ -200,6 +200,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 subsidiaria = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.SUBSIDIARY });
             }
             var periodo = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.PERIOD });
+            log.debug({ title:'periodo 203', details:periodo });
            /*  var search_pagos = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.BUSQUEDA_PAGOS }) || '';
             log.audit({ title: 'search_pagos', details: search_pagos }); */
             var search_informe = objScript.getParameter({ name: SCRIPTS_INFO.MAP_REDUCE.PARAMETERS.BUSQUEDA_INFORMES }) || '';
@@ -259,7 +260,8 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
             /** Se realiza la búsqueda de las distintas transacciones */
             var facturasProv = [], informesGastos = [], polizasDiario =[], creditoProveedor = [];
             if(oneWorldFeature){
-                /* if(search_factura != ''){
+                let search_factura = 'customsearch_fb_diot_st_vendorbill_2';
+                if(search_factura != ''){
                     var resFact = searchVendorBillPrueba(subsidiaria, periodo, search_factura, suitetax, valores, exentos, iva, retenciones, recordID);
                     facturasProv = resFact[0].facturas;
                     var proveedores = resFact[0].arrayProv;
@@ -268,36 +270,34 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                     log.audit({title: 'Proveedores Resultados', details: proveedores});
                     log.audit({title: 'Id Fact Resultados', details: idFacturas});
                     var credito = [];
-                    if(facturasProv.length != 0){ //si existen facturas se buscan creditos de factura
-                        credito = searchFacturasCredito(proveedores, idFacturas, suitetax);
-                        log.audit({title: 'Credito', details: credito });
-                        //agregamos el credito a cada factura
-                        var pastIdFact = '', pastProv = '';
-                        for(var x = 0; x < facturasProv.length; x++){
-                            var imp = 0;
-                            //se verifica que no se repitan las facturas y el proveedor para no agregar el credito dos veces
-                            if((pastIdFact != facturasProv[x].id) && (pastProv != facturasProv[x].proveedor)){
-                                for(var y = 0; y < credito.length; y++){
-                                    if((credito[y].idFactura == facturasProv[x].id) && (credito[y].proveedor == facturasProv[x].proveedor)){
-                                        var impuesto = parseFloat(credito[y].impuesto);
-                                        impuesto = Math.abs(impuesto);
-                                        imp = imp + impuesto;
-                                    }
-                                }
-                                facturasProv[x].credito = imp;
-                                pastIdFact = facturasProv[x].id;
-                                pastProv = facturasProv[x].proveedor;
-                            }else{
-                                facturasProv[x].credito = '';
-                            }
-                        }
+                    // if(facturasProv.length != 0){ //si existen facturas se buscan creditos de factura
+                    //     credito = searchFacturasCredito(proveedores, idFacturas, suitetax);
+                    //     log.audit({title: 'Credito', details: credito });
+                    //     //agregamos el credito a cada factura
+                    //     var pastIdFact = '', pastProv = '';
+                    //     for(var x = 0; x < facturasProv.length; x++){
+                    //         var imp = 0;
+                    //         //se verifica que no se repitan las facturas y el proveedor para no agregar el credito dos veces
+                    //         if((pastIdFact != facturasProv[x].id) && (pastProv != facturasProv[x].proveedor)){
+                    //             for(var y = 0; y < credito.length; y++){
+                    //                 if((credito[y].idFactura == facturasProv[x].id) && (credito[y].proveedor == facturasProv[x].proveedor)){
+                    //                     var impuesto = parseFloat(credito[y].impuesto);
+                    //                     impuesto = Math.abs(impuesto);
+                    //                     imp = imp + impuesto;
+                    //                 }
+                    //             }
+                    //             facturasProv[x].credito = imp;
+                    //             pastIdFact = facturasProv[x].id;
+                    //             pastProv = facturasProv[x].proveedor;
+                    //         }else{
+                    //             facturasProv[x].credito = '';
+                    //         }
+                    //     }
     
-                        log.audit({title: 'Facturas con Credito', details: facturasProv});
-                    }
-                } */
-                /* if(search_pagos != ''){
-
-                } */
+                    //     log.audit({title: 'Facturas con Credito', details: facturasProv});
+                    // }
+                }
+                
                 //if(search_credito != ''){
                     search_credito = '';
                     creditoProveedor = searchVendorCredit(subsidiaria, periodo, search_credito, suitetax, valores, exentos, iva, retenciones, recordID);
@@ -888,6 +888,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
     function buscaProveedores(facturasProv, informesGastos, polizasDiario){
         try{
             var idProv = new Array();
+            log.debug({ title:'facturasProv', details:facturasProv });
             if(facturasProv.length != 0){
                 for(var i = 0; i < facturasProv.length; i++){
                     if(facturasProv[i].tipoTercero == "04"){ //proveedor nacional
@@ -921,6 +922,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 }
             }
             //se recorren los proveedores de los informes
+            log.debug({ title:'informesGastos', details:informesGastos });
             if(informesGastos.length != 0){
                 for(var i = 0; i < informesGastos.length; i++){
                     if(informesGastos[i].tipoTercero == "04"){ //proveedor nacional
@@ -954,6 +956,7 @@ define(['N/runtime', 'N/search', 'N/url', 'N/record', 'N/file', 'N/redirect', 'N
                 }
             }
             //se recorren los proveedores de las polizas
+            log.debug({ title:'polizasDiario', details:polizasDiario });
             if(polizasDiario.length != 0){
                 for(var i = 0; i < polizasDiario.length; i++){
                     if(polizasDiario[i].tipoTercero == "04"){ //proveedor nacional
